@@ -32,8 +32,12 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.koin.android)
+            implementation(libs.androidx.datastore.preferences)
         }
         commonMain.dependencies {
+            //back-handler
+            implementation(libs.ui.backhandler)
+
             //ktor
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.auth)
