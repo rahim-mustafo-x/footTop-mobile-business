@@ -13,15 +13,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        initKoin()
         setContent {
             App()
-        }
-    }
-
-    private fun initKoin() {
-        startKoin {
-            modules(appModule, platformModule())
         }
     }
 }

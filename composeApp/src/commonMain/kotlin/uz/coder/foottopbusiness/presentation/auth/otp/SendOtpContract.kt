@@ -11,6 +11,8 @@ sealed interface SendOtpContract {
     sealed interface Effect: MviEffect{
         data object NavigateToLogin: Effect
         data class ShowToast(val message: String): Effect
+        data class Error(val message: String?): Effect
+        data object Loading: Effect
     }
     sealed interface Event: MviEvent{
         data object NavigateToLogin: Event

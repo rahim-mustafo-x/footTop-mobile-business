@@ -25,7 +25,7 @@ abstract class BaseViewModel <S: MviState, E: MviEffect, A: MviEvent>(initialSta
     protected fun <T> executeAsync(
         onLoading:()->Unit={},
         onError:(Throwable)->Unit={},
-        onSuccess:(T)->Unit={},
+        onSuccess: suspend (T)->Unit={},
         block: suspend ()->T) {
         viewModelScope.launch {
             try {

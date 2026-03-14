@@ -7,6 +7,7 @@ import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.http.encodedPath
 import io.ktor.serialization.kotlinx.json.json
@@ -25,7 +26,13 @@ object HttpClientFactory {
             })
         }
         install(Logging){
-            level = LogLevel.BODY.also {  LogLevel.HEADERS }
+            logger = object : Logger{
+                override fun log(message: String) {
+                    print(message)
+                }
+
+            }
+            level = LogLevel.BODY
         }
         install(Auth){
             bearer {
