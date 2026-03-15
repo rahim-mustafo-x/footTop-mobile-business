@@ -13,10 +13,13 @@ import io.ktor.http.encodedPath
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.serialization.json.Json
+import uz.coder.foottopbusiness.core.log
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 
 object HttpClientFactory {
     const val BASE_URL = "http://83.222.19.225:5002"
+    private const val TAG = "HttpClientFactory"
+
     fun create(preferencesManager: PreferencesManager) = HttpClient {
         install(ContentNegotiation) {
             json(Json {
@@ -26,23 +29,31 @@ object HttpClientFactory {
             })
         }
         install(Logging){
-            logger = object : Logger{
+            logger = object : Logger {
                 override fun log(message: String) {
-                    print(message)
+                    log("Ktor", message)
                 }
-
             }
             level = LogLevel.BODY
         }
         install(Auth){
             bearer {
                 loadTokens {
+                    log(TAG, "Loading tokens...")
                     val token = preferencesManager.token.firstOrNull()
+                    log(TAG, "Token loaded: $token")
                     token?.let { BearerTokens(it, "") }
                 }
                 sendWithoutRequest { request ->
                     val encodedPath = request.url.encodedPath
-                    encodedPath.contains("/login") || encodedPath.contains("/send-otp")
+                    // Viloyat, tuman, login va otp uchun tokenni talab qilmaslik
+                    val skipAuth = encodedPath.contains("/login") || 
+                                 encodedPath.contains("/send-otp") ||
+                                 encodedPath.contains("/regions") ||
+                                 encodedPath.contains("/districts-by-region")
+
+                    log(TAG, "Sending without request for $encodedPath: $skipAuth")
+                    skipAuth
                 }
             }
         }

@@ -22,7 +22,10 @@ class AuthRepositoryImpl(
         val response = authApiService.login(phoneNumber, otp)
         response.token?.let {
             preferencesManager.setToken(it)
+        }
+        response.userId?.let {
             preferencesManager.setAuthorised(true)
+            preferencesManager.setUserId(it)
         }
         emit(response.token?.isNotBlank()?:false)
     }

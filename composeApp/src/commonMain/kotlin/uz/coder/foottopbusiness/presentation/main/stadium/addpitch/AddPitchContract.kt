@@ -3,50 +3,68 @@ package uz.coder.foottopbusiness.presentation.main.stadium.addpitch
 import uz.coder.foottopbusiness.core.mvi.MviEffect
 import uz.coder.foottopbusiness.core.mvi.MviEvent
 import uz.coder.foottopbusiness.core.mvi.MviState
+import uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto
+import uz.coder.foottopbusiness.data.network.dto.stadium.RegionDto
 
-enum class WeekDay(val label: String, val short: String) {
-    Monday("Monday", "Mon"),
-    Tuesday("Tuesday", "Tue"),
-    Wednesday("Wednesday", "Wed"),
-    Thursday("Thursday", "Thu"),
-    Friday("Friday", "Fri"),
-    Saturday("Saturday", "Sat"),
-    Sunday("Sunday", "Sun")
+enum class StadiumType(val label: String) {
+    FOOTBALL("Football"),
+    BASKETBALL("Basketball"),
+    TENNIS("Tennis"),
+    VOLLEYBALL("Volleyball"),
 }
 
-data class TimeFrame(
-    val id: Int,
-    val startTime: String = "",
-    val endTime: String = "",
-    val price: String = ""
-)
+enum class StadiumDuration(val label: String) {
+    SIXTY("60 min"),
+    NINETY("90 min"),
+    ONE_TWENTY("120 min"),
+}
 
 sealed interface AddPitchContract {
     data class State(
-        val pitchName: String = "",
-        val selectedDay: WeekDay = WeekDay.Monday,
-        val schedules: Map<WeekDay, List<TimeFrame>> = WeekDay.values().associateWith { emptyList() },
-        val showCopyDialog: Boolean = false,
-        val copyTargetDays: Set<WeekDay> = emptySet(),
+        val name: String = "",
+        val description: String = "",
+        val type: StadiumType = StadiumType.FOOTBALL,
+        val duration: StadiumDuration = StadiumDuration.SIXTY,
+        val capacity: String = "",
+        val pricePerHour: String = "",
+        val openTime: String = "",
+        val closeTime: String = "",
+        val imageUrl: String = "",
+        // region/district
+        val regions: List<RegionDto> = emptyList(),
+        val districts: List<DistrictDto> = emptyList(),
+        val selectedRegion: RegionDto? = null,
+        val selectedDistrict: DistrictDto? = null,
+        val showRegionDropdown: Boolean = false,
+        val showDistrictDropdown: Boolean = false,
+        // dropdowns
+        val showTypeDropdown: Boolean = false,
+        val showDurationDropdown: Boolean = false,
         val isLoading: Boolean = false,
+        val error: String? = null,
     ) : MviState
 
     sealed interface Effect : MviEffect {
         object NavigateBack : Effect
+        data class ShowToast(val message: String) : Effect
     }
 
     sealed interface Event : MviEvent {
-        data class PitchName(val value: String) : Event
-        data class SelectDay(val day: WeekDay) : Event
-        data class AddTimeFrame(val day: WeekDay) : Event
-        data class RemoveTimeFrame(val day: WeekDay, val frameId: Int) : Event
-        data class UpdateStartTime(val day: WeekDay, val frameId: Int, val time: String) : Event
-        data class UpdateEndTime(val day: WeekDay, val frameId: Int, val time: String) : Event
-        data class UpdatePrice(val day: WeekDay, val frameId: Int, val price: String) : Event
-        object ShowCopyDialog : Event
-        object DismissCopyDialog : Event
-        data class ToggleCopyDay(val day: WeekDay) : Event
-        object ConfirmCopy : Event
+        data class Name(val value: String) : Event
+        data class Description(val value: String) : Event
+        data class Type(val value: StadiumType) : Event
+        data class Duration(val value: StadiumDuration) : Event
+        data class Capacity(val value: String) : Event
+        data class PricePerHour(val value: String) : Event
+        data class OpenTime(val value: String) : Event
+        data class CloseTime(val value: String) : Event
+        data class ImageUrl(val value: String) : Event
+        data class SelectRegion(val region: RegionDto) : Event
+        data class SelectDistrict(val district: DistrictDto) : Event
+        data class ShowRegionDropdown(val show: Boolean) : Event
+        data class ShowDistrictDropdown(val show: Boolean) : Event
+        data class ShowTypeDropdown(val show: Boolean) : Event
+        data class ShowDurationDropdown(val show: Boolean) : Event
         object Save : Event
     }
 }

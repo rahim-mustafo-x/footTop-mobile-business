@@ -40,7 +40,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import uz.coder.foottopbusiness.core.ui.Primary
@@ -65,7 +64,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
 
     if (showLogoutSheet) {
         ModalBottomSheet(
-            onDismissRequest = { showLogoutSheet = false },
+            onDismissRequest = { showLogoutSheet = !showLogoutSheet },
             sheetState = sheetState
         ) {
             Column(
@@ -103,7 +102,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 }
                 Spacer(Modifier.height(8.dp))
                 OutlinedButton(
-                    onClick = { showLogoutSheet = false },
+                    onClick = { showLogoutSheet = !showLogoutSheet },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Bekor qilish", fontSize = 15.sp)
