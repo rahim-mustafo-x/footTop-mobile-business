@@ -5,6 +5,7 @@ package uz.coder.foottopbusiness.data.local
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -18,15 +19,26 @@ actual class PreferencesManager(context: Context) {
     private val applicationContext = context.applicationContext
     companion object{
         private val TOKEN = stringPreferencesKey("token")
+        private val AUTHORISED = booleanPreferencesKey("authorised")
     }
-    actual val token: Flow<String>
+    actual val token: Flow<String?>
         get() = applicationContext.dataStore.data.map { preferences->
-            preferences[TOKEN] ?: ""
+            preferences[TOKEN]
+        }
+    actual val authorised: Flow<Boolean>
+        get() = applicationContext.dataStore.data.map { preferences ->
+            preferences[AUTHORISED] ?: false
         }
 
     actual suspend fun setToken(token: String) {
         applicationContext.dataStore.edit { preferences ->
             preferences[TOKEN] = token
+        }
+    }
+
+    actual suspend fun setAuthorised(value: Boolean) {
+        applicationContext.dataStore.edit { preferences ->
+            preferences[AUTHORISED] = value
         }
     }
 }

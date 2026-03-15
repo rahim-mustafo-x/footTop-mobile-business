@@ -25,5 +25,5 @@ class AuthApiService(private val client: HttpClient) {
     suspend fun login(phoneNumber: String, otpCode: String) = client.post(HttpClientFactory.BASE_URL+LOGIN_END_POINT){
         setBody(LoginRequest(phoneNumber, otpCode))
         contentType(ContentType.Application.Json)
-    }.body<BaseResponse<LoginResponse>>()
+    }.body<LoginResponse>()
 }

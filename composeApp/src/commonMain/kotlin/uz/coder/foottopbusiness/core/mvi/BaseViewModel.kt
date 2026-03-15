@@ -12,7 +12,6 @@ import kotlinx.coroutines.launch
 abstract class BaseViewModel <S: MviState, E: MviEffect, A: MviEvent>(initialState: S): ViewModel() {
     private val _state = MutableStateFlow(initialState)
     val state = _state.asStateFlow()
-    val currentState = state.value
     private val _effect = Channel<E>(Channel.BUFFERED)
     val effect = _effect.receiveAsFlow()
     protected fun updateState(reducer: S.() -> S){

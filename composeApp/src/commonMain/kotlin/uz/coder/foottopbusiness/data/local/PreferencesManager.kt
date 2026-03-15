@@ -5,6 +5,8 @@ package uz.coder.foottopbusiness.data.local
 import kotlinx.coroutines.flow.Flow
 
 expect class PreferencesManager {
-    val token: Flow<String>
-    suspend fun setToken(token:String)
+    val token: Flow<String?>
+    val authorised: Flow<Boolean>
+    suspend fun setToken(token: String)
+    suspend fun setAuthorised(value: Boolean)
 }

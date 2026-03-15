@@ -36,8 +36,8 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
         }
         commonMain.dependencies {
-            //back-handler
-            implementation(libs.ui.backhandler)
+            //icon
+            implementation(compose.materialIconsExtended)
 
             //ktor
             implementation(libs.ktor.client.core)

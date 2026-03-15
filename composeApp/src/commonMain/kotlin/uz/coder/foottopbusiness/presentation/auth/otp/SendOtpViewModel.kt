@@ -1,11 +1,15 @@
 package uz.coder.foottopbusiness.presentation.auth.otp
 
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
+import uz.coder.foottopbusiness.domain.usecase.auth.IsLoginInUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.SendOtpUseCase
 
 class SendOtpViewModel(
-    private val sendOtpUseCase: SendOtpUseCase
+    private val sendOtpUseCase: SendOtpUseCase,
+    private val isLoginInUseCase: IsLoginInUseCase
 ): BaseViewModel<SendOtpContract.State, SendOtpContract.Effect, SendOtpContract.Event>(initialState = SendOtpContract.State()) {
     override fun handleEvent(event: SendOtpContract.Event) {
         when(event){
@@ -13,23 +17,33 @@ class SendOtpViewModel(
             is SendOtpContract.Event.TypePhoneNumber -> updateState {
                 copy(phoneNumber = event.phoneNumber.filter { it.isDigit() }.take(9))
             }
+            SendOtpContract.Event.Load -> {
+                viewModelScope.launch {
+                    isLoginInUseCase().collect {
+                        sendEffect(SendOtpContract.Effect.Logged(it))
+                    }
+                }
+            }
+
         }
     }
 
     private fun sendOtp() {
         executeAsync(onLoading = {
-            sendEffect(SendOtpContract.Effect.Loading)
+            updateState { copy(isLoading = true) }
         },
             onError = {
+                updateState { copy(isLoading = false) }
                 sendEffect(SendOtpContract.Effect.Error(it.message))
             },
-            onSuccess = {result->
-                if (result){
-                    sendEffect(SendOtpContract.Effect.NavigateToLogin)
-                }else{
+            onSuccess = { result ->
+                updateState { copy(isLoading = false) }
+                if (result) {
+                    sendEffect(SendOtpContract.Effect.NavigateToLogin("+998${state.value.phoneNumber}"))
+                } else {
                     sendEffect(SendOtpContract.Effect.ShowToast("Something went wrong"))
                 }
-            }){
+            }) {
             sendOtpUseCase(state.first().phoneNumber).first()
         }
     }

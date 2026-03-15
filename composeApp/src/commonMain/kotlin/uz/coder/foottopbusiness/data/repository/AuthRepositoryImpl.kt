@@ -1,5 +1,6 @@
 package uz.coder.foottopbusiness.data.repository
 
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.data.network.AuthApiService
@@ -19,9 +20,14 @@ class AuthRepositoryImpl(
         otp: String
     ) = flow {
         val response = authApiService.login(phoneNumber, otp)
-        response.data?.token?.let {
+        response.token?.let {
             preferencesManager.setToken(it)
+            preferencesManager.setAuthorised(true)
         }
-        emit(response.success?:false)
+        emit(response.token?.isNotBlank()?:false)
+    }
+
+    override fun isLoginIn(): Flow<Boolean> {
+        return preferencesManager.authorised
     }
 }
