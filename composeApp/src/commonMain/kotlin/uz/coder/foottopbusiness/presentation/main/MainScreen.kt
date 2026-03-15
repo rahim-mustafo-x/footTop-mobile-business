@@ -84,7 +84,7 @@ fun MainScreen() {
     if (showAddPitch) {
         AddPitchScreen(
             viewModel = addPitchViewModel,
-            onBack = { showAddPitch = false }
+            onBack = { showAddPitch = !showAddPitch }
         )
     } else {
         ModalNavigationDrawer(
