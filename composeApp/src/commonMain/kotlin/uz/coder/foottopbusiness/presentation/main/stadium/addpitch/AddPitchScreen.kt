@@ -20,6 +20,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
@@ -169,7 +170,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                     readOnly = true,
                     label = { Text("Viloyat") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showRegionDropdown) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp)
                 )
                 ExposedDropdownMenu(
@@ -207,7 +208,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                     readOnly = true,
                     label = { Text("Tuman") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showDistrictDropdown) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
                     enabled = state.selectedRegion != null
                 )
@@ -236,7 +237,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                     readOnly = true,
                     label = { Text("Type") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showTypeDropdown) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp)
                 )
                 ExposedDropdownMenu(
@@ -264,7 +265,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                     readOnly = true,
                     label = { Text("Duration") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showDurationDropdown) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp)
                 )
                 ExposedDropdownMenu(
