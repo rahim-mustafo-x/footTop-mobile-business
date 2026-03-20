@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
+import uz.coder.foottopbusiness.domain.repository.LoginResult
 import uz.coder.foottopbusiness.domain.usecase.auth.LoginUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.SendOtpUseCase
 
@@ -41,10 +42,17 @@ class LoginViewModel(
 
     private fun login() {
         executeAsync(
-            onError = { sendEffect(LoginContract.Effect.ShowToast(it.message ?: "")) },
-            onSuccess = { success ->
-                if (success) sendEffect(LoginContract.Effect.NavigateToMain)
-                else sendEffect(LoginContract.Effect.ShowToast("Noto'g'ri kod"))
+            onError = { sendEffect(LoginContract.Effect.ShowToast(it.message ?: "Xatolik yuz berdi")) },
+            onSuccess = { result ->
+                when (result) {
+                    LoginResult.Success -> sendEffect(LoginContract.Effect.NavigateToMain)
+                    LoginResult.RegisterRequired -> sendEffect(
+                        LoginContract.Effect.ShowToast("Ro'yxatdan o'tish talab qilinadi. Iltimos, qayta ro'yxatdan o'ting.")
+                    )
+                    LoginResult.InvalidOtp -> sendEffect(
+                        LoginContract.Effect.ShowToast("Kod noto'g'ri kiritildi. Qayta urinib ko'ring.")
+                    )
+                }
             }
         ) {
             val s = state.first()

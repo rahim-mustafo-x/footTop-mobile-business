@@ -7,15 +7,13 @@ import uz.coder.foottopbusiness.presentation.main.stadium.tabs.StadiumTab
 
 enum class StadiumType(val label: String) {
     FOOTBALL("Football"),
-    BASKETBALL("Basketball"),
     TENNIS("Tennis"),
-    VOLLEYBALL("Volleyball"),
 }
 
 enum class StadiumDuration(val label: String) {
     SIXTY("60 min"),
     NINETY("90 min"),
-    ONE_TWENTY("120 min"),
+    ONE_HUNDRED_TWENTY("120 min"),
 }
 
 sealed interface StadiumContract {

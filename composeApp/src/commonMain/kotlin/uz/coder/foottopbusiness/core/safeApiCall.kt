@@ -1,6 +1,8 @@
 package uz.coder.foottopbusiness.core
 
 import io.ktor.client.call.body
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.bearerAuth
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
@@ -16,4 +18,9 @@ suspend inline fun <reified T> safeApiCall(block: suspend () -> HttpResponse): R
     } catch (e: Exception) {
         Result.failure(e)
     }
+}
+
+// token bilan — bearerAuth ni builder ga qo'shadi
+fun HttpRequestBuilder.applyToken(token: String?) {
+    token?.let { bearerAuth(it) }
 }

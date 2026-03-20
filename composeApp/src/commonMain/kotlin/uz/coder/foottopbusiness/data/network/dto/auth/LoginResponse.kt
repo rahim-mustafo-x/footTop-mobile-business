@@ -8,5 +8,13 @@ data class LoginResponse(
     @SerialName("accessToken")
     val token: String? = null,
     @SerialName("id")
-    val userId: Int? = null
+    val userId: Int? = null,
+    @SerialName("status")
+    val status: String? = null,
 )
+
+// status qiymatlari
+object LoginStatus {
+    const val REGISTER_REQUIRED = "REGISTER_REQUIRED"
+    const val INVALID_OTP = "INVALID_OTP"
+}

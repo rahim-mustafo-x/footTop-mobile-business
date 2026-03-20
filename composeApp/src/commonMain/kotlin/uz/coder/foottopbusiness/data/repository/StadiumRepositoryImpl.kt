@@ -9,6 +9,7 @@ import uz.coder.foottopbusiness.data.network.dto.stadium.CreateStadiumRequest
 import uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.ImageDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.LocationDto
+import uz.coder.foottopbusiness.data.network.dto.stadium.PageStadiumResponseDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.RegionDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.domain.repository.StadiumRepository
@@ -18,62 +19,55 @@ class StadiumRepositoryImpl(
     private val preferencesManager: PreferencesManager
 ) : StadiumRepository {
 
+    private suspend fun token() = preferencesManager.token.firstOrNull() ?: ""
+
     override fun createStadium(
-        name: String,
-        description: String,
-        type: String,
-        duration: String,
-        capacity: Int,
-        pricePerHour: Int,
-        openTime: String,
-        closeTime: String,
-        imageUrl: String,
-        regionId: Int,
-        districtId: Int,
+        name: String, description: String, type: String, duration: String,
+        capacity: Int, pricePerHour: Int, openTime: String, closeTime: String,
+        imageUrl: String, regionId: Int, districtId: Int,
     ) = flow {
         val ownerId = preferencesManager.userId.firstOrNull() ?: 0
-        val token = preferencesManager.token.firstOrNull() ?: ""
         val response = stadiumApiService.createStadium(
-            token,
-            CreateStadiumRequest(
-                name = name,
-                ownerId = ownerId,
-                regionId = regionId,
-                districtId = districtId,
-                description = description,
-                location = LocationDto(),
-                type = type,
-                duration = duration,
-                capacity = capacity,
-                pricePerHour = pricePerHour,
+            token = token(),
+            request = CreateStadiumRequest(
+                name = name, ownerId = ownerId, regionId = regionId, districtId = districtId,
+                description = description, location = LocationDto(), type = type, duration = duration,
+                capacity = capacity, pricePerHour = pricePerHour,
                 images = if (imageUrl.isNotBlank()) listOf(ImageDto(imageUrl)) else emptyList(),
-                openTime = openTime,
-                closeTime = closeTime,
+                openTime = openTime, closeTime = closeTime,
             )
         )
-        val data = response.getOrThrow().data ?: throw Exception(response.getOrThrow().message ?: "Xatolik yuz berdi")
+        val data = response.getOrThrow().data
+            ?: throw Exception(response.getOrThrow().message ?: "Xatolik yuz berdi")
         emit(data)
     }
 
+    override fun getStadiums(
+        name: String?, type: String?, isActive: Boolean?, page: Int, size: Int,
+    ): Flow<PageStadiumResponseDto> = flow {
+        val ownerId = preferencesManager.userId.firstOrNull() ?: 0
+        val response = stadiumApiService.getStadiums(
+            token = token(), name = name, type = type,
+            ownerId = ownerId, isActive = isActive, page = page, size = size,
+        ).getOrThrow()
+        emit(response.data ?: PageStadiumResponseDto())
+    }
+
+    override fun deleteStadium(id: Int) = flow {
+        stadiumApiService.deleteStadium(token = token(), id = id).getOrThrow()
+        emit(Unit)
+    }
+
     override fun getRegions() = flow {
-        val result = stadiumApiService.getRegions().getOrThrow()
-        emit(result.data ?: emptyList())
+        emit(stadiumApiService.getRegions(token()).getOrThrow().data ?: emptyList())
     }
 
     override fun getDistricts(regionId: Int) = flow {
-        val result = stadiumApiService.getDistrictsByRegion(regionId).getOrThrow()
-        emit(result.data ?: emptyList())
+        emit(stadiumApiService.getDistrictsByRegion(token(), regionId).getOrThrow().data ?: emptyList())
     }
 
-    override suspend fun saveRegionId(id: Int) {
-        preferencesManager.setRegionId(id)
-    }
-
-    override suspend fun saveDistrictId(id: Int) {
-        preferencesManager.setDistrictId(id)
-    }
-
+    override suspend fun saveRegionId(id: Int) = preferencesManager.setRegionId(id)
+    override suspend fun saveDistrictId(id: Int) = preferencesManager.setDistrictId(id)
     override fun getSavedRegionId(): Flow<Int> = preferencesManager.regionId
-
     override fun getSavedDistrictId(): Flow<Int> = preferencesManager.districtId
 }
