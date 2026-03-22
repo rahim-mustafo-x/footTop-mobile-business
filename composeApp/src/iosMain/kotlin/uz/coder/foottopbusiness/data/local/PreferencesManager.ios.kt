@@ -5,6 +5,7 @@ package uz.coder.foottopbusiness.data.local
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import platform.Foundation.NSUserDefaults
+import uz.coder.foottopbusiness.core.normalizeBearerToken
 
 actual class PreferencesManager {
     private val userDefaults = NSUserDefaults.standardUserDefaults
@@ -15,7 +16,7 @@ actual class PreferencesManager {
         private const val REGION_ID = "region_id"
         private const val DISTRICT_ID = "district_id"
     }
-    private val _token = MutableStateFlow(userDefaults.stringForKey(TOKEN))
+    private val _token = MutableStateFlow(normalizeBearerToken(userDefaults.stringForKey(TOKEN)))
     private val _authorised = MutableStateFlow(userDefaults.boolForKey(AUTHORISED))
     private val _userId = MutableStateFlow(userDefaults.integerForKey(USER_ID).toInt())
     private val _regionId = MutableStateFlow(userDefaults.integerForKey(REGION_ID).toInt())
@@ -28,9 +29,14 @@ actual class PreferencesManager {
     actual val districtId: Flow<Int> get() = _districtId
 
     actual suspend fun setToken(token: String) {
-        userDefaults.setObject(token, TOKEN)
+        val cleaned = normalizeBearerToken(token)
+        if (cleaned.isNullOrEmpty()) {
+            userDefaults.removeObjectForKey(TOKEN)
+        } else {
+            userDefaults.setObject(cleaned, TOKEN)
+        }
         userDefaults.synchronize()
-        _token.emit(token)
+        _token.emit(cleaned)
     }
     actual suspend fun setAuthorised(value: Boolean) {
         userDefaults.setBool(value, AUTHORISED)

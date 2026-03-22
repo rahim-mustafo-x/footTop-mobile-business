@@ -6,7 +6,6 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
-import uz.coder.foottopbusiness.core.applyToken
 import uz.coder.foottopbusiness.core.safeApiCall
 import uz.coder.foottopbusiness.data.network.dto.BaseResponse
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
@@ -17,24 +16,19 @@ class TournamentApiService(private val client: HttpClient) {
         private const val TOURNAMENTS = "/v1/tournaments"
     }
 
-    suspend fun getTournaments(token: String): Result<BaseResponse<List<TournamentResponseDto>>> =
+    suspend fun getTournaments(): Result<BaseResponse<List<TournamentResponseDto>>> =
         safeApiCall {
-            client.get(HttpClientFactory.BASE_URL + TOURNAMENTS) {
-                applyToken(token)
-            }
+            client.get(HttpClientFactory.BASE_URL + TOURNAMENTS)
         }
 
-    suspend fun getTournamentById(token: String, id: Long): Result<BaseResponse<TournamentResponseDto>> =
+    suspend fun getTournamentById(id: Long): Result<BaseResponse<TournamentResponseDto>> =
         safeApiCall {
-            client.get(HttpClientFactory.BASE_URL + "$TOURNAMENTS/$id") {
-                applyToken(token)
-            }
+            client.get(HttpClientFactory.BASE_URL + "$TOURNAMENTS/$id")
         }
 
-    suspend fun createTournament(token: String, request: TournamentRequestDto): Result<BaseResponse<TournamentResponseDto>> =
+    suspend fun createTournament(request: TournamentRequestDto): Result<BaseResponse<TournamentResponseDto>> =
         safeApiCall {
             client.post(HttpClientFactory.BASE_URL + "$TOURNAMENTS/create") {
-                applyToken(token)
                 contentType(ContentType.Application.Json)
                 setBody(request)
             }

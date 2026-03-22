@@ -67,8 +67,9 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     }
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-        Text("Sozlamalar", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-        Spacer(Modifier.height(20.dp))
+        Text("Profil", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(12.dp))
 
         // Profil kartasi
         Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large,

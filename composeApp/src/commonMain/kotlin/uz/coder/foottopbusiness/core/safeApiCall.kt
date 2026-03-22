@@ -20,7 +20,8 @@ suspend inline fun <reified T> safeApiCall(block: suspend () -> HttpResponse): R
     }
 }
 
-// token bilan — bearerAuth ni builder ga qo'shadi
 fun HttpRequestBuilder.applyToken(token: String?) {
-    token?.let { bearerAuth(it) }
+    normalizeBearerToken(token)?.let {
+        bearerAuth(it)
+    }
 }

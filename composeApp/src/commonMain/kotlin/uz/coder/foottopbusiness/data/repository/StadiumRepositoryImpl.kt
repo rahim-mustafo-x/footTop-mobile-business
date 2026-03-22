@@ -19,8 +19,6 @@ class StadiumRepositoryImpl(
     private val preferencesManager: PreferencesManager
 ) : StadiumRepository {
 
-    private suspend fun token() = preferencesManager.token.firstOrNull() ?: ""
-
     override fun createStadium(
         name: String, description: String, type: String, duration: String,
         capacity: Int, pricePerHour: Int, openTime: String, closeTime: String,
@@ -28,7 +26,6 @@ class StadiumRepositoryImpl(
     ) = flow {
         val ownerId = preferencesManager.userId.firstOrNull() ?: 0
         val response = stadiumApiService.createStadium(
-            token = token(),
             request = CreateStadiumRequest(
                 name = name, ownerId = ownerId, regionId = regionId, districtId = districtId,
                 description = description, location = LocationDto(), type = type, duration = duration,
@@ -47,23 +44,23 @@ class StadiumRepositoryImpl(
     ): Flow<PageStadiumResponseDto> = flow {
         val ownerId = preferencesManager.userId.firstOrNull() ?: 0
         val response = stadiumApiService.getStadiums(
-            token = token(), name = name, type = type,
+            name = name, type = type,
             ownerId = ownerId, isActive = isActive, page = page, size = size,
         ).getOrThrow()
         emit(response.data ?: PageStadiumResponseDto())
     }
 
     override fun deleteStadium(id: Int) = flow {
-        stadiumApiService.deleteStadium(token = token(), id = id).getOrThrow()
+        stadiumApiService.deleteStadium(id = id).getOrThrow()
         emit(Unit)
     }
 
     override fun getRegions() = flow {
-        emit(stadiumApiService.getRegions(token()).getOrThrow().data ?: emptyList())
+        emit(stadiumApiService.getRegions().getOrThrow().data ?: emptyList())
     }
 
     override fun getDistricts(regionId: Int) = flow {
-        emit(stadiumApiService.getDistrictsByRegion(token(), regionId).getOrThrow().data ?: emptyList())
+        emit(stadiumApiService.getDistrictsByRegion(regionId).getOrThrow().data ?: emptyList())
     }
 
     override suspend fun saveRegionId(id: Int) = preferencesManager.setRegionId(id)

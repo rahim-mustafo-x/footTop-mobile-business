@@ -4,51 +4,76 @@ package uz.coder.foottopbusiness.data.local
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import uz.coder.foottopbusiness.core.normalizeBearerToken
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "foot_top_business")
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "foot_top_business_prefs")
 
+actual class PreferencesManager(private val context: Context) {
 
-actual class PreferencesManager(context: Context) {
-    private val applicationContext = context.applicationContext
-    companion object{
+    companion object {
         private val TOKEN = stringPreferencesKey("token")
         private val AUTHORISED = booleanPreferencesKey("authorised")
         private val USER_ID = intPreferencesKey("user_id")
         private val REGION_ID = intPreferencesKey("region_id")
         private val DISTRICT_ID = intPreferencesKey("district_id")
     }
-    actual val token: Flow<String?>
-        get() = applicationContext.dataStore.data.map { it[TOKEN] }
-    actual val authorised: Flow<Boolean>
-        get() = applicationContext.dataStore.data.map { it[AUTHORISED] ?: false }
-    actual val userId: Flow<Int>
-        get() = applicationContext.dataStore.data.map { it[USER_ID] ?: 0 }
-    actual val regionId: Flow<Int>
-        get() = applicationContext.dataStore.data.map { it[REGION_ID] ?: 0 }
-    actual val districtId: Flow<Int>
-        get() = applicationContext.dataStore.data.map { it[DISTRICT_ID] ?: 0 }
+
+    actual val token: Flow<String?> = context.dataStore.data.map { preferences ->
+        normalizeBearerToken(preferences[TOKEN])
+    }
+
+    actual val authorised: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[AUTHORISED] ?: false
+    }
+
+    actual val userId: Flow<Int> = context.dataStore.data.map { preferences ->
+        preferences[USER_ID] ?: 0
+    }
+
+    actual val regionId: Flow<Int> = context.dataStore.data.map { preferences ->
+        preferences[REGION_ID] ?: 0
+    }
+
+    actual val districtId: Flow<Int> = context.dataStore.data.map { preferences ->
+        preferences[DISTRICT_ID] ?: 0
+    }
 
     actual suspend fun setToken(token: String) {
-        applicationContext.dataStore.edit { it[TOKEN] = token }
+        val cleaned = normalizeBearerToken(token)
+        context.dataStore.edit { preferences ->
+            if (cleaned.isNullOrEmpty()) {
+                preferences.remove(TOKEN)
+            } else {
+                preferences[TOKEN] = cleaned
+            }
+        }
     }
+
     actual suspend fun setAuthorised(value: Boolean) {
-        applicationContext.dataStore.edit { it[AUTHORISED] = value }
+        context.dataStore.edit { preferences ->
+            preferences[AUTHORISED] = value
+        }
     }
+
     actual suspend fun setUserId(id: Int) {
-        applicationContext.dataStore.edit { it[USER_ID] = id }
+        context.dataStore.edit { preferences ->
+            preferences[USER_ID] = id
+        }
     }
+
     actual suspend fun setRegionId(id: Int) {
-        applicationContext.dataStore.edit { it[REGION_ID] = id }
+        context.dataStore.edit { preferences ->
+            preferences[REGION_ID] = id
+        }
     }
+
     actual suspend fun setDistrictId(id: Int) {
-        applicationContext.dataStore.edit { it[DISTRICT_ID] = id }
+        context.dataStore.edit { preferences ->
+            preferences[DISTRICT_ID] = id
+        }
     }
 }

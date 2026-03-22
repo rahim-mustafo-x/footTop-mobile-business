@@ -3,6 +3,7 @@ package uz.coder.foottopbusiness.data.repository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import uz.coder.foottopbusiness.core.SessionManager
+import uz.coder.foottopbusiness.core.normalizeBearerToken
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.data.network.AuthApiService
 import uz.coder.foottopbusiness.data.network.dto.auth.LoginStatus
@@ -30,15 +31,26 @@ class AuthRepositoryImpl(
                 emit(LoginResult.InvalidOtp)
             }
             else -> {
-                // status null — muvaffaqiyatli login
-                response.token?.let {
-                    preferencesManager.setToken(it)
-                    sessionManager.onAuthorized()
+                val access = normalizeBearerToken(response.resolvedAccessToken())
+                if (access == null) {
+                    emit(LoginResult.InvalidOtp)
+                    return@flow
                 }
+                
+                // 1. Save Token
+                preferencesManager.setToken(access)
+                
+                // 2. Mark as authorised immediately since we have a token
+                preferencesManager.setAuthorised(true)
+                
+                // 3. Reset session state
+                sessionManager.onAuthorized()
+                
+                // 4. Save User ID if available
                 response.userId?.let {
-                    preferencesManager.setAuthorised(true)
                     preferencesManager.setUserId(it)
                 }
+
                 emit(LoginResult.Success)
             }
         }

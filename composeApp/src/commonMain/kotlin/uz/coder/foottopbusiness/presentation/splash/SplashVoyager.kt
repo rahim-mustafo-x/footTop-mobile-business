@@ -3,15 +3,22 @@ package uz.coder.foottopbusiness.presentation.splash
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.SportsSoccer
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -54,15 +61,13 @@ fun SplashScreenContent() {
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            // Placeholder for Logo, replace with actual app icon
-            Box(
-                modifier = Modifier
-                    .size(120.dp)
-                    .background(Primary.copy(alpha = 0.1f), MaterialTheme.shapes.medium),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("⚽", fontSize = 60.sp)
-            }
+            // New Icon using Material Icons
+            Icon(
+                imageVector = Icons.Default.SportsSoccer,
+                contentDescription = "App Icon",
+                modifier = Modifier.size(120.dp),
+                tint = Primary
+            )
 
             val title = buildAnnotatedString {
                 withStyle(SpanStyle(fontSize = 32.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)) { append("Foot") }
@@ -74,6 +79,14 @@ fun SplashScreenContent() {
                 fontSize = 18.sp,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                 fontWeight = FontWeight.Medium
+            )
+            
+            Spacer(modifier = Modifier.height(48.dp))
+            
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                color = Primary,
+                strokeWidth = 2.dp
             )
         }
     }

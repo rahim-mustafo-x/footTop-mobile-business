@@ -53,8 +53,8 @@ import uz.coder.foottopbusiness.presentation.splash.SplashViewModel
 val appModule = module {
     // core
     single { SessionManager() }
-    // PreferencesManager + SessionManager — token mismatch fix uchun
-    single { HttpClientFactory.create(get(), get()) }
+    single { HttpClientFactory(get(), get()) }
+    single { get<HttpClientFactory>().create() }
 
     // api services
     single { AuthApiService(get()) }
@@ -67,10 +67,10 @@ val appModule = module {
     // repositories
     single<AuthRepository> { AuthRepositoryImpl(get(), get(), get()) }
     single<StadiumRepository> { StadiumRepositoryImpl(get(), get()) }
-    single<CoachRepository> { CoachRepositoryImpl(get(), get()) }
-    single<TournamentRepository> { TournamentRepositoryImpl(get(), get()) }
-    single<MatchRepository> { MatchRepositoryImpl(get(), get()) }
-    single<UserRepository> { UserRepositoryImpl(get(), get()) }
+    single<CoachRepository> { CoachRepositoryImpl(get()) }
+    single<TournamentRepository> { TournamentRepositoryImpl(get()) }
+    single<MatchRepository> { MatchRepositoryImpl(get()) }
+    single<UserRepository> { UserRepositoryImpl(get()) }
 
     // use-cases
     factory { SendOtpUseCase(get()) }
@@ -97,7 +97,7 @@ val appModule = module {
     factory { SendOtpViewModel(get(), get()) }
     factory { LoginViewModel(get(), get()) }
     factory { HomeViewModel(get(), get(), get(), get()) }
-    factory { StadiumViewModel(get(), get(), get()) }
+    factory { StadiumViewModel(get()) }
     factory { AddPitchViewModel(get(), get(), get(), get(), get(), get(), get()) }
     factory { CoachesViewModel(get(), get()) }
     factory { TournamentsViewModel(get(), get(), get()) }
