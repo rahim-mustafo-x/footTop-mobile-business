@@ -58,4 +58,19 @@ actual class PreferencesManager {
         userDefaults.synchronize()
         _districtId.emit(id)
     }
+
+    actual suspend fun logout() {
+        userDefaults.removeObjectForKey(TOKEN)
+        userDefaults.setBool(false, AUTHORISED)
+        userDefaults.setInteger(0, USER_ID)
+        userDefaults.setInteger(0, REGION_ID)
+        userDefaults.setInteger(0, DISTRICT_ID)
+        userDefaults.synchronize()
+
+        _token.emit(null)
+        _authorised.emit(false)
+        _userId.emit(0)
+        _regionId.emit(0)
+        _districtId.emit(0)
+    }
 }

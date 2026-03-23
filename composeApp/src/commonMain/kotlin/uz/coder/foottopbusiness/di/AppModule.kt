@@ -24,6 +24,7 @@ import uz.coder.foottopbusiness.domain.repository.TournamentRepository
 import uz.coder.foottopbusiness.domain.repository.UserRepository
 import uz.coder.foottopbusiness.domain.usecase.auth.IsLoginInUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.LoginUseCase
+import uz.coder.foottopbusiness.domain.usecase.auth.LogoutUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.SendOtpUseCase
 import uz.coder.foottopbusiness.domain.usecase.coach.CreateCoachUseCase
 import uz.coder.foottopbusiness.domain.usecase.coach.GetCoachesUseCase
@@ -76,6 +77,7 @@ val appModule = module {
     factory { SendOtpUseCase(get()) }
     factory { LoginUseCase(get()) }
     factory { IsLoginInUseCase(get()) }
+    factory { LogoutUseCase(get()) }
     factory { CreateStadiumUseCase(get()) }
     factory { GetStadiumsUseCase(get()) }
     factory { DeleteStadiumUseCase(get()) }
@@ -94,7 +96,7 @@ val appModule = module {
 
     // viewModels
     factory { SplashViewModel(get()) }
-    factory { SendOtpViewModel(get(), get()) }
+    factory { SendOtpViewModel(get(), get(), get()) }
     factory { LoginViewModel(get(), get()) }
     factory { HomeViewModel(get(), get(), get(), get()) }
     factory { StadiumViewModel(get()) }

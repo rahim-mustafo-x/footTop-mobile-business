@@ -57,4 +57,8 @@ class AuthRepositoryImpl(
     }
 
     override fun isLoginIn(): Flow<Boolean> = preferencesManager.authorised
+
+    override suspend fun logout() {
+        preferencesManager.logout()
+    }
 }

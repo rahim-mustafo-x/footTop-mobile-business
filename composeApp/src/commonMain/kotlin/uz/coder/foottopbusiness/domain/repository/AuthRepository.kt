@@ -12,4 +12,5 @@ interface AuthRepository {
     fun sendOtp(phoneNumber: String): Flow<Boolean>
     fun login(phoneNumber: String, otp: String): Flow<LoginResult>
     fun isLoginIn(): Flow<Boolean>
+    suspend fun logout()
 }

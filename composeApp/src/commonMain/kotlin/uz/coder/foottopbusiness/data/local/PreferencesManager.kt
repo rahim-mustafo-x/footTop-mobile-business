@@ -15,4 +15,5 @@ expect class PreferencesManager {
     suspend fun setUserId(id: Int)
     suspend fun setRegionId(id: Int)
     suspend fun setDistrictId(id: Int)
+    suspend fun logout()
 }

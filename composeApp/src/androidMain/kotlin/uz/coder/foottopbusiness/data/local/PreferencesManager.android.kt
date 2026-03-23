@@ -76,4 +76,17 @@ actual class PreferencesManager(private val context: Context) {
             preferences[DISTRICT_ID] = id
         }
     }
+
+    actual suspend fun logout() {
+        context.dataStore.edit { preferences ->
+            preferences.clear()
+        }
+        // Clear application cache
+        try {
+            context.cacheDir.deleteRecursively()
+            context.externalCacheDir?.deleteRecursively()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 }

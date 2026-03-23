@@ -5,15 +5,22 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
 import uz.coder.foottopbusiness.domain.usecase.auth.IsLoginInUseCase
+import uz.coder.foottopbusiness.domain.usecase.auth.LogoutUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.SendOtpUseCase
 
 class SendOtpViewModel(
     private val sendOtpUseCase: SendOtpUseCase,
-    private val isLoginInUseCase: IsLoginInUseCase
+    private val isLoginInUseCase: IsLoginInUseCase,
+    private val logoutUseCase: LogoutUseCase
 ): BaseViewModel<SendOtpContract.State, SendOtpContract.Effect, SendOtpContract.Event>(initialState = SendOtpContract.State()) {
     override fun handleEvent(event: SendOtpContract.Event) {
         when(event){
-            SendOtpContract.Event.NavigateToLogin -> sendOtp()
+            SendOtpContract.Event.NavigateToLogin -> {
+                viewModelScope.launch {
+                    logoutUseCase()
+                    sendOtp()
+                }
+            }
             is SendOtpContract.Event.TypePhoneNumber -> updateState {
                 copy(phoneNumber = event.phoneNumber.filter { it.isDigit() }.take(9))
             }
@@ -44,7 +51,7 @@ class SendOtpViewModel(
                     sendEffect(SendOtpContract.Effect.ShowToast("Something went wrong"))
                 }
             }) {
-            sendOtpUseCase(state.first().phoneNumber).first()
+            sendOtpUseCase(state.value.phoneNumber).first()
         }
     }
 }
