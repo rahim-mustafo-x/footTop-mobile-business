@@ -60,5 +60,6 @@ class AuthRepositoryImpl(
 
     override suspend fun logout() {
         preferencesManager.logout()
+        sessionManager.onUnauthorized()
     }
 }

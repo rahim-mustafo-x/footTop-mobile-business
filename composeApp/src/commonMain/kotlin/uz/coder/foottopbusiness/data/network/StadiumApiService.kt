@@ -4,6 +4,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
@@ -53,6 +54,27 @@ class StadiumApiService(private val client: HttpClient) {
                 parameters.append("size", size.toString())
             }
         }
+    }
+
+    suspend fun getStadiumById(
+        id: Int,
+        date: String,
+        duration: String
+    ): Result<BaseResponse<List<StadiumResponse>>> = safeApiCall {
+        client.get(HttpClientFactory.BASE_URL + "/v1/stadiums/$id") {
+            url {
+                parameters.append("date", date)
+                parameters.append("duration", duration)
+            }
+        }
+    }
+
+    suspend fun updateOpenCloseTime(
+        id: Int,
+        openTime: String,
+        closeTime: String
+    ): Result<BaseResponse<Unit>> = safeApiCall {
+        client.put(HttpClientFactory.BASE_URL + "/v1/stadiums/$id/$openTime/$closeTime")
     }
 
     suspend fun deleteStadium(id: Int): Result<BaseResponse<Unit>> = safeApiCall {

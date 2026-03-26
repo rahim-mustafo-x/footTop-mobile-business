@@ -29,6 +29,18 @@ interface StadiumRepository {
         size: Int = 20,
     ): Flow<PageStadiumResponseDto>
 
+    fun getStadiumById(
+        id: Int,
+        date: String,
+        duration: String
+    ): Flow<List<StadiumResponse>>
+
+    fun updateOpenCloseTime(
+        id: Int,
+        openTime: String,
+        closeTime: String
+    ): Flow<Unit>
+
     fun deleteStadium(id: Int): Flow<Unit>
 
     fun getRegions(): Flow<List<RegionDto>>

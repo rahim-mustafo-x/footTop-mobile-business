@@ -2,27 +2,28 @@ package uz.coder.foottopbusiness.data.network
 
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpResponseValidator
+import io.ktor.client.plugins.HttpSend
 import io.ktor.client.plugins.HttpTimeout
-import io.ktor.client.plugins.auth.Auth
-import io.ktor.client.plugins.auth.providers.BearerTokens
-import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.plugins.plugin
+import io.ktor.client.request.header
+import io.ktor.http.HttpHeaders
 import io.ktor.http.encodedPath
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import uz.coder.foottopbusiness.core.SessionManager
 import uz.coder.foottopbusiness.core.log
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 
 class HttpClientFactory(
-    preferencesManager: PreferencesManager,
+    private val preferencesManager: PreferencesManager,
     private val sessionManager: SessionManager
 ) {
     companion object {
@@ -30,14 +31,9 @@ class HttpClientFactory(
     }
 
     private val scope = CoroutineScope(Dispatchers.Default)
-    private val tokenState = preferencesManager.token.stateIn(
-        scope = scope,
-        started = SharingStarted.Eagerly,
-        initialValue = null
-    )
 
     fun create(): HttpClient {
-        return HttpClient {
+        val client = HttpClient {
             install(ContentNegotiation) {
                 json(Json {
                     prettyPrint = true
@@ -45,26 +41,6 @@ class HttpClientFactory(
                     ignoreUnknownKeys = true
                     explicitNulls = false
                 })
-            }
-
-            install(Auth) {
-                bearer {
-                    loadTokens {
-                        // Access the latest value immediately from StateFlow
-                        val token = tokenState.value
-                        if (token.isNullOrEmpty()) {
-                            log("Auth", "No token in StateFlow")
-                            null
-                        } else {
-                            log("Auth", "Token loaded from StateFlow: ${token.take(10)}...")
-                            BearerTokens(accessToken = token, refreshToken = "")
-                        }
-                    }
-                    sendWithoutRequest { request ->
-                        val path = request.url.encodedPath
-                        !path.contains("/api/auth/") && !path.contains("/login") && !path.contains("/send-otp")
-                    }
-                }
             }
 
             install(Logging) {
@@ -90,12 +66,42 @@ class HttpClientFactory(
                     val path = response.call.request.url.encodedPath
                     val isAuthEndpoint = path.contains("/api/auth/") || path.contains("/login") || path.contains("/send-otp")
 
+                    // 401 va 403 statuslarini token eskirgan yoki yaroqsiz deb hisoblaymiz
                     if ((code == 401 || code == 403) && !isAuthEndpoint) {
-                        log("Auth", "Session expired or Forbidden ($code) for $path")
-                        sessionManager.onUnauthorized()
+                        log("Auth", "Session expired or Forbidden ($code) for $path. Redirecting to login.")
+                        scope.launch {
+                            // Mahalliy saqlangan ma'lumotlarni tozalaymiz
+                            preferencesManager.logout()
+                            // Navigatsiyani login sahifasiga o'tkazamiz
+                            sessionManager.onUnauthorized()
+                        }
                     }
                 }
             }
         }
+
+        /**
+         * Ktor'ning standard 'Auth' plagini o'rniga manual interceptor ishlatamiz.
+         * Sababi: 'Auth' plagini loadTokens natijasini keshlab oladi va login/logout'dan keyin
+         * yangi tokenni har doim ham darhol ilib olmaydi (caching issue).
+         * Bu interceptor esa har bir so'rovda eng yangi tokenni PreferencesManager'dan oladi.
+         */
+        client.plugin(HttpSend).intercept { request ->
+            val path = request.url.encodedPath
+            val isAuthEndpoint = path.contains("/api/auth/") || path.contains("/login") || path.contains("/send-otp")
+            
+            if (!isAuthEndpoint) {
+                // PreferencesManager'dan joriy tokenni olamiz
+                val token = preferencesManager.token.firstOrNull()
+                if (!token.isNullOrEmpty()) {
+                    // Header qo'shish (normalizeBearerToken allaqachon preferences'da tozalangan bo'ladi)
+                    request.header(HttpHeaders.Authorization, "Bearer $token")
+                }
+            }
+            
+            execute(request)
+        }
+
+        return client
     }
 }

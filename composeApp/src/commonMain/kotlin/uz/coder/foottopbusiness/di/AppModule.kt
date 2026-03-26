@@ -35,9 +35,11 @@ import uz.coder.foottopbusiness.domain.usecase.stadium.GetDistrictsUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetRegionsUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetSavedDistrictIdUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetSavedRegionIdUseCase
+import uz.coder.foottopbusiness.domain.usecase.stadium.GetStadiumByIdUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetStadiumsUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.SaveDistrictIdUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.SaveRegionIdUseCase
+import uz.coder.foottopbusiness.domain.usecase.stadium.UpdateOpenCloseTimeUseCase
 import uz.coder.foottopbusiness.domain.usecase.tournament.CreateTournamentUseCase
 import uz.coder.foottopbusiness.domain.usecase.tournament.GetTournamentsUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
@@ -80,6 +82,8 @@ val appModule = module {
     factory { LogoutUseCase(get()) }
     factory { CreateStadiumUseCase(get()) }
     factory { GetStadiumsUseCase(get()) }
+    factory { GetStadiumByIdUseCase(get()) }
+    factory { UpdateOpenCloseTimeUseCase(get()) }
     factory { DeleteStadiumUseCase(get()) }
     factory { GetRegionsUseCase(get()) }
     factory { GetDistrictsUseCase(get()) }
@@ -98,7 +102,7 @@ val appModule = module {
     factory { SplashViewModel(get()) }
     factory { SendOtpViewModel(get(), get(), get()) }
     factory { LoginViewModel(get(), get()) }
-    factory { HomeViewModel(get(), get(), get(), get()) }
+    factory { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { StadiumViewModel(get()) }
     factory { AddPitchViewModel(get(), get(), get(), get(), get(), get(), get()) }
     factory { CoachesViewModel(get(), get()) }

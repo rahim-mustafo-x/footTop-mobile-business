@@ -50,6 +50,16 @@ class StadiumRepositoryImpl(
         emit(response.data ?: PageStadiumResponseDto())
     }
 
+    override fun getStadiumById(id: Int, date: String, duration: String): Flow<List<StadiumResponse>> = flow {
+        val response = stadiumApiService.getStadiumById(id, date, duration).getOrThrow()
+        emit(response.data ?: emptyList())
+    }
+
+    override fun updateOpenCloseTime(id: Int, openTime: String, closeTime: String): Flow<Unit> = flow {
+        stadiumApiService.updateOpenCloseTime(id, openTime, closeTime).getOrThrow()
+        emit(Unit)
+    }
+
     override fun deleteStadium(id: Int) = flow {
         stadiumApiService.deleteStadium(id = id).getOrThrow()
         emit(Unit)
