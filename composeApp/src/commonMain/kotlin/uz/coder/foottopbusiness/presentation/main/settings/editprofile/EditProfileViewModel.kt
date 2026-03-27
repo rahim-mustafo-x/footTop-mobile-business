@@ -21,7 +21,7 @@ class EditProfileViewModel(
     private fun loadUser() {
 
         viewModelScope.launch {
-        val userId = getUserIdUseCase()?:0L
+        val userId = getUserIdUseCase()
             executeAsync(onLoading = {
                 updateState { copy(isLoading = true) }
             }, onError = {
