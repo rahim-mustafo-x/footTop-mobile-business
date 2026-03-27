@@ -36,6 +36,7 @@ import uz.coder.foottopbusiness.core.ui.Primary
 import uz.coder.foottopbusiness.data.network.dto.MatchResponseDto
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
+import uz.coder.foottopbusiness.presentation.main.settings.SettingsVoyager
 import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.AddPitchVoyager
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsVoyager
 
@@ -69,7 +70,12 @@ fun HomeScreen(viewModel: HomeViewModel) {
             when (state.currentTab) {
                 0 -> HomeTab(state, viewModel, onAddStadium = { navigator.push(AddPitchVoyager) }, onAddTournament = { navigator.push(TournamentsVoyager) })
                 1 -> HistoryTab(state)
-                2 -> ProfileTab(state, viewModel)
+                2 -> {
+                    LaunchedEffect(Unit) {
+                        navigator.push(SettingsVoyager)
+                        viewModel.handleEvent(HomeContract.Event.ChangeTab(0))
+                    }
+                }
             }
         }
     }
@@ -86,7 +92,7 @@ private fun HomeTab(state: HomeContract.State, viewModel: HomeViewModel, onAddSt
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            item { MalaebDashboard(state) }
+            item { MalaebDashboard(state, viewModel) }
 
             item {
                 Text("Tezkor boshqaruv", fontWeight = FontWeight.Bold, fontSize = 18.sp)
@@ -136,47 +142,11 @@ private fun HistoryTab(state: HomeContract.State) {
 }
 
 @Composable
-private fun ProfileTab(state: HomeContract.State, viewModel: HomeViewModel) {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(Modifier.height(40.dp))
-        Box(modifier = Modifier.size(100.dp).clip(CircleShape).background(Primary.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
-            Icon(Icons.Default.Person, null, modifier = Modifier.size(60.dp), tint = Primary)
-        }
-        Spacer(Modifier.height(16.dp))
-        Text(state.user?.fullName ?: "Foydalanuvchi", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        Text(state.user?.phone ?: "", color = Color.Gray)
-        
-        Spacer(Modifier.height(32.dp))
-        
-        ProfileMenuItem("Profilni tahrirlash", Icons.Default.Edit) {}
-        ProfileMenuItem("Stadion sozlamalari", Icons.Default.Settings) {}
-        ProfileMenuItem("Yordam", Icons.Default.Help) {}
-        ProfileMenuItem("Chiqish", Icons.Default.Logout, color = Color.Red) { viewModel.handleEvent(HomeContract.Event.Logout) }
-    }
-}
-
-@Composable
-private fun ProfileMenuItem(title: String, icon: ImageVector, color: Color = Color.Black, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, null, tint = if (color == Color.Red) color else Primary)
-            Spacer(Modifier.width(16.dp))
-            Text(title, modifier = Modifier.weight(1f), color = color, fontWeight = FontWeight.Medium)
-            Icon(Icons.Default.ChevronRight, null, tint = Color.LightGray)
-        }
-    }
-}
-
-@Composable
 private fun MalaebHeader(state: HomeContract.State, onProfileClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(180.dp)
+            .wrapContentHeight()
             .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
             .background(Brush.verticalGradient(listOf(Primary, Color(0xFF1B5E20))))
             .padding(24.dp)
@@ -198,9 +168,9 @@ private fun MalaebHeader(state: HomeContract.State, onProfileClick: () -> Unit) 
                     Icon(Icons.Default.Person, null, tint = Color.White)
                 }
             }
-            
+
             Spacer(Modifier.height(20.dp))
-            
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -217,16 +187,24 @@ private fun MalaebHeader(state: HomeContract.State, onProfileClick: () -> Unit) 
                     Icon(Icons.Default.TrendingUp, null, tint = Color(0xFF4CAF50))
                 }
             }
+
+            Spacer(Modifier.height(8.dp))
         }
     }
 }
 
 @Composable
-private fun MalaebDashboard(state: HomeContract.State) {
+private fun MalaebDashboard(state: HomeContract.State, viewModel: HomeViewModel) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        SmallStatCard("Faol", state.activeStadiums.toString(), Icons.Default.Stadium, Color(0xFF2196F3), Modifier.weight(1f))
-        SmallStatCard("O'yinlar", state.totalMatches.toString(), Icons.Default.SportsSoccer, Color(0xFF9C27B0), Modifier.weight(1f))
-        SmallStatCard("Turnirlar", state.totalTournaments.toString(), Icons.Default.EmojiEvents, Color(0xFFFF9800), Modifier.weight(1f))
+        SmallStatCard("Faol", state.activeStadiums.toString(), Icons.Default.Stadium, Color(0xFF2196F3), Modifier.weight(1f).clickable{
+            viewModel.handleEvent(HomeContract.Event.Stadium)
+        })
+        SmallStatCard("O'yinlar", state.totalMatches.toString(), Icons.Default.SportsSoccer, Color(0xFF9C27B0), Modifier.weight(1f).clickable{
+            viewModel.handleEvent(HomeContract.Event.Match)
+        })
+        SmallStatCard("Turnirlar", state.totalTournaments.toString(), Icons.Default.EmojiEvents, Color(0xFFFF9800), Modifier.weight(1f).clickable{
+            viewModel.handleEvent(HomeContract.Event.Tournament)
+        })
     }
 }
 

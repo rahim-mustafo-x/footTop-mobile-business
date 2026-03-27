@@ -1,12 +1,18 @@
 package uz.coder.foottopbusiness.data.repository
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.stateIn
+import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.data.network.UserApiService
+import uz.coder.foottopbusiness.data.network.dto.UserRequestDto
 import uz.coder.foottopbusiness.domain.repository.UserRepository
-import uz.coder.foottopbusiness.data.network.dto.UserDto
 
 class UserRepositoryImpl(
     private val api: UserApiService,
+    private val preferencesManager: PreferencesManager
 ) : UserRepository {
 
     override fun getUserById(id: Long) = flow {
@@ -16,5 +22,20 @@ class UserRepositoryImpl(
         }.onFailure {
             throw it
         }
+    }
+
+    override fun updateUser(id: Long, dto: UserRequestDto) = flow {
+        val result = api.updateUser(id, dto)
+        result.onSuccess { user ->
+            emit(user)
+        }.onFailure {
+            throw it
+        }
+    }
+
+    override suspend fun userId(): Long {
+        val scope = CoroutineScope(Dispatchers.IO)
+        val stateIn = preferencesManager.userId.stateIn(scope)
+        return stateIn.value.toLong()
     }
 }

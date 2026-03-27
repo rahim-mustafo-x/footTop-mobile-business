@@ -43,11 +43,13 @@ import uz.coder.foottopbusiness.domain.usecase.stadium.UpdateOpenCloseTimeUseCas
 import uz.coder.foottopbusiness.domain.usecase.tournament.CreateTournamentUseCase
 import uz.coder.foottopbusiness.domain.usecase.tournament.GetTournamentsUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
+import uz.coder.foottopbusiness.domain.usecase.user.UserIdUseCase
 import uz.coder.foottopbusiness.presentation.auth.login.LoginViewModel
 import uz.coder.foottopbusiness.presentation.auth.otp.SendOtpViewModel
 import uz.coder.foottopbusiness.presentation.main.coaches.CoachesViewModel
 import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
 import uz.coder.foottopbusiness.presentation.main.settings.SettingsViewModel
+import uz.coder.foottopbusiness.presentation.main.settings.editprofile.EditProfileViewModel
 import uz.coder.foottopbusiness.presentation.main.stadium.StadiumViewModel
 import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.AddPitchViewModel
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsViewModel
@@ -73,7 +75,7 @@ val appModule = module {
     single<CoachRepository> { CoachRepositoryImpl(get()) }
     single<TournamentRepository> { TournamentRepositoryImpl(get()) }
     single<MatchRepository> { MatchRepositoryImpl(get()) }
-    single<UserRepository> { UserRepositoryImpl(get()) }
+    single<UserRepository> { UserRepositoryImpl(get(), get()) }
 
     // use-cases
     factory { SendOtpUseCase(get()) }
@@ -97,6 +99,8 @@ val appModule = module {
     factory { CreateTournamentUseCase(get()) }
     factory { GetMatchesUseCase(get()) }
     factory { GetUserUseCase(get()) }
+    factory { UserIdUseCase(get()) }
+
 
     // viewModels
     factory { SplashViewModel(get()) }
@@ -108,6 +112,7 @@ val appModule = module {
     factory { CoachesViewModel(get(), get()) }
     factory { TournamentsViewModel(get(), get(), get()) }
     factory { SettingsViewModel(get(), get()) }
+    factory { EditProfileViewModel(get(), get()) }
 }
 
 expect fun platformModule(): Module

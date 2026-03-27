@@ -56,7 +56,9 @@ sealed interface HomeContract {
 
     sealed interface Effect : MviEffect {
         data class ShowToast(val message: String) : Effect
-        object NavigateToProfile : Effect
+        object Stadium: Effect
+        object Match: Effect
+        object Tournament: Effect
     }
 
     sealed interface Event : MviEvent {
@@ -83,5 +85,8 @@ sealed interface HomeContract {
         object ClearMatch : Event
         
         object Logout : Event
+        object Stadium: Event
+        object Match: Event
+        object Tournament: Event
     }
 }

@@ -16,6 +16,7 @@ import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import uz.coder.foottopbusiness.presentation.main.home.HomeContract.Effect.*
 import kotlin.time.Clock
 
 class HomeViewModel(
@@ -75,7 +76,7 @@ class HomeViewModel(
                 executeAsync {
                     deleteStadiumUseCase(id).collect {
                         updateState { copy(stadiums = stadiums.filter { it.id != id }) }
-                        sendEffect(HomeContract.Effect.ShowToast("Stadion o'chirildi"))
+                        sendEffect(ShowToast("Stadion o'chirildi"))
                         loadDashboardStats()
                     }
                 }
@@ -121,7 +122,7 @@ class HomeViewModel(
                                 }
                             )
                         }
-                        sendEffect(HomeContract.Effect.ShowToast("Vaqt yangilandi"))
+                        sendEffect(ShowToast("Vaqt yangilandi"))
                     }
                 }
             }
@@ -131,6 +132,10 @@ class HomeViewModel(
                     logoutUseCase()
                 }
             }
+
+            HomeContract.Event.Match -> sendEffect(Match)
+            HomeContract.Event.Stadium -> sendEffect(Stadium)
+            HomeContract.Event.Tournament -> sendEffect(Tournament)
         }
     }
 
