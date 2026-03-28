@@ -16,13 +16,13 @@ class AuthApiService(private val client: HttpClient) {
         private const val SEND_OTP_END_POINT = "/api/auth/send-otp"
         private const val LOGIN_END_POINT = "/api/auth/login"
     }
-    suspend fun sendOtp(phoneNumber: String) = client.post(HttpClientFactory.BASE_URL+SEND_OTP_END_POINT) {
+    suspend fun sendOtp(phoneNumber: String) = client.post(SEND_OTP_END_POINT) {
         url{
             parameters.append("phoneNumber", "+998$phoneNumber")
         }
         contentType(ContentType.Application.Json)
     }.body<BaseResponse<SendOtpResponse>>()
-    suspend fun login(phoneNumber: String, otpCode: String) = client.post(HttpClientFactory.BASE_URL+LOGIN_END_POINT){
+    suspend fun login(phoneNumber: String, otpCode: String) = client.post(LOGIN_END_POINT){
         setBody(LoginRequest(phoneNumber, otpCode))
         contentType(ContentType.Application.Json)
     }.body<LoginResponse>()

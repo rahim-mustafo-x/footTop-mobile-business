@@ -9,9 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,6 +27,27 @@ import uz.coder.foottopbusiness.core.ui.Primary
 @Composable
 fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddPitch: () -> Unit = {}) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    if (state.stadiumToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.handleEvent(StadiumContract.Event.DismissDelete) },
+            title = { Text("O'chirishni tasdiqlang") },
+            text = { Text("${state.stadiumToDelete?.name} stadionini rostdan ham o'chirmoqchimisiz?") },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.handleEvent(StadiumContract.Event.ConfirmDelete) },
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                ) {
+                    Text("O'chirish")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.handleEvent(StadiumContract.Event.DismissDelete) }) {
+                    Text("Bekor qilish")
+                }
+            }
+        )
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -81,7 +100,7 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddPitch: () -> Unit 
                             modifier = Modifier.background(Primary.copy(alpha = 0.1f)).padding(vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            listOf("Nomi", "Narxi", "Vaqti", "Holat").forEach { header ->
+                            listOf("Nomi", "Narxi", "Vaqti", "Holat", "Amallar").forEach { header ->
                                 Text(
                                     text = header,
                                     modifier = Modifier.width(100.dp).padding(horizontal = 8.dp),
@@ -112,11 +131,18 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddPitch: () -> Unit 
                                 ) {
                                     TableCell(item.name ?: "—")
                                     TableCell("${item.pricePerHour?.toInt() ?: 0} so'm")
-                                    TableCell("${item.openTime?.take(5) ?: "—"}-${item.closeTime?.take(5) ?: "—"}")
+                                    val openTimeStr = item.openTime?.takeIf { it.contains("T") }?.let { it.split("T").getOrNull(1)?.take(5) } ?: item.openTime?.take(5) ?: "—"
+                                    val closeTimeStr = item.closeTime?.takeIf { it.contains("T") }?.let { it.split("T").getOrNull(1)?.take(5) } ?: item.closeTime?.take(5) ?: "—"
+                                    TableCell("$openTimeStr-$closeTimeStr")
                                     TableCell(
                                         text = if (item.isActive == true) "Faol" else "Nofaol",
                                         color = if (item.isActive == true) Color(0xFF4CAF50) else Color.Gray
                                     )
+                                    Box(modifier = Modifier.width(100.dp), contentAlignment = Alignment.Center) {
+                                        IconButton(onClick = { viewModel.handleEvent(StadiumContract.Event.RequestDelete(item)) }) {
+                                            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Red)
+                                        }
+                                    }
                                 }
                             }
                         }

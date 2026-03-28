@@ -1,4 +1,3 @@
-// EditProfileScreen.kt
 package uz.coder.foottopbusiness.presentation.main.settings.editprofile
 
 import androidx.compose.foundation.background
@@ -15,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -45,28 +45,23 @@ fun EditProfileScreen(viewModel: EditProfileViewModel) {
     }
 
     Scaffold(
+        containerColor = Color.White,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = { Text("Profilni tahrirlash") },
+            CenterAlignedTopAppBar(
+                title = { Text("Profilni tahrirlash", fontSize = 18.sp, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navigator.pop() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.Black)
                     }
                 },
-                actions = {
-                    if (state.isSaving) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp).padding(end = 16.dp),
-                            color = Primary,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        TextButton(onClick = { viewModel.handleEvent(EditProfileContract.Event.Save) }) {
-                            Text("Saqlash", color = Primary, fontWeight = FontWeight.SemiBold)
-                        }
-                    }
-                }
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.White,
+                    scrolledContainerColor = Color.Unspecified,
+                    navigationIconContentColor = Color.Unspecified,
+                    titleContentColor = Color.Unspecified,
+                    actionIconContentColor = Color.Unspecified
+                )
             )
         }
     ) { padding ->
@@ -88,166 +83,146 @@ fun EditProfileScreen(viewModel: EditProfileViewModel) {
             Box(
                 modifier = Modifier
                     .padding(top = 24.dp, bottom = 32.dp)
-                    .size(96.dp)
+                    .size(100.dp)
                     .clip(CircleShape)
-                    .background(Primary.copy(alpha = 0.12f)),
+                    .background(Primary.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Person, null, modifier = Modifier.size(56.dp), tint = Primary)
-            }
-
-            // Fields card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(2.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-
-                    SectionLabel("Shaxsiy ma'lumotlar")
-
-                    ProfileField(
-                        label = "To'liq ism",
-                        value = state.fullName,
-                        icon = Icons.Default.Person,
-                        onValueChange = { viewModel.handleEvent(EditProfileContract.Event.FullNameChanged(it)) }
-                    )
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-                    ProfileField(
-                        label = "Foydalanuvchi nomi",
-                        value = state.username,
-                        icon = Icons.Default.AlternateEmail,
-                        onValueChange = { viewModel.handleEvent(EditProfileContract.Event.UsernameChanged(it)) }
-                    )
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-                    // Phone — read only (auth is phone-based)
-                    ProfileFieldReadOnly(
-                        label = "Telefon raqam",
-                        value = state.phone,
-                        icon = Icons.Default.Phone,
-                    )
+                Icon(Icons.Default.Person, null, modifier = Modifier.size(50.dp), tint = Primary)
+                
+                // Edit icon overlay (visual only for now)
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(Primary)
+                        .align(Alignment.BottomEnd)
+                        .padding(4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.CameraAlt, null, tint = Color.White, modifier = Modifier.size(14.dp))
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
-
-            Card(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.cardElevation(2.dp)
+                    .padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                EditField(
+                    label = "To'liq ism",
+                    value = state.fullName,
+                    onValueChange = { viewModel.handleEvent(EditProfileContract.Event.FullNameChanged(it)) },
+                    placeholder = "Ismingizni kiriting"
+                )
 
-                    SectionLabel("Joylashuv")
+                EditField(
+                    label = "Foydalanuvchi nomi",
+                    value = state.username,
+                    onValueChange = { viewModel.handleEvent(EditProfileContract.Event.UsernameChanged(it)) },
+                    placeholder = "Username tanlang"
+                )
 
-                    ProfileField(
-                        label = "Manzil",
-                        value = state.location,
-                        icon = Icons.Default.LocationOn,
-                        onValueChange = { viewModel.handleEvent(EditProfileContract.Event.LocationChanged(it)) }
-                    )
+                ReadOnlyField(
+                    label = "Telefon raqam",
+                    value = state.phone,
+                    icon = Icons.Default.Phone
+                )
 
-                    if (!state.user?.districtName.isNullOrBlank()) {
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                        ProfileFieldReadOnly(
-                            label = "Tuman",
-                            value = state.user?.districtName ?: "",
-                            icon = Icons.Default.Map,
-                        )
-                    }
-                }
+                EditField(
+                    label = "Manzil",
+                    value = state.location,
+                    onValueChange = { viewModel.handleEvent(EditProfileContract.Event.LocationChanged(it)) },
+                    placeholder = "Manzilingizni kiriting"
+                )
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(32.dp))
 
-            // Save button (also in topBar, but a bottom CTA feels better on mobile)
             Button(
                 onClick = { viewModel.handleEvent(EditProfileContract.Event.Save) },
                 enabled = !state.isSaving,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .height(52.dp),
-                shape = RoundedCornerShape(14.dp),
+                    .padding(horizontal = 20.dp)
+                    .height(54.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Primary)
             ) {
                 if (state.isSaving) {
-                    CircularProgressIndicator(Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
+                    CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
                 } else {
-                    Text("Saqlash", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Saqlash", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(24.dp))
         }
     }
 }
 
 @Composable
-private fun SectionLabel(text: String) {
-    Text(
-        text = text,
-        fontSize = 12.sp,
-        fontWeight = FontWeight.Medium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(bottom = 8.dp)
-    )
-}
-
-@Composable
-private fun ProfileField(
+private fun EditField(
     label: String,
     value: String,
-    icon: ImageVector,
     onValueChange: (String) -> Unit,
+    placeholder: String
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-        Icon(icon, null, tint = Primary, modifier = Modifier.size(20.dp))
-        Spacer(Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            OutlinedTextField(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0f),
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                ),
-                textStyle = LocalTextStyle.current.copy(fontSize = 15.sp, fontWeight = FontWeight.Medium),
-            )
-        }
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = label,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.Black,
+            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+        )
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text(placeholder, fontSize = 14.sp, color = Color.LightGray) },
+            shape = RoundedCornerShape(14.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Primary,
+                unfocusedBorderColor = Color(0xFFEEEEEE),
+                focusedContainerColor = Color(0xFFFAFAFA),
+                unfocusedContainerColor = Color(0xFFFAFAFA),
+            ),
+            singleLine = true,
+            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium)
+        )
     }
 }
 
 @Composable
-private fun ProfileFieldReadOnly(
+private fun ReadOnlyField(
     label: String,
     value: String,
-    icon: ImageVector,
+    icon: ImageVector
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
-    ) {
-        Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-        Spacer(Modifier.width(12.dp))
-        Column {
-            Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(value, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = label,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.Black,
+            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .background(Color(0xFFF5F5F5), RoundedCornerShape(14.dp))
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(12.dp))
+            Text(value, fontSize = 15.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
+            Spacer(Modifier.weight(1f))
+            Icon(Icons.Default.Lock, null, tint = Color.LightGray, modifier = Modifier.size(16.dp))
         }
-        Spacer(Modifier.weight(1f))
-        Icon(Icons.Default.Lock, null, tint = MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.size(16.dp))
     }
 }

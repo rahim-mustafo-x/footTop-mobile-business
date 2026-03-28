@@ -1,12 +1,13 @@
 package uz.coder.foottopbusiness.presentation.main.home
 
+import kotlinx.datetime.LocalDateTime
 import uz.coder.foottopbusiness.core.mvi.MviEffect
 import uz.coder.foottopbusiness.core.mvi.MviEvent
 import uz.coder.foottopbusiness.core.mvi.MviState
 import uz.coder.foottopbusiness.data.network.dto.MatchResponseDto
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
-import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.data.network.dto.UserDto
+import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 
 sealed interface HomeContract {
     data class State(
@@ -38,7 +39,7 @@ sealed interface HomeContract {
         val selectedStadiumForTime: StadiumResponse? = null,
         val isUpdatingTime: Boolean = false,
         val selectedDate: String = "", // YYYY-MM-DD
-        val stadiumSlots: List<uz.coder.foottopbusiness.data.network.dto.stadium.SlotDto> = emptyList(),
+        val stadiumSlots: List<Triple<LocalDateTime, LocalDateTime, Boolean>> = emptyList(),
         val isLoadingSlots: Boolean = false,
         val newOpenTime: String = "",
         val newCloseTime: String = "",

@@ -8,14 +8,19 @@ import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 sealed interface StadiumDetailsContract {
     data class State(
         val stadium: StadiumResponse? = null,
-        val isLoading: Boolean = false
+        val isLoading: Boolean = false,
+        val isUpdatingStatus: Boolean = false
     ) : MviState
 
     sealed interface Effect : MviEffect {
         object NavigateBack : Effect
+        data class NavigateToEdit(val stadium: StadiumResponse) : Effect
+        data class ShowToast(val message: String) : Effect
     }
 
     sealed interface Event : MviEvent {
         object BackClick : Event
+        object EditClick : Event
+        data class ToggleActive(val isActive: Boolean) : Event
     }
 }

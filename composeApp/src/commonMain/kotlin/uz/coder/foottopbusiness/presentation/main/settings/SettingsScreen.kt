@@ -2,7 +2,18 @@ package uz.coder.foottopbusiness.presentation.main.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,13 +21,33 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.Help
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -79,12 +110,13 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 Text(
                     "Hisobingizdan chiqmoqchimisiz?",
                     fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
                 Spacer(Modifier.height(28.dp))
                 Button(
                     onClick = {
-                        showLogoutSheet = false
+                        showLogoutSheet = !showLogoutSheet
                         viewModel.handleEvent(SettingsContract.Event.Logout)
                     },
                     modifier = Modifier.fillMaxWidth().height(52.dp),
@@ -95,7 +127,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 }
                 Spacer(Modifier.height(10.dp))
                 OutlinedButton(
-                    onClick = { showLogoutSheet = !showLogoutSheet },
+                    onClick = { showLogoutSheet = false },
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(14.dp),
                 ) {
@@ -105,25 +137,25 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
         }
     }
 
-    Scaffold(modifier = Modifier.fillMaxSize()) {
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(it)
-                .background(Color(0xFFF5F5F5))
+                .padding(padding)
                 .verticalScroll(rememberScrollState())
         ) {
-
-            // Avatar card — header ustiga chiqib turadi
+            // Header qismi
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
+                    .padding(20.dp)
             ) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
-                    elevation = CardDefaults.cardElevation(8.dp),
+                    elevation = CardDefaults.cardElevation(2.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
                     if (state.isLoadingUser) {
@@ -142,11 +174,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                                 modifier = Modifier
                                     .size(64.dp)
                                     .clip(CircleShape)
-                                    .background(
-                                        Brush.radialGradient(
-                                            listOf(Primary.copy(alpha = 0.2f), Primary.copy(alpha = 0.05f))
-                                        )
-                                    ),
+                                    .background(Primary.copy(alpha = 0.1f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
@@ -178,158 +206,100 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                                         fontWeight = FontWeight.Medium
                                     )
                                 }
-                                if (!state.user?.districtName.isNullOrBlank()) {
-                                    Spacer(Modifier.height(4.dp))
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            Icons.Default.LocationOn,
-                                            null,
-                                            tint = Color.Gray,
-                                            modifier = Modifier.size(12.dp)
-                                        )
-                                        Spacer(Modifier.width(2.dp))
-                                        Text(
-                                            state.user?.districtName ?: "",
-                                            fontSize = 12.sp,
-                                            color = Color.Gray
-                                        )
-                                    }
-                                }
                             }
                         }
                     }
                 }
             }
 
-            // Menu items
+            // Menu qismi
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .offset(y = (-24).dp)
                     .padding(horizontal = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                SettingsGroupLabel("Hisob")
-                SettingsCard {
-                    SettingsMenuItem(
-                        icon = Icons.Default.Edit,
-                        iconBg = Primary.copy(alpha = 0.1f),
-                        iconTint = Primary,
-                        title = "Profilni tahrirlash",
-                        subtitle = "Ism, username, manzil",
-                        onClick = { navigator.push(EditProfileVoyager) }
-                    )
-                }
+                Text(
+                    "Sozlamalar",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 4.dp)
+                )
 
-                SettingsGroupLabel("Ilova")
-                SettingsCard {
-                    SettingsMenuItem(
-                        icon = Icons.AutoMirrored.Filled.Help,
-                        iconBg = Color(0xFF2196F3).copy(alpha = 0.1f),
-                        iconTint = Color(0xFF2196F3),
-                        title = "Yordam",
-                        subtitle = "Ko'p so'raladigan savollar",
-                        onClick = {}
-                    )
-                    HorizontalDivider(
-                        modifier = Modifier.padding(start = 70.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                    )
-                    SettingsMenuItem(
-                        icon = Icons.Default.Info,
-                        iconBg = Color(0xFF9C27B0).copy(alpha = 0.1f),
-                        iconTint = Color(0xFF9C27B0),
-                        title = "Ilova haqida",
-                        subtitle = "Versiya 1.0.0",
-                        onClick = {}
-                    )
-                }
+                SettingsItem(
+                    icon = Icons.Default.Edit,
+                    iconTint = Primary,
+                    iconBg = Primary.copy(alpha = 0.1f),
+                    title = "Profilni tahrirlash",
+                    onClick = { navigator.push(EditProfileVoyager) }
+                )
 
-                Spacer(Modifier.height(4.dp))
-                Card(
+                SettingsItem(
+                    icon = Icons.AutoMirrored.Filled.Help,
+                    iconTint = Color(0xFF2196F3),
+                    iconBg = Color(0xFF2196F3).copy(alpha = 0.1f),
+                    title = "Yordam markazi",
+                    onClick = {}
+                )
+
+                SettingsItem(
+                    icon = Icons.Default.Info,
+                    iconTint = Color(0xFF9C27B0),
+                    iconBg = Color(0xFF9C27B0).copy(alpha = 0.1f),
+                    title = "Ilova haqida",
+                    onClick = {}
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                // Chiqish tugmasi
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { showLogoutSheet = true },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
-                    ),
-                    elevation = CardDefaults.cardElevation(0.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .clickable { showLogoutSheet = true }
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.errorContainer),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(10.dp)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ExitToApp,
-                                null,
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Spacer(Modifier.width(14.dp))
-                        Text(
-                            "Chiqish",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.weight(1f)
-                        )
                         Icon(
-                            Icons.Default.ChevronRight,
+                            Icons.AutoMirrored.Filled.ExitToApp,
                             null,
-                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
+                    Spacer(Modifier.width(14.dp))
+                    Text(
+                        "Chiqish",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
-
-                Spacer(Modifier.height(24.dp))
             }
         }
     }
 }
 
 @Composable
-private fun SettingsGroupLabel(text: String) {
-    Text(
-        text = text,
-        fontSize = 12.sp,
-        fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
-    )
-}
-
-@Composable
-private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Column { content() }
-    }
-}
-
-@Composable
-private fun SettingsMenuItem(
+private fun SettingsItem(
     icon: ImageVector,
-    iconBg: Color,
     iconTint: Color,
+    iconBg: Color,
     title: String,
-    subtitle: String,
-    onClick: () -> Unit,
+    onClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -344,15 +314,17 @@ private fun SettingsMenuItem(
             Icon(icon, null, tint = iconTint, modifier = Modifier.size(20.dp))
         }
         Spacer(Modifier.width(14.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-            Text(subtitle, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+        Text(
+            title,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.weight(1f)
+        )
         Icon(
             Icons.Default.ChevronRight,
             null,
             tint = MaterialTheme.colorScheme.outlineVariant,
-            modifier = Modifier.size(18.dp)
+            modifier = Modifier.size(20.dp)
         )
     }
 }

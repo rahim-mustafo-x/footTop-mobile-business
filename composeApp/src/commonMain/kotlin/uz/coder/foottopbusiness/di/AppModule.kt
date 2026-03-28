@@ -10,6 +10,7 @@ import uz.coder.foottopbusiness.data.network.MatchApiService
 import uz.coder.foottopbusiness.data.network.StadiumApiService
 import uz.coder.foottopbusiness.data.network.TournamentApiService
 import uz.coder.foottopbusiness.data.network.UserApiService
+import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.data.repository.AuthRepositoryImpl
 import uz.coder.foottopbusiness.data.repository.CoachRepositoryImpl
 import uz.coder.foottopbusiness.data.repository.MatchRepositoryImpl
@@ -40,6 +41,7 @@ import uz.coder.foottopbusiness.domain.usecase.stadium.GetStadiumsUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.SaveDistrictIdUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.SaveRegionIdUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.UpdateOpenCloseTimeUseCase
+import uz.coder.foottopbusiness.domain.usecase.stadium.UpdateStadiumUseCase
 import uz.coder.foottopbusiness.domain.usecase.tournament.CreateTournamentUseCase
 import uz.coder.foottopbusiness.domain.usecase.tournament.GetTournamentsUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
@@ -52,6 +54,8 @@ import uz.coder.foottopbusiness.presentation.main.settings.SettingsViewModel
 import uz.coder.foottopbusiness.presentation.main.settings.editprofile.EditProfileViewModel
 import uz.coder.foottopbusiness.presentation.main.stadium.StadiumViewModel
 import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.AddPitchViewModel
+import uz.coder.foottopbusiness.presentation.main.stadium.details.StadiumDetailsViewModel
+import uz.coder.foottopbusiness.presentation.main.stadium.edit.EditStadiumViewModel
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsViewModel
 import uz.coder.foottopbusiness.presentation.splash.SplashViewModel
 
@@ -83,6 +87,7 @@ val appModule = module {
     factory { IsLoginInUseCase(get()) }
     factory { LogoutUseCase(get()) }
     factory { CreateStadiumUseCase(get()) }
+    factory { UpdateStadiumUseCase(get()) }
     factory { GetStadiumsUseCase(get()) }
     factory { GetStadiumByIdUseCase(get()) }
     factory { UpdateOpenCloseTimeUseCase(get()) }
@@ -107,8 +112,10 @@ val appModule = module {
     factory { SendOtpViewModel(get(), get(), get()) }
     factory { LoginViewModel(get(), get()) }
     factory { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    factory { StadiumViewModel(get()) }
+    factory { StadiumViewModel(get(), get()) }
     factory { AddPitchViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    factory { (stadium: StadiumResponse) -> EditStadiumViewModel(stadium, get(), get(), get()) }
+    factory { (stadium: StadiumResponse) -> StadiumDetailsViewModel(stadium, get()) }
     factory { CoachesViewModel(get(), get()) }
     factory { TournamentsViewModel(get(), get(), get()) }
     factory { SettingsViewModel(get(), get()) }

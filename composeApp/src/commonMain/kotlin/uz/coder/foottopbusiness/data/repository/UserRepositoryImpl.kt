@@ -16,21 +16,13 @@ class UserRepositoryImpl(
 ) : UserRepository {
 
     override fun getUserById(id: Long) = flow {
-        val result = api.getUserById(id)
-        result.onSuccess { response ->
-            response.data?.let { emit(it) }
-        }.onFailure {
-            throw it
-        }
+        val response = api.getUserById(id)
+        response.data?.let { emit(it) }
     }
 
     override fun updateUser(id: Long, dto: UserRequestDto) = flow {
-        val result = api.updateUser(id, dto)
-        result.onSuccess { user ->
-            emit(user)
-        }.onFailure {
-            throw it
-        }
+        val user = api.updateUser(id, dto)
+        emit(user)
     }
 
     override suspend fun userId(): Long {

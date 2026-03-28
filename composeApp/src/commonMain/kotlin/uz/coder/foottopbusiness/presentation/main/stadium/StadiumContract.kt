@@ -13,7 +13,8 @@ sealed interface StadiumContract {
         val filterActive: Boolean? = null,
         val currentPage: Int = 0,
         val isLastPage: Boolean = false,
-        val error: String? = null
+        val error: String? = null,
+        val stadiumToDelete: StadiumResponse? = null
     ) : MviState
 
     sealed interface Effect : MviEffect {
@@ -28,5 +29,8 @@ sealed interface StadiumContract {
         data class FilterActive(val isActive: Boolean?) : Event
         object LoadNextPage : Event
         data class StadiumClick(val stadium: StadiumResponse) : Event
+        data class RequestDelete(val stadium: StadiumResponse) : Event
+        object ConfirmDelete : Event
+        object DismissDelete : Event
     }
 }

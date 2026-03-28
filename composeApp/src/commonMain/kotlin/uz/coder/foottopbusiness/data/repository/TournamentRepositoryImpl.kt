@@ -10,29 +10,17 @@ class TournamentRepositoryImpl(
 ) : TournamentRepository {
 
     override fun getTournaments() = flow {
-        val result = api.getTournaments()
-        result.onSuccess { response ->
-            emit(response.data ?: emptyList())
-        }.onFailure {
-            throw it
-        }
+        val response = api.getTournaments()
+        emit(response.data ?: emptyList())
     }
 
     override fun getTournamentById(id: Long) = flow {
-        val result = api.getTournamentById(id)
-        result.onSuccess { response ->
-            response.data?.let { emit(it) }
-        }.onFailure {
-            throw it
-        }
+        val response = api.getTournamentById(id)
+        response.data?.let { emit(it) }
     }
 
     override fun createTournament(request: TournamentRequestDto) = flow {
-        val result = api.createTournament(request)
-        result.onSuccess { response ->
-            response.data?.let { emit(it) }
-        }.onFailure {
-            throw it
-        }
+        val response = api.createTournament(request)
+        response.data?.let { emit(it) }
     }
 }

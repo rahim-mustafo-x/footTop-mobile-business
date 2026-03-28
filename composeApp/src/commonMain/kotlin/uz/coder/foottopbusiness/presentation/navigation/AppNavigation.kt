@@ -23,7 +23,7 @@ fun AppNavigation() {
 
     Box(modifier = Modifier.fillMaxSize()) {
         Navigator(SplashVoyager) { navigator ->
-            LaunchedEffect(sessionState) {
+            LaunchedEffect(Unit) {
                 if (sessionState == SessionState.EXPIRED) {
                     navigator.replaceAll(SendOtpVoyager)
                 }

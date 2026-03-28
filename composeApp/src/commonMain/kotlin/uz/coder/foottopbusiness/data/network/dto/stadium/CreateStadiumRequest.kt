@@ -2,6 +2,7 @@ package uz.coder.foottopbusiness.data.network.dto.stadium
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import uz.coder.foottopbusiness.core.Serializable as KmpSerializable
 
 @Serializable
 data class CreateStadiumRequest(
@@ -17,17 +18,15 @@ data class CreateStadiumRequest(
     @SerialName("pricePerHour") val pricePerHour: Int,
     @SerialName("images") val images: List<ImageDto>,
     @SerialName("isActive") val isActive: Boolean = true,
-    @SerialName("openTime") val openTime: String,
-    @SerialName("closeTime") val closeTime: String,
-)
+) : KmpSerializable
 
 @Serializable
 data class LocationDto(
     @SerialName("latitude") val latitude: Double? = 0.0,
     @SerialName("longitude") val longitude: Double? = 0.0,
-)
+) : KmpSerializable
 
 @Serializable
 data class ImageDto(
     @SerialName("urls") val urls: String,
-)
+) : KmpSerializable

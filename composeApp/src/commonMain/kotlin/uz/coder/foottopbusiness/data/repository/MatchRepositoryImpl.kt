@@ -11,20 +11,12 @@ class MatchRepositoryImpl(
 ) : MatchRepository {
 
     override fun getMatches(): Flow<List<MatchResponseDto>> = flow {
-        val result = api.getMatches()
-        result.onSuccess { response ->
-            emit(response.data ?: emptyList())
-        }.onFailure {
-            throw it
-        }
+        val response = api.getMatches()
+        emit(response.data ?: emptyList())
     }
 
     override fun getMatchById(id: Long): Flow<MatchResponseDto> = flow {
-        val result = api.getMatchById(id)
-        result.onSuccess { response ->
-            response.data?.let { emit(it) }
-        }.onFailure {
-            throw it
-        }
+        val response = api.getMatchById(id)
+        response.data?.let { emit(it) }
     }
 }

@@ -1,10 +1,12 @@
 package uz.coder.foottopbusiness.presentation.main.stadium
 
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
+import uz.coder.foottopbusiness.domain.usecase.stadium.DeleteStadiumUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetStadiumsUseCase
 
 class StadiumViewModel(
     private val getStadiumsUseCase: GetStadiumsUseCase,
+    private val deleteStadiumUseCase: DeleteStadiumUseCase
 ) : BaseViewModel<StadiumContract.State, StadiumContract.Effect, StadiumContract.Event>(
     initialState = StadiumContract.State()
 ) {
@@ -32,6 +34,22 @@ class StadiumViewModel(
             }
             is StadiumContract.Event.StadiumClick -> {
                 sendEffect(StadiumContract.Effect.NavigateToDetails(event.stadium))
+            }
+            is StadiumContract.Event.RequestDelete -> {
+                updateState { copy(stadiumToDelete = event.stadium) }
+            }
+            StadiumContract.Event.DismissDelete -> {
+                updateState { copy(stadiumToDelete = null) }
+            }
+            StadiumContract.Event.ConfirmDelete -> {
+                val stadium = state.value.stadiumToDelete ?: return
+                updateState { copy(stadiumToDelete = null, isLoading = true) }
+                executeAsync {
+                    deleteStadiumUseCase(stadium.id ?: return@executeAsync).collect {
+                        sendEffect(StadiumContract.Effect.ShowToast("Stadion muvaffaqiyatli o'chirildi"))
+                        handleEvent(StadiumContract.Event.Refresh)
+                    }
+                }
             }
         }
     }

@@ -21,6 +21,22 @@ interface StadiumRepository {
         districtId: Int,
     ): Flow<StadiumResponse>
 
+    fun updateStadium(
+        id: Int,
+        name: String,
+        description: String,
+        type: String,
+        duration: String,
+        capacity: Int,
+        pricePerHour: Int,
+        openTime: String,
+        closeTime: String,
+        imageUrl: String,
+        regionId: Int,
+        districtId: Int,
+        isActive: Boolean = true
+    ): Flow<StadiumResponse>
+
     fun getStadiums(
         name: String? = null,
         type: String? = null,

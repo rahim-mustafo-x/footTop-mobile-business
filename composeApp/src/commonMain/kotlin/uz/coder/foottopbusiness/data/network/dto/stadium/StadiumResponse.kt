@@ -2,6 +2,7 @@ package uz.coder.foottopbusiness.data.network.dto.stadium
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import uz.coder.foottopbusiness.core.Serializable as KmpSerializable
 
 @Serializable
 data class StadiumResponse(
@@ -22,11 +23,11 @@ data class StadiumResponse(
     @SerialName("openTime") val openTime: String? = null,
     @SerialName("closeTime") val closeTime: String? = null,
     @SerialName("slots") val slots: List<SlotDto>? = null,
-)
+) : KmpSerializable
 
 @Serializable
 data class SlotDto(
     @SerialName("start") val start: String? = null,
     @SerialName("end") val end: String? = null,
     @SerialName("available") val available: Boolean? = null,
-)
+) : KmpSerializable

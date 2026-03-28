@@ -2,6 +2,7 @@ package uz.coder.foottopbusiness.presentation.main.home
 
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.zip
+import kotlinx.datetime.LocalDateTime
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
 import uz.coder.foottopbusiness.data.network.dto.MatchResponseDto
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
@@ -17,7 +18,6 @@ import uz.coder.foottopbusiness.data.local.PreferencesManager
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import uz.coder.foottopbusiness.presentation.main.home.HomeContract.Effect.*
-import kotlin.time.Clock
 
 class HomeViewModel(
     private val getStadiumsUseCase: GetStadiumsUseCase,
@@ -31,7 +31,7 @@ class HomeViewModel(
     private val preferencesManager: PreferencesManager,
 ) : BaseViewModel<HomeContract.State, HomeContract.Effect, HomeContract.Event>(
     initialState = HomeContract.State(
-        selectedDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+        selectedDate = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
     )
 ) {
     init {
@@ -153,7 +153,14 @@ class HomeViewModel(
         executeAsync {
             getStadiumByIdUseCase(id, date, "SIXTY").collect { responseList ->
                 val stadium = responseList.firstOrNull()
-                updateState { copy(stadiumSlots = stadium?.slots ?: emptyList(), isLoadingSlots = false) }
+                val triples = stadium?.slots?.map {
+                    Triple(
+                        LocalDateTime.parse(it.start ?: ""),
+                        LocalDateTime.parse(it.end ?: ""),
+                        it.available?:false
+                    )
+                }?:emptyList()
+                updateState { copy(stadiumSlots = triples, isLoadingSlots = false) }
             }
         }
     }

@@ -10,14 +10,17 @@ class CoachRepositoryImpl(
 ) : CoachRepository {
 
     override fun getCoaches() = flow {
-        emit(api.getCoaches().getOrThrow().data ?: emptyList())
+        val response = api.getCoaches()
+        emit(response.data ?: emptyList())
     }
 
     override fun getCoachById(id: Long) = flow {
-        emit(api.getCoachById(id).getOrThrow().data!!)
+        val response = api.getCoachById(id)
+        emit(response.data!!)
     }
 
     override fun createCoach(dto: CoachRequestDto) = flow {
-        emit(api.createCoach(dto).getOrThrow().data!!)
+        val response = api.createCoach(dto)
+        emit(response.data!!)
     }
 }
