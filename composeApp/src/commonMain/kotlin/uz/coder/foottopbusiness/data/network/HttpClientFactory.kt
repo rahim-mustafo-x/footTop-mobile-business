@@ -40,6 +40,7 @@ class HttpClientFactory(
                     isLenient = true
                     ignoreUnknownKeys = true
                     explicitNulls = false
+                    coerceInputValues = true
                 })
             }
 
@@ -86,13 +87,12 @@ class HttpClientFactory(
                                        path.contains("/send-otp") ||
                                        path.contains("/v1/users/create")
 
-                    // 401 va 403 statuslarini token eskirgan yoki yaroqsiz deb hisoblaymiz
                     if ((code == 401 || code == 403) && !isAuthEndpoint) {
-                        log("Auth", "Session expired or Forbidden ($code) for $path. Redirecting to login.")
+                        log("Auth", "Session expired or Forbidden ($code) for $path. Clearing and redirecting.")
+                        
+                        // Tokenni darhol tozalash va navigatsiyani trigger qilish
                         scope.launch {
-                            // Mahalliy saqlangan ma'lumotlarni tozalaymiz
                             preferencesManager.logout()
-                            // Navigatsiyani login sahifasiga o'tkazamiz
                             sessionManager.onUnauthorized()
                         }
                     }

@@ -102,6 +102,41 @@ class AddPitchViewModel(
 
     private fun save() {
         val s = state.value
+
+        // Validation
+        if (s.name.isBlank()) {
+            sendEffect(AddPitchContract.Effect.ShowToast("Stadion nomini kiriting"))
+            return
+        }
+        if (s.description.isBlank()) {
+            sendEffect(AddPitchContract.Effect.ShowToast("Tavsifni kiriting"))
+            return
+        }
+        if (s.capacity.isBlank()) {
+            sendEffect(AddPitchContract.Effect.ShowToast("Sig'imni kiriting"))
+            return
+        }
+        if (s.pricePerHour.isBlank()) {
+            sendEffect(AddPitchContract.Effect.ShowToast("Soatlik narxni kiriting"))
+            return
+        }
+        if (s.openTime.isBlank()) {
+            sendEffect(AddPitchContract.Effect.ShowToast("Ochilish vaqtini kiriting"))
+            return
+        }
+        if (s.closeTime.isBlank()) {
+            sendEffect(AddPitchContract.Effect.ShowToast("Yopilish vaqtini kiriting"))
+            return
+        }
+        if (s.selectedRegion == null) {
+            sendEffect(AddPitchContract.Effect.ShowToast("Viloyatni tanlang"))
+            return
+        }
+        if (s.selectedDistrict == null) {
+            sendEffect(AddPitchContract.Effect.ShowToast("Tumanni tanlang"))
+            return
+        }
+
         log(logLabel, "Saving stadium: ${s.name}")
         executeAsync(
             onLoading = { updateState { copy(isLoading = true) } },

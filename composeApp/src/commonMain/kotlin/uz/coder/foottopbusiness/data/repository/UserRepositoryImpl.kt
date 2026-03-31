@@ -21,8 +21,8 @@ class UserRepositoryImpl(
     }
 
     override fun updateUser(id: Long, dto: UserRequestDto) = flow {
-        val user = api.updateUser(id, dto)
-        emit(user)
+        val response = api.updateUser(id, dto)
+        response.data?.let { emit(it) }
     }
 
     override suspend fun userId(): Long {

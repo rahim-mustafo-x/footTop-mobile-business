@@ -4,13 +4,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
@@ -25,6 +30,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
@@ -33,6 +41,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,11 +53,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import uz.coder.foottopbusiness.core.BackHandler
 import uz.coder.foottopbusiness.core.ui.Primary
 import uz.coder.foottopbusiness.presentation.main.coaches.CoachesVoyager
+import uz.coder.foottopbusiness.presentation.main.home.HomeContract
+import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
 import uz.coder.foottopbusiness.presentation.main.home.HomeVoyager
 import uz.coder.foottopbusiness.presentation.main.settings.SettingsVoyager
 import uz.coder.foottopbusiness.presentation.main.stadium.StadiumVoyager
@@ -56,7 +68,7 @@ import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.AddPitchScree
 import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.AddPitchViewModel
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsVoyager
 
-private data class TabItem(
+private data class DrawerItem(
     val label: String,
     val icon: ImageVector,
     val content: @Composable () -> Unit,
@@ -66,26 +78,33 @@ private data class TabItem(
 @Composable
 fun MainScreen() {
     val addPitchViewModel = koinInject<AddPitchViewModel>()
+    val homeViewModel = koinInject<HomeViewModel>()
+    val homeState by homeViewModel.state.collectAsState()
+    
     var showAddPitch by remember { mutableStateOf(false) }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    val tabs = remember {
+    val drawerItems = remember {
         listOf(
-            TabItem("Bosh sahifa", Icons.Default.Home) { HomeVoyager.Content() },
-            TabItem("Stadion", Icons.Default.Place) { StadiumVoyager.ContentWithNav(onNavigateToAddPitch = { showAddPitch = true }) },
-            TabItem("Murabbiylar", Icons.Default.Person) { CoachesVoyager.Content() },
-            TabItem("Turnirlar", Icons.Default.DateRange) { TournamentsVoyager.Content() },
-            TabItem("Sozlamalar", Icons.Default.Settings) { SettingsVoyager.Content() },
+            DrawerItem("Bosh sahifa", Icons.Default.Home) { HomeVoyager.Content() },
+            DrawerItem("Stadion", Icons.Default.Place) { StadiumVoyager.ContentWithNav(onNavigateToAddPitch = { showAddPitch = true }) },
+            DrawerItem("Murabbiylar", Icons.Default.Person) { CoachesVoyager.Content() },
+            DrawerItem("Turnirlar", Icons.Default.DateRange) { TournamentsVoyager.Content() },
+            DrawerItem("Sozlamalar", Icons.Default.Settings) { SettingsVoyager.Content() },
         )
     }
 
-    var selectedIndex by remember { mutableStateOf(0) }
+    var selectedDrawerIndex by remember { mutableStateOf(0) }
 
     BackHandler(enabled = !showAddPitch) {
         when {
             drawerState.currentValue == DrawerValue.Open -> scope.launch { drawerState.close() }
-            selectedIndex != 0 -> selectedIndex = 0
+            selectedDrawerIndex != 0 -> {
+                selectedDrawerIndex = 0
+                homeViewModel.handleEvent(HomeContract.Event.ChangeTab(0))
+            }
+            homeState.currentTab != 0 -> homeViewModel.handleEvent(HomeContract.Event.ChangeTab(0))
         }
     }
 
@@ -109,18 +128,20 @@ fun MainScreen() {
                     Spacer(Modifier.height(8.dp))
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     Spacer(Modifier.height(8.dp))
-                    tabs.forEachIndexed { index, tab ->
+                    drawerItems.forEachIndexed { index, item ->
                         NavigationDrawerItem(
-                            icon = { Icon(tab.icon, contentDescription = null) },
+                            icon = { Icon(item.icon, contentDescription = null) },
                             label = {
                                 Text(
-                                    tab.label,
-                                    fontWeight = if (selectedIndex == index) FontWeight.SemiBold else FontWeight.Normal,
+                                    item.label,
+                                    fontWeight = if (selectedDrawerIndex == index) FontWeight.SemiBold else FontWeight.Normal,
                                 )
                             },
-                            selected = selectedIndex == index,
+                            selected = selectedDrawerIndex == index,
                             onClick = {
-                                selectedIndex = index
+                                selectedDrawerIndex = index
+                                // Agar Bosh sahifaga o'tilsa, uning tabini 0 (Home) ga qaytarish
+                                if (index == 0) homeViewModel.handleEvent(HomeContract.Event.ChangeTab(0))
                                 scope.launch { drawerState.close() }
                             },
                             modifier = Modifier.padding(vertical = 2.dp),
@@ -143,7 +164,11 @@ fun MainScreen() {
                 TopAppBar(
                     title = {
                         Text(
-                            tabs[selectedIndex].label,
+                            if (selectedDrawerIndex == 0) {
+                                if (homeState.currentTab == 0) "Bosh sahifa" else "Tarix"
+                            } else {
+                                drawerItems[selectedDrawerIndex].label
+                            },
                             fontWeight = FontWeight.SemiBold,
                         )
                     },
@@ -160,9 +185,50 @@ fun MainScreen() {
                     ),
                 )
             },
+            bottomBar = {
+                // BottomBar faqat Bosh sahifa (0-index) tanlangan bo'lsa ko'rinadi
+                if (selectedDrawerIndex == 0) {
+                    NavigationBar(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .windowInsetsPadding(WindowInsets.navigationBars),
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 8.dp
+                    ) {
+                        NavigationBarItem(
+                            selected = homeState.currentTab == 0,
+                            onClick = { homeViewModel.handleEvent(HomeContract.Event.ChangeTab(0)) },
+                            icon = { Icon(Icons.Default.Home, contentDescription = "Bosh sahifa") },
+                            label = { Text("Bosh sahifa", fontSize = 10.sp) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = Primary,
+                                selectedTextColor = Primary,
+                                indicatorColor = Primary.copy(alpha = 0.1f),
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        )
+                        NavigationBarItem(
+                            selected = homeState.currentTab == 1,
+                            onClick = { homeViewModel.handleEvent(HomeContract.Event.ChangeTab(1)) },
+                            icon = { Icon(Icons.Default.History, contentDescription = "Tarix") },
+                            label = { Text("Tarix", fontSize = 10.sp) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = Primary,
+                                selectedTextColor = Primary,
+                                indicatorColor = Primary.copy(alpha = 0.1f),
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        )
+                    }
+                }
+            }
         ) { paddingValues ->
             Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-                tabs[selectedIndex].content()
+                // Bu yerda DRAWER orqali tanlangan kontent ko'rsatiladi
+                // Agar index 0 bo'lsa, HomeVoyager ichidagi HomeScreen state.currentTab ga qarab Home yoki Historyni ko'rsatadi
+                drawerItems[selectedDrawerIndex].content()
             }
         }
     }

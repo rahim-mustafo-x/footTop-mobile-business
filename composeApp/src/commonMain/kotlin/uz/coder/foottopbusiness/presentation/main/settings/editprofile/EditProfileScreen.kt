@@ -45,21 +45,20 @@ fun EditProfileScreen(viewModel: EditProfileViewModel) {
     }
 
     Scaffold(
-        containerColor = Color.White,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Profilni tahrirlash", fontSize = 18.sp, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navigator.pop() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.Black)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
+                    containerColor = MaterialTheme.colorScheme.surface,
                     scrolledContainerColor = Color.Unspecified,
-                    navigationIconContentColor = Color.Unspecified,
-                    titleContentColor = Color.Unspecified,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
                     actionIconContentColor = Color.Unspecified
                 )
             )
@@ -83,24 +82,39 @@ fun EditProfileScreen(viewModel: EditProfileViewModel) {
             Box(
                 modifier = Modifier
                     .padding(top = 24.dp, bottom = 32.dp)
-                    .size(100.dp)
-                    .clip(CircleShape)
-                    .background(Primary.copy(alpha = 0.1f)),
+                    .size(100.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Person, null, modifier = Modifier.size(50.dp), tint = Primary)
-                
-                // Edit icon overlay (visual only for now)
+                // Circle Background
                 Box(
                     modifier = Modifier
-                        .size(28.dp)
+                        .fillMaxSize()
                         .clip(CircleShape)
-                        .background(Primary)
-                        .align(Alignment.BottomEnd)
-                        .padding(4.dp),
+                        .background(Primary.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.CameraAlt, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                    Icon(Icons.Default.Person, null, modifier = Modifier.size(50.dp), tint = Primary)
+                }
+                
+                // Camera icon protruding outside the circle
+                Surface(
+                    onClick = { /* Handle camera click */ },
+                    modifier = Modifier
+                        .size(34.dp)
+                        .align(Alignment.BottomEnd)
+                        .offset(x = 4.dp, y = 2.dp),
+                    shape = CircleShape,
+                    color = Primary,
+                    shadowElevation = 4.dp
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Default.CameraAlt, 
+                            null, 
+                            tint = Color.White, 
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
 
@@ -138,7 +152,6 @@ fun EditProfileScreen(viewModel: EditProfileViewModel) {
                 )
             }
 
-            Spacer(Modifier.weight(1f))
             Spacer(Modifier.height(32.dp))
 
             Button(
@@ -175,20 +188,22 @@ private fun EditField(
             text = label,
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
         )
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(placeholder, fontSize = 14.sp, color = Color.LightGray) },
+            placeholder = { Text(placeholder, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
             shape = RoundedCornerShape(14.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = Primary,
-                unfocusedBorderColor = Color(0xFFEEEEEE),
-                focusedContainerColor = Color(0xFFFAFAFA),
-                unfocusedContainerColor = Color(0xFFFAFAFA),
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
             ),
             singleLine = true,
             textStyle = androidx.compose.ui.text.TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium)
@@ -207,22 +222,22 @@ private fun ReadOnlyField(
             text = label,
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
         )
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
-                .background(Color(0xFFF5F5F5), RoundedCornerShape(14.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+            Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(12.dp))
-            Text(value, fontSize = 15.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
+            Text(value, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
             Spacer(Modifier.weight(1f))
-            Icon(Icons.Default.Lock, null, tint = Color.LightGray, modifier = Modifier.size(16.dp))
+            Icon(Icons.Default.Lock, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), modifier = Modifier.size(16.dp))
         }
     }
 }

@@ -117,7 +117,7 @@ class StadiumRepositoryImpl(
 
     override fun getStadiumById(id: Int, date: String, duration: String): Flow<List<StadiumResponse>> = flow {
         val response = stadiumApiService.getStadiumById(id.toLong(), date, duration)
-        emit(response.data?.content ?: emptyList())
+        emit(response.data ?: emptyList())
     }
 
     override fun updateOpenCloseTime(id: Int, openTime: String, closeTime: String): Flow<Unit> = flow {

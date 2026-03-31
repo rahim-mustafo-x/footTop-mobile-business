@@ -26,20 +26,14 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.SportsSoccer
-import androidx.compose.material.icons.filled.Stadium
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -60,13 +54,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import kotlinx.datetime.LocalDateTime
-import uz.coder.foottopbusiness.core.formatAsDate
-import uz.coder.foottopbusiness.core.formatAsTime
 import uz.coder.foottopbusiness.core.ui.Primary
-import uz.coder.foottopbusiness.data.network.dto.MatchResponseDto
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
+import uz.coder.foottopbusiness.presentation.main.home.history.HistoryScreen
 import uz.coder.foottopbusiness.presentation.main.settings.SettingsVoyager
 import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.AddPitchVoyager
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsVoyager
@@ -81,26 +72,18 @@ fun HomeScreen(
     val state by viewModel.state.collectAsState()
     val navigator = LocalNavigator.currentOrThrow
 
-    // Navigation trigger for Slots Control
     LaunchedEffect(state.selectedStadiumForTime) {
         state.selectedStadiumForTime?.let {
             navigateToSlotsControl(it)
         }
     }
 
-    // Screens overlay for Tournament Detail (if kept as overlay)
     state.selectedTournament?.let { t ->
         TournamentDetailScreen(t, onBack = { viewModel.handleEvent(HomeContract.Event.ClearTournament) })
         return
     }
 
-    Scaffold(
-        bottomBar = {
-            MalaebBottomBar(state.currentTab) {
-                viewModel.handleEvent(HomeContract.Event.ChangeTab(it))
-            }
-        }
-    ) { padding ->
+    Scaffold { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -117,18 +100,14 @@ fun HomeScreen(
                     onAddStadium = { navigator.push(AddPitchVoyager) },
                     onAddTournament = { navigator.push(TournamentsVoyager) },
                     navigateToStadiums = navigateToStadiums,
-                    navigateToProfile = {
-                        navigator.push(SettingsVoyager)
-                    }
+                    onProfileClick = { navigator.push(SettingsVoyager) }
                 )
-
-                1 -> HistoryTab(state)
+                1 -> HistoryScreen(state)
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HomeTab(
     state: HomeContract.State,
@@ -136,72 +115,68 @@ private fun HomeTab(
     onAddStadium: () -> Unit,
     onAddTournament: () -> Unit,
     navigateToStadiums: () -> Unit,
-    navigateToProfile: () -> Unit
+    onProfileClick: () -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        MalaebHeader(state) { navigateToProfile() }
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            item { MalaebDashboard(state, viewModel) }
-
-            item {
-                Text("Tezkor boshqaruv", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            }
-
-            item {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    ActionCard(
-                        "Stadion Qo'shish",
-                        Icons.Default.AddCircle,
-                        Color(0xFF4CAF50),
-                        Modifier.weight(1f),
-                        onClick = onAddStadium
-                    )
-                    ActionCard(
-                        "Turnir Ochish",
-                        Icons.Default.EmojiEvents,
-                        Color(0xFFFF9800),
-                        Modifier.weight(1f),
-                        onClick = onAddTournament
-                    )
-                }
-            }
-
-            item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Mening Stadionlarim", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.weight(1f))
-                    TextButton(onClick = navigateToStadiums) { Text("Hammasi", color = Primary) }
-                }
-            }
-
-            items(state.stadiums) { stadium ->
-                MalaebStadiumCard(stadium) {
-                    viewModel.handleEvent(HomeContract.Event.SelectStadiumForSlots(stadium))
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun HistoryTab(state: HomeContract.State) {
-    Column(modifier = Modifier.fillMaxSize()) {
-
-        Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(selected = true, onClick = {}, label = { Text("Hammasi") })
-            FilterChip(selected = false, onClick = {}, label = { Text("O'yinlar") })
-            FilterChip(selected = false, onClick = {}, label = { Text("Turnirlar") })
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp)
+    ) {
+        item {
+            MalaebHeader(state, onProfileClick)
         }
 
-        LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            item { Text("Yaqindagi o'yinlar", fontWeight = FontWeight.Bold, fontSize = 16.sp) }
-            items(state.matches) { match ->
-                MatchRow(match) {}
+        item {
+            MalaebDashboard(state, viewModel, Modifier.padding(horizontal = 16.dp))
+        }
+
+        item {
+            Text(
+                "Tezkor boshqaruv", 
+                fontWeight = FontWeight.Bold, 
+                fontSize = 18.sp,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), 
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                ActionCard(
+                    "Stadion Qo'shish",
+                    Icons.Default.AddCircle,
+                    Color(0xFF4CAF50),
+                    Modifier.weight(1f),
+                    onClick = onAddStadium
+                )
+                ActionCard(
+                    "Turnir Ochish",
+                    Icons.Default.EmojiEvents,
+                    Color(0xFFFF9800),
+                    Modifier.weight(1f),
+                    onClick = onAddTournament
+                )
+            }
+        }
+
+        item {
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Mening Stadionlarim", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.weight(1f))
+                TextButton(onClick = navigateToStadiums) { Text("Hammasi", color = Primary) }
+            }
+        }
+
+        items(state.stadiums) { stadium ->
+            MalaebStadiumCard(
+                stadium = stadium,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            ) {
+                viewModel.handleEvent(HomeContract.Event.SelectStadiumForSlots(stadium))
             }
         }
     }
@@ -254,16 +229,14 @@ private fun MalaebHeader(state: HomeContract.State, onProfileClick: () -> Unit) 
                     Icon(Icons.AutoMirrored.Filled.TrendingUp, null, tint = Color(0xFF4CAF50))
                 }
             }
-
-            Spacer(Modifier.height(8.dp))
         }
     }
 }
 
 @Composable
-private fun MalaebDashboard(state: HomeContract.State, viewModel: HomeViewModel) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        SmallStatCard("Faol", state.activeStadiums.toString(), Icons.Default.Stadium, Color(0xFF2196F3), Modifier.weight(1f).clickable {
+private fun MalaebDashboard(state: HomeContract.State, viewModel: HomeViewModel, modifier: Modifier = Modifier) {
+    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        SmallStatCard("Faol", state.activeStadiums.toString(), Icons.Default.SportsSoccer, Color(0xFF2196F3), Modifier.weight(1f).clickable {
             viewModel.handleEvent(HomeContract.Event.Stadium)
         })
         SmallStatCard("O'yinlar", state.totalMatches.toString(), Icons.Default.SportsSoccer, Color(0xFF9C27B0), Modifier.weight(1f).clickable {
@@ -315,9 +288,9 @@ private fun ActionCard(title: String, icon: ImageVector, color: Color, modifier:
 }
 
 @Composable
-private fun MalaebStadiumCard(stadium: StadiumResponse, onClick: () -> Unit) {
+private fun MalaebStadiumCard(stadium: StadiumResponse, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
@@ -332,59 +305,20 @@ private fun MalaebStadiumCard(stadium: StadiumResponse, onClick: () -> Unit) {
                     .background(Primary.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Stadium, null, tint = Primary, modifier = Modifier.size(30.dp))
+                Icon(Icons.Default.SportsSoccer, null, tint = Primary, modifier = Modifier.size(30.dp))
             }
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(stadium.name ?: "Noma'lum stadion", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Text("${stadium.districtName}, ${stadium.regionName}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
-            Icon(Icons.Default.Stadium, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+            Icon(Icons.Default.SportsSoccer, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
         }
-    }
-}
-
-@Composable
-private fun MatchRow(match: MatchResponseDto, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Match #${match.id}", fontWeight = FontWeight.Bold)
-                Text(match.dateTime?.let { LocalDateTime.parse(it) }?.formatAsDate() ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                Text(match.dateTime?.let { LocalDateTime.parse(it) }?.formatAsTime() ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-            }
-            Text("${match.pricePerPlayer?.toInt()} so'm", color = Primary, fontWeight = FontWeight.Bold)
-        }
-    }
-}
-
-@Composable
-private fun MalaebBottomBar(selectedTab: Int, onTabSelected: (Int) -> Unit) {
-    NavigationBar {
-        NavigationBarItem(
-            selected = selectedTab == 0,
-            onClick = { onTabSelected(0) },
-            icon = { Icon(Icons.Default.Home, null) },
-            label = { Text("Bosh sahifa") }
-        )
-        NavigationBarItem(
-            selected = selectedTab == 1,
-            onClick = { onTabSelected(1) },
-            icon = { Icon(Icons.Default.History, null) },
-            label = { Text("Tarix") }
-        )
     }
 }
 
 @Composable
 private fun TournamentDetailScreen(tournament: TournamentResponseDto, onBack: () -> Unit) {
-    // Basic overlay for tournament details
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -397,6 +331,5 @@ private fun TournamentDetailScreen(tournament: TournamentResponseDto, onBack: ()
         Text("Turnir Tafsilotlari", fontWeight = FontWeight.Bold, fontSize = 24.sp)
         Spacer(Modifier.height(16.dp))
         Text("Nomi: ${tournament.name}")
-        // More details...
     }
 }
