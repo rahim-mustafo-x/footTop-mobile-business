@@ -2,7 +2,7 @@ package uz.coder.foottopbusiness.data.repository
 
 import io.ktor.client.call.body
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
@@ -40,13 +40,14 @@ class StadiumRepositoryImpl(
         capacity: Int, pricePerHour: Int, openTime: String, closeTime: String,
         imageUrl: String, regionId: Int, districtId: Int,
     ): Flow<StadiumResponse> = flow {
-        val ownerId = preferencesManager.userId.firstOrNull() ?: 0
+        val ownerId = preferencesManager.userId.first()
         val response = stadiumApiService.createStadium(
             request = CreateStadiumRequest(
                 name = name, ownerId = ownerId, regionId = regionId, districtId = districtId,
                 description = description, location = LocationDto(), type = type, duration = duration,
                 capacity = capacity, pricePerHour = pricePerHour,
                 images = if (imageUrl.isNotBlank()) listOf(ImageDto(imageUrl)) else emptyList(),
+                isActive = true
             )
         )
         val data = response.data ?: throw Exception(response.message ?: "Xatolik yuz berdi")
@@ -75,7 +76,7 @@ class StadiumRepositoryImpl(
         districtId: Int,
         isActive: Boolean
     ): Flow<StadiumResponse> = flow {
-        val ownerId = preferencesManager.userId.firstOrNull() ?: 0
+        val ownerId = preferencesManager.userId.first()
         val response = stadiumApiService.updateStadium(
             id = id.toLong(),
             request = CreateStadiumRequest(
@@ -87,19 +88,32 @@ class StadiumRepositoryImpl(
             )
         )
         
-        // Handle 204 No Content or success with body
+        // If 204 No Content, we construct a response from the request data
         val stadiumResponse = if (response.status.value == 204) {
-             StadiumResponse(id = id)
+             StadiumResponse(
+                 id = id,
+                 name = name,
+                 description = description,
+                 type = type,
+                 duration = duration,
+                 capacity = capacity,
+                 pricePerHour = pricePerHour.toDouble(),
+                 isActive = isActive,
+                 openTime = openTime,
+                 closeTime = closeTime
+             )
         } else {
              val baseResponse = response.body<BaseResponse<StadiumResponse>>()
              baseResponse.data ?: throw Exception(baseResponse.message ?: "Xatolik yuz berdi")
         }
         
-        stadiumApiService.updateOpenCloseTime(
-            id.toLong(), 
-            formatToIsoDateTime(openTime), 
-            formatToIsoDateTime(closeTime)
-        )
+        try {
+            stadiumApiService.updateOpenCloseTime(
+                id.toLong(), 
+                formatToIsoDateTime(openTime), 
+                formatToIsoDateTime(closeTime)
+            )
+        } catch (_: Exception) {}
         
         emit(stadiumResponse)
     }
@@ -107,7 +121,7 @@ class StadiumRepositoryImpl(
     override fun getStadiums(
         name: String?, type: String?, isActive: Boolean?, page: Int, size: Int,
     ): Flow<PageStadiumResponseDto> = flow {
-        val ownerId = preferencesManager.userId.firstOrNull() ?: 0
+        val ownerId = preferencesManager.userId.first()
         val response = stadiumApiService.getStadiums(
             name = name, type = type,
             ownerId = ownerId.toLong(), isActive = isActive, page = page, size = size,

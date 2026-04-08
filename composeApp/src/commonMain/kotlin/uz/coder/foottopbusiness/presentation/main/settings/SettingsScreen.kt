@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -37,6 +38,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -50,6 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,6 +69,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     val state by viewModel.state.collectAsState()
     var showLogoutSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
+    val uriHandler = LocalUriHandler.current
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
@@ -135,6 +139,32 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 }
             }
         }
+    }
+
+    // About App Dialog
+    if (state.showAboutDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.handleEvent(SettingsContract.Event.DismissAboutDialog) },
+            title = { Text("Ilova haqida", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text("FootTop Business", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Spacer(Modifier.height(8.dp))
+                    Text(" versiya 1.0.0", fontSize = 14.sp)
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "Bu ilova stadium egalari uchun mo'ljallangan. Stadion qo'shish, turnir yaratish va boshqa imkoniyatlardan foydalanish mumkin.",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.handleEvent(SettingsContract.Event.DismissAboutDialog) }) {
+                    Text("Yopish")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -239,7 +269,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     iconTint = Color(0xFF2196F3),
                     iconBg = Color(0xFF2196F3).copy(alpha = 0.1f),
                     title = "Yordam markazi",
-                    onClick = {}
+                    onClick = { uriHandler.openUri("https://t.me/rahim_mustafo_x") }
                 )
 
                 SettingsItem(
@@ -247,7 +277,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     iconTint = Color(0xFF9C27B0),
                     iconBg = Color(0xFF9C27B0).copy(alpha = 0.1f),
                     title = "Ilova haqida",
-                    onClick = {}
+                    onClick = { viewModel.handleEvent(SettingsContract.Event.ShowAboutApp) }
                 )
 
                 Spacer(Modifier.height(8.dp))

@@ -39,10 +39,12 @@ sealed interface HomeContract {
         val selectedStadiumForTime: StadiumResponse? = null,
         val isUpdatingTime: Boolean = false,
         val selectedDate: String = "", // YYYY-MM-DD
+        val selectedDuration: String = "SIXTY", // SIXTY, NINETY, HUNDRED_TWENTY
         val stadiumSlots: List<Triple<LocalDateTime, LocalDateTime, Boolean>> = emptyList(),
         val isLoadingSlots: Boolean = false,
         val newOpenTime: String = "",
         val newCloseTime: String = "",
+        val selectedSlot: Triple<LocalDateTime, LocalDateTime, Boolean>? = null,
         
         // tournaments
         val tournaments: List<TournamentResponseDto> = emptyList(),
@@ -70,6 +72,8 @@ sealed interface HomeContract {
         data class Search(val query: String) : Event
         data class FilterActive(val isActive: Boolean?) : Event
         object LoadNextPage : Event
+        object LoadPreviousPage : Event
+        data class LoadPage(val page: Int) : Event
         data class DeleteRequest(val id: Int) : Event
         object DeleteConfirm : Event
         object DeleteCancel : Event
@@ -77,6 +81,8 @@ sealed interface HomeContract {
         // Slot & Time control events
         data class SelectStadiumForSlots(val stadium: StadiumResponse) : Event
         data class ChangeDate(val date: String) : Event
+        data class ChangeDuration(val duration: String) : Event
+        data class SelectSlot(val slot: Triple<LocalDateTime, LocalDateTime, Boolean>) : Event
         object ClearStadiumForSlots : Event
         data class UpdateTime(val open: String, val close: String) : Event
         

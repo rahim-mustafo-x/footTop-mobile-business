@@ -1,6 +1,6 @@
 package uz.coder.foottopbusiness.presentation.main.home
 
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.zip
 import kotlinx.datetime.LocalDateTime
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
@@ -68,6 +68,15 @@ class HomeViewModel(
                 if (!s.isLastPage && !s.isLoadingStadiums) loadStadiums(s.currentPage + 1)
             }
 
+            HomeContract.Event.LoadPreviousPage -> {
+                val s = state.value
+                if (s.currentPage > 0 && !s.isLoadingStadiums) loadStadiums(s.currentPage - 1)
+            }
+
+            is HomeContract.Event.LoadPage -> {
+                if (!state.value.isLoadingStadiums) loadStadiums(event.page)
+            }
+
             is HomeContract.Event.DeleteRequest -> updateState { copy(deletingId = event.id) }
             HomeContract.Event.DeleteCancel -> updateState { copy(deletingId = null) }
             HomeContract.Event.DeleteConfirm -> {
@@ -95,15 +104,24 @@ class HomeViewModel(
                         newCloseTime = event.stadium.closeTime ?: ""
                     ) 
                 }
-                loadSlots(event.stadium.id ?: return, state.value.selectedDate)
+                loadSlots(event.stadium.id ?: return, state.value.selectedDate, state.value.selectedDuration)
             }
 
             is HomeContract.Event.ChangeDate -> {
                 updateState { copy(selectedDate = event.date) }
-                state.value.selectedStadiumForTime?.id?.let { loadSlots(it, event.date) }
+                state.value.selectedStadiumForTime?.id?.let { loadSlots(it, event.date, state.value.selectedDuration) }
             }
 
-            HomeContract.Event.ClearStadiumForSlots -> updateState { copy(selectedStadiumForTime = null, stadiumSlots = emptyList()) }
+            is HomeContract.Event.ChangeDuration -> {
+                updateState { copy(selectedDuration = event.duration) }
+                state.value.selectedStadiumForTime?.id?.let { loadSlots(it, state.value.selectedDate, event.duration) }
+            }
+
+            is HomeContract.Event.SelectSlot -> {
+                updateState { copy(selectedSlot = event.slot) }
+            }
+
+            HomeContract.Event.ClearStadiumForSlots -> updateState { copy(selectedStadiumForTime = null, stadiumSlots = emptyList(), selectedSlot = null) }
 
             is HomeContract.Event.UpdateTime -> {
                 val stadiumId = state.value.selectedStadiumForTime?.id ?: return
@@ -141,17 +159,18 @@ class HomeViewModel(
 
     private fun loadUser() {
         executeAsync {
-            val userId = preferencesManager.userId.firstOrNull() ?: return@executeAsync
+            val userId = preferencesManager.userId.first()
+            if (userId == 0) return@executeAsync
             getUserUseCase(userId.toLong()).collect { result ->
                 updateState { copy(user = result) }
             }
         }
     }
 
-    private fun loadSlots(id: Int, date: String) {
-        updateState { copy(isLoadingSlots = true) }
+    private fun loadSlots(id: Int, date: String, duration: String) {
+        updateState { copy(isLoadingSlots = true, selectedSlot = null) }
         executeAsync {
-            getStadiumByIdUseCase(id, date, "SIXTY").collect { responseList ->
+            getStadiumByIdUseCase(id, date, duration).collect { responseList ->
                 val stadium = responseList.firstOrNull()
                 val triples = stadium?.slots?.map {
                     Triple(
@@ -198,7 +217,7 @@ class HomeViewModel(
                 val newItems = pageData.content ?: emptyList()
                 updateState {
                     copy(
-                        stadiums = if (page == 0) newItems else stadiums + newItems,
+                        stadiums = newItems,
                         currentPage = page,
                         isLastPage = pageData.last ?: true,
                         isLoadingStadiums = false,

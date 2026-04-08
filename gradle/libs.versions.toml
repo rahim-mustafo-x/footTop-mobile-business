@@ -20,6 +20,7 @@ kotlinx-datetime = "0.7.1"
 kotlin-serilization = "2.3.10"
 ktor = "3.4.1"
 androidx-datastore = "1.2.1"
+coreKtx = "1.7.0"
 
 
 [libraries]
@@ -70,6 +71,7 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 
 #datastore
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "androidx-datastore" }
+core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "coreKtx" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

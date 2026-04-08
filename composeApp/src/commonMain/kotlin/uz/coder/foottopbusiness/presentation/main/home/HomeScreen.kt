@@ -8,16 +8,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -49,7 +51,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -83,15 +85,13 @@ fun HomeScreen(
         return
     }
 
-    Scaffold { padding ->
+    Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(
-                    bottom = padding.calculateBottomPadding(),
-                    start = padding.calculateStartPadding(LayoutDirection.Ltr),
-                    end = padding.calculateEndPadding(LayoutDirection.Ltr)
-                )
+                .padding(padding)
         ) {
             when (state.currentTab) {
                 0 -> HomeTab(
@@ -171,12 +171,19 @@ private fun HomeTab(
             }
         }
 
-        items(state.stadiums) { stadium ->
-            MalaebStadiumCard(
-                stadium = stadium,
-                modifier = Modifier.padding(horizontal = 16.dp)
+        item {
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                viewModel.handleEvent(HomeContract.Event.SelectStadiumForSlots(stadium))
+                items(state.stadiums.take(4)) { stadium ->
+                    MalaebStadiumCard(
+                        stadium = stadium,
+                        modifier = Modifier.width(280.dp)
+                    ) {
+                        viewModel.handleEvent(HomeContract.Event.SelectStadiumForSlots(stadium))
+                    }
+                }
             }
         }
     }
@@ -184,19 +191,20 @@ private fun HomeTab(
 
 @Composable
 private fun MalaebHeader(state: HomeContract.State, onProfileClick: () -> Unit) {
+    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
             .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
             .background(Brush.verticalGradient(listOf(Primary, Color(0xFF1B5E20))))
-            .padding(24.dp)
+            .padding(top = statusBarPadding + 16.dp, start = 24.dp, end = 24.dp, bottom = 24.dp)
     ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Xush kelibsiz,", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
-                    Text(state.user?.fullName ?: "Admin", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    Text(state.user?.fullName ?: "Admin", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 Box(
                     modifier = Modifier
@@ -235,7 +243,7 @@ private fun MalaebHeader(state: HomeContract.State, onProfileClick: () -> Unit) 
 
 @Composable
 private fun MalaebDashboard(state: HomeContract.State, viewModel: HomeViewModel, modifier: Modifier = Modifier) {
-    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         SmallStatCard("Faol", state.activeStadiums.toString(), Icons.Default.SportsSoccer, Color(0xFF2196F3), Modifier.weight(1f).clickable {
             viewModel.handleEvent(HomeContract.Event.Stadium)
         })
@@ -252,15 +260,15 @@ private fun MalaebDashboard(state: HomeContract.State, viewModel: HomeViewModel,
 private fun SmallStatCard(label: String, value: String, icon: ImageVector, color: Color, modifier: Modifier) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(icon, null, tint = color, modifier = Modifier.size(20.dp))
             Spacer(Modifier.height(4.dp))
-            Text(value, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text(label, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1)
+            Text(label, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -269,20 +277,20 @@ private fun SmallStatCard(label: String, value: String, icon: ImageVector, color
 private fun ActionCard(title: String, icon: ImageVector, color: Color, modifier: Modifier, onClick: () -> Unit) {
     Card(
         modifier = modifier
-            .height(100.dp)
+            .height(90.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(
-            Modifier.fillMaxSize(),
+            Modifier.fillMaxSize().padding(4.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(icon, null, tint = color)
+            Icon(icon, null, tint = color, modifier = Modifier.size(24.dp))
             Spacer(Modifier.height(8.dp))
-            Text(title, color = color, fontWeight = FontWeight.Bold, fontSize = 13.sp, textAlign = TextAlign.Center)
+            Text(title, color = color, fontWeight = FontWeight.Bold, fontSize = 12.sp, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -291,28 +299,26 @@ private fun ActionCard(title: String, icon: ImageVector, color: Color, modifier:
 private fun MalaebStadiumCard(stadium: StadiumResponse, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Card(
         modifier = modifier
-            .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
-                    .size(60.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .size(50.dp)
+                    .clip(RoundedCornerShape(10.dp))
                     .background(Primary.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.SportsSoccer, null, tint = Primary, modifier = Modifier.size(30.dp))
+                Icon(Icons.Default.SportsSoccer, null, tint = Primary, modifier = Modifier.size(24.dp))
             }
-            Spacer(Modifier.width(16.dp))
+            Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(stadium.name ?: "Noma'lum stadion", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text("${stadium.districtName}, ${stadium.regionName}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                Text(stadium.name ?: "Noma'lum stadion", fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("${stadium.districtName}, ${stadium.regionName}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            Icon(Icons.Default.SportsSoccer, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
         }
     }
 }

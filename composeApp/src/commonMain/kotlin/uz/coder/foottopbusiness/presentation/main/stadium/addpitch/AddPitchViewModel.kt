@@ -161,7 +161,7 @@ class AddPitchViewModel(
                     closeTime = s.closeTime,
                     imageUrl = s.imageUrl,
                     regionId = regionId,
-                    districtId = districtId,
+                    districtId = districtId
                 ).first()
             },
             onSuccess = {

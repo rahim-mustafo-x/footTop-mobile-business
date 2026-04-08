@@ -56,7 +56,7 @@ class StadiumViewModel(
 
     private fun loadStadiums(page: Int) {
         val s = state.value
-        updateState { copy(isLoading = true, error = null) }
+        updateState { copy(isLoading = true, error = null, hasError = false) }
         executeAsync(
             block = {
                 var result = uz.coder.foottopbusiness.data.network.dto.stadium.PageStadiumResponseDto()
@@ -75,10 +75,11 @@ class StadiumViewModel(
                         currentPage = page,
                         isLastPage = pageData.last ?: true,
                         isLoading = false,
+                        hasError = false,
                     )
                 }
             },
-            onError = { updateState { copy(isLoading = false, error = it.message) } }
+            onError = { updateState { copy(isLoading = false, error = it.message, hasError = true) } }
         )
     }
 }

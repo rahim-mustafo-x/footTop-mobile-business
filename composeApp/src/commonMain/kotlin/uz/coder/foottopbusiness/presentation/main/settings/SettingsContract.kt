@@ -9,6 +9,7 @@ sealed interface SettingsContract {
     data class State(
         val user: UserDto? = null,
         val isLoadingUser: Boolean = false,
+        val showAboutDialog: Boolean = false,
     ) : MviState
 
     sealed interface Effect : MviEffect {
@@ -18,5 +19,7 @@ sealed interface SettingsContract {
     sealed interface Event : MviEvent {
         object Load : Event
         object Logout : Event
+        object ShowAboutApp : Event
+        object DismissAboutDialog : Event
     }
 }

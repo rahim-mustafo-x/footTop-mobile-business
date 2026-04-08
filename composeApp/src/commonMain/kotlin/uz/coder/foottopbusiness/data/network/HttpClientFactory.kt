@@ -15,7 +15,7 @@ import io.ktor.http.encodedPath
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import uz.coder.foottopbusiness.core.SessionManager
@@ -62,7 +62,8 @@ class HttpClientFactory(
             install(Auth) {
                 bearer {
                     loadTokens {
-                        preferencesManager.token.firstOrNull()?.let {
+                        val token = preferencesManager.token.first()
+                        token?.let {
                             BearerTokens(it, "")
                         }
                     }
@@ -82,17 +83,18 @@ class HttpClientFactory(
                 validateResponse { response ->
                     val code = response.status.value
                     val path = response.call.request.url.encodedPath
-                    val isAuthEndpoint = path.contains("/api/auth/") || 
-                                       path.contains("/login") || 
+                    val isAuthEndpoint = path.contains("/api/auth/") ||
+                                       path.contains("/login") ||
                                        path.contains("/send-otp") ||
                                        path.contains("/v1/users/create")
 
                     if ((code == 401 || code == 403) && !isAuthEndpoint) {
                         log("Auth", "Session expired or Forbidden ($code) for $path. Clearing and redirecting.")
-                        
+
                         // Tokenni darhol tozalash va navigatsiyani trigger qilish
                         scope.launch {
                             preferencesManager.logout()
+                            sessionManager.setTokenValid(false)
                             sessionManager.onUnauthorized()
                         }
                     }

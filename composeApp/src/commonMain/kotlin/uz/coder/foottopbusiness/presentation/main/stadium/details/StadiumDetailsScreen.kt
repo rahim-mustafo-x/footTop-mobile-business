@@ -3,12 +3,15 @@ package uz.coder.foottopbusiness.presentation.main.stadium.details
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Stadium
+import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -19,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -153,20 +157,82 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     )
                     
                     Spacer(Modifier.height(32.dp))
+
+                    // Add Pitch Button
                     Button(
-                        onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.EditClick) },
+                        onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.ShowAddPitchDialog) },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Primary)
                     ) {
-                        Icon(Icons.Default.Edit, contentDescription = null)
+                        Icon(Icons.Default.Add, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Stadionni tahrirlash", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("Pitch qo'shish", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Button(
+                        onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.EditClick) },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = null, tint = Primary)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Stadionni tahrirlash", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Primary)
                     }
                     Spacer(Modifier.height(16.dp))
                 }
             }
         }
+    }
+
+    // Add Pitch Dialog
+    if (state.showAddPitchDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissAddPitchDialog) },
+            title = { Text("Pitch qo'shish", color = Primary, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = state.pitchName,
+                        onValueChange = { viewModel.handleEvent(StadiumDetailsContract.Event.PitchNameChanged(it)) },
+                        label = { Text("Pitch nomi") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = state.pitchStartTime,
+                        onValueChange = { viewModel.handleEvent(StadiumDetailsContract.Event.PitchStartTimeChanged(it)) },
+                        label = { Text("Boshlanish vaqti (HH:mm)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        placeholder = { Text("09:00") }
+                    )
+                    OutlinedTextField(
+                        value = state.pitchEndTime,
+                        onValueChange = { viewModel.handleEvent(StadiumDetailsContract.Event.PitchEndTimeChanged(it)) },
+                        label = { Text("Tugash vaqti (HH:mm)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        placeholder = { Text("18:00") }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.SavePitch) }) {
+                    Text("Saqlash", color = Primary)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissAddPitchDialog) }) {
+                    Text("Bekor qilish")
+                }
+            }
+        )
     }
 }
 

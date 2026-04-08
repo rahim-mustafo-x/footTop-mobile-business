@@ -20,11 +20,13 @@ import uz.coder.foottopbusiness.presentation.splash.SplashVoyager
 fun AppNavigation() {
     val sessionManager = koinInject<SessionManager>()
     val sessionState by sessionManager.sessionState.collectAsState()
+    val isTokenValid by sessionManager.isTokenValid.collectAsState()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Navigator(SplashVoyager) { navigator ->
-            LaunchedEffect(Unit) {
-                if (sessionState == SessionState.EXPIRED) {
+            LaunchedEffect(isTokenValid) {
+                if (!isTokenValid) {
+                    sessionManager.startObservingToken()
                     navigator.replaceAll(SendOtpVoyager)
                 }
             }

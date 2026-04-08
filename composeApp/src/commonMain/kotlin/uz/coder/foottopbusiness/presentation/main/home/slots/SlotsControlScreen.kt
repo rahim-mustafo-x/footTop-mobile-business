@@ -25,6 +25,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.EventNote
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -78,10 +81,38 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                     }
                 }
             )
+        },
+        bottomBar = {
+            if (state.selectedSlot != null) {
+                Box(modifier = Modifier.padding(16.dp)) {
+                    Button(
+                        onClick = { /* Bron qilish */ },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                    ) {
+                        Text(
+                            "Bron qilish ${state.selectedSlot.first.formatAsTime()} – ${state.selectedSlot.second.formatAsTime()}",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            // Kunlar tanlash
+            // Duration Selection
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                DurationChip("60 min", state.selectedDuration == "SIXTY") { viewModel.handleEvent(HomeContract.Event.ChangeDuration("SIXTY")) }
+                DurationChip("90 min", state.selectedDuration == "NINETY") { viewModel.handleEvent(HomeContract.Event.ChangeDuration("NINETY")) }
+                DurationChip("120 min", state.selectedDuration == "HUNDRED_TWENTY") { viewModel.handleEvent(HomeContract.Event.ChangeDuration("HUNDRED_TWENTY")) }
+            }
+
+            // Days Selection
             LazyRow(
                 contentPadding = PaddingValues(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -128,25 +159,20 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                 }
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Vaqt Slotlari", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Text("Available Slots", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Spacer(Modifier.height(8.dp))
                 
-                // Legend
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(8.dp).clip(CircleShape).background(Color(0xFF4CAF50)))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Bo'sh", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.width(12.dp))
-                    Box(Modifier.size(8.dp).clip(CircleShape).background(Color(0xFFF44336)))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Band", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                state.stadiumSlots.firstOrNull { it.third }?.let { earliest ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.AccessTime, null, modifier = Modifier.size(18.dp), tint = Color(0xFF388E3C))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Earliest available: ", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        Text(earliest.first.formatAsTime(), color = Color(0xFF388E3C), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    }
                 }
             }
-            
+
             if (state.isLoadingSlots) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { 
                     CircularProgressIndicator(color = Primary) 
@@ -154,18 +180,9 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
             } else if (state.stadiumSlots.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.EventNote,
-                            null, 
-                            modifier = Modifier.size(64.dp), 
-                            tint = MaterialTheme.colorScheme.outlineVariant
-                        )
+                        Icon(Icons.AutoMirrored.Filled.EventNote, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.outlineVariant)
                         Spacer(Modifier.height(16.dp))
-                        Text(
-                            "Ushbu kunga ma'lumot topilmadi", 
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
+                        Text("Ushbu kunga ma'lumot topilmadi", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             } else {
@@ -173,43 +190,73 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                     columns = GridCells.Fixed(3),
                     contentPadding = PaddingValues(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.weight(1f)
                 ) {
-                    items(state.stadiumSlots) { (start, _, available) ->
-                        val baseColor = if (available) Color(0xFF4CAF50) else Color(0xFFF44336)
-                        
+                    items(state.stadiumSlots) { slot ->
+                        val (start, _, available) = slot
+                        val isSelected = state.selectedSlot == slot
+                        val baseColor = if (!available) Color(0xFFF44336) else if (isSelected) Color.White else Color(0xFF388E3C)
+                        val bgColor = if (!available) Color(0xFFF44336).copy(alpha = 0.1f) else if (isSelected) Color(0xFF388E3C) else Color(0xFF388E3C).copy(alpha = 0.1f)
+                        val borderColor = if (isSelected) Color(0xFF388E3C) else baseColor.copy(alpha = 0.3f)
+
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(baseColor.copy(alpha = 0.08f))
-                                .border(
-                                    width = 1.5.dp, 
-                                    color = baseColor.copy(alpha = 0.4f), 
-                                    shape = RoundedCornerShape(16.dp)
-                                )
-                                .padding(14.dp),
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(bgColor)
+                                .border(width = 1.dp, color = borderColor, shape = RoundedCornerShape(12.dp))
+                                .clickable(enabled = available) { viewModel.handleEvent(HomeContract.Event.SelectSlot(slot)) }
+                                .padding(vertical = 12.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    start.formatAsTime(), 
-                                    fontWeight = FontWeight.ExtraBold, 
-                                    fontSize = 16.sp,
-                                    color = baseColor
-                                )
-                                Spacer(Modifier.height(4.dp))
-                                Text(
-                                    if (available) "Ochiq" else "Band", 
-                                    fontSize = 10.sp, 
-                                    color = baseColor.copy(alpha = 0.8f),
-                                    fontWeight = FontWeight.Bold,
-                                    style = MaterialTheme.typography.labelSmall
-                                )
+                                Text(start.formatAsTime(), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = baseColor)
+                                Text(if (available) "Bo'sh" else "Band", fontSize = 12.sp, color = baseColor.copy(alpha = 0.8f))
                             }
                         }
                     }
                 }
+
+                // Legend
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    LegendItem("Bo'sh", Color(0xFF388E3C))
+                    Spacer(Modifier.width(16.dp))
+                    LegendItem("Band", Color(0xFFF44336))
+                    Spacer(Modifier.width(16.dp))
+                    LegendItem("Sig'maydi", Color.LightGray)
+                    Spacer(Modifier.width(16.dp))
+                    LegendItem("O'tib ketgan", Color.LightGray)
+                }
             }
         }
+    }
+}
+
+@Composable
+fun DurationChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .height(48.dp)
+            .width(100.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (isSelected) Primary else Color.White)
+            .border(1.dp, if (isSelected) Primary else Color.LightGray.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text, color = if (isSelected) Color.White else Color.Black, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+fun LegendItem(label: String, color: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(10.dp).clip(CircleShape).background(color))
+        Spacer(Modifier.width(6.dp))
+        Text(label, fontSize = 12.sp, color = Color.Gray)
     }
 }

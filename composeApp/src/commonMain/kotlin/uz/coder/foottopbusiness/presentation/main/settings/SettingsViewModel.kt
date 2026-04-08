@@ -36,6 +36,12 @@ class SettingsViewModel(
                 },
                 onSuccess = { sendEffect(SettingsContract.Effect.NavigateToAuth) }
             )
+            SettingsContract.Event.ShowAboutApp -> {
+                updateState { copy(showAboutDialog = true) }
+            }
+            SettingsContract.Event.DismissAboutDialog -> {
+                updateState { copy(showAboutDialog = false) }
+            }
         }
     }
 }

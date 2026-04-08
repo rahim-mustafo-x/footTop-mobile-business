@@ -5,11 +5,23 @@ import uz.coder.foottopbusiness.core.mvi.MviEvent
 import uz.coder.foottopbusiness.core.mvi.MviState
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 
+// TODO: Pitch - name, start_time, end_time
+data class PitchDto(
+    val name: String,
+    val startTime: String,
+    val endTime: String
+)
+
 sealed interface StadiumDetailsContract {
     data class State(
         val stadium: StadiumResponse? = null,
         val isLoading: Boolean = false,
-        val isUpdatingStatus: Boolean = false
+        val isUpdatingStatus: Boolean = false,
+        val showAddPitchDialog: Boolean = false,
+        val pitchName: String = "",
+        val pitchStartTime: String = "",
+        val pitchEndTime: String = "",
+        val pitches: List<PitchDto> = emptyList()
     ) : MviState
 
     sealed interface Effect : MviEffect {
@@ -22,5 +34,11 @@ sealed interface StadiumDetailsContract {
         object BackClick : Event
         object EditClick : Event
         data class ToggleActive(val isActive: Boolean) : Event
+        object ShowAddPitchDialog : Event
+        object DismissAddPitchDialog : Event
+        data class PitchNameChanged(val name: String) : Event
+        data class PitchStartTimeChanged(val time: String) : Event
+        data class PitchEndTimeChanged(val time: String) : Event
+        object SavePitch : Event
     }
 }
