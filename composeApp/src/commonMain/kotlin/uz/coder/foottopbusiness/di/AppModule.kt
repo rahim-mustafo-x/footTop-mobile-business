@@ -3,26 +3,10 @@ package uz.coder.foottopbusiness.di
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import uz.coder.foottopbusiness.core.SessionManager
-import uz.coder.foottopbusiness.data.network.AuthApiService
-import uz.coder.foottopbusiness.data.network.CoachApiService
-import uz.coder.foottopbusiness.data.network.HttpClientFactory
-import uz.coder.foottopbusiness.data.network.MatchApiService
-import uz.coder.foottopbusiness.data.network.StadiumApiService
-import uz.coder.foottopbusiness.data.network.TournamentApiService
-import uz.coder.foottopbusiness.data.network.UserApiService
+import uz.coder.foottopbusiness.data.network.*
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
-import uz.coder.foottopbusiness.data.repository.AuthRepositoryImpl
-import uz.coder.foottopbusiness.data.repository.CoachRepositoryImpl
-import uz.coder.foottopbusiness.data.repository.MatchRepositoryImpl
-import uz.coder.foottopbusiness.data.repository.StadiumRepositoryImpl
-import uz.coder.foottopbusiness.data.repository.TournamentRepositoryImpl
-import uz.coder.foottopbusiness.data.repository.UserRepositoryImpl
-import uz.coder.foottopbusiness.domain.repository.AuthRepository
-import uz.coder.foottopbusiness.domain.repository.CoachRepository
-import uz.coder.foottopbusiness.domain.repository.MatchRepository
-import uz.coder.foottopbusiness.domain.repository.StadiumRepository
-import uz.coder.foottopbusiness.domain.repository.TournamentRepository
-import uz.coder.foottopbusiness.domain.repository.UserRepository
+import uz.coder.foottopbusiness.data.repository.*
+import uz.coder.foottopbusiness.domain.repository.*
 import uz.coder.foottopbusiness.domain.usecase.auth.IsLoginInUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.LoginUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.LogoutUseCase
@@ -30,6 +14,9 @@ import uz.coder.foottopbusiness.domain.usecase.auth.SendOtpUseCase
 import uz.coder.foottopbusiness.domain.usecase.coach.CreateCoachUseCase
 import uz.coder.foottopbusiness.domain.usecase.coach.GetCoachesUseCase
 import uz.coder.foottopbusiness.domain.usecase.match.GetMatchesUseCase
+import uz.coder.foottopbusiness.domain.usecase.notification.RegisterDeviceTokenUseCase
+import uz.coder.foottopbusiness.domain.usecase.notification.SendNotificationUseCase
+import uz.coder.foottopbusiness.domain.usecase.notification.SendToAllUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.CreateStadiumUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.DeleteStadiumUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetDistrictsUseCase
@@ -52,6 +39,7 @@ import uz.coder.foottopbusiness.presentation.main.coaches.CoachesViewModel
 import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
 import uz.coder.foottopbusiness.presentation.main.settings.SettingsViewModel
 import uz.coder.foottopbusiness.presentation.main.settings.editprofile.EditProfileViewModel
+import uz.coder.foottopbusiness.presentation.main.settings.notification.SendNotificationViewModel
 import uz.coder.foottopbusiness.presentation.main.stadium.StadiumViewModel
 import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.AddPitchViewModel
 import uz.coder.foottopbusiness.presentation.main.stadium.details.StadiumDetailsViewModel
@@ -61,7 +49,7 @@ import uz.coder.foottopbusiness.presentation.splash.SplashViewModel
 
 val appModule = module {
     // core
-    single { SessionManager() }
+    single { SessionManager(get()) }
     single { HttpClientFactory(get(), get()) }
     single { get<HttpClientFactory>().create() }
 
@@ -72,6 +60,7 @@ val appModule = module {
     single { TournamentApiService(get()) }
     single { MatchApiService(get()) }
     single { UserApiService(get()) }
+    single { NotificationApiService(get()) }
 
     // repositories
     single<AuthRepository> { AuthRepositoryImpl(get(), get(), get()) }
@@ -80,6 +69,7 @@ val appModule = module {
     single<TournamentRepository> { TournamentRepositoryImpl(get()) }
     single<MatchRepository> { MatchRepositoryImpl(get()) }
     single<UserRepository> { UserRepositoryImpl(get(), get()) }
+    single<NotificationRepository> { NotificationRepositoryImpl(get()) }
 
     // use-cases
     factory { SendOtpUseCase(get()) }
@@ -105,12 +95,15 @@ val appModule = module {
     factory { GetMatchesUseCase(get()) }
     factory { GetUserUseCase(get()) }
     factory { UserIdUseCase(get()) }
+    factory { SendNotificationUseCase(get()) }
+    factory { SendToAllUseCase(get()) }
+    factory { RegisterDeviceTokenUseCase(get()) }
 
 
     // viewModels
     factory { SplashViewModel(get()) }
     factory { SendOtpViewModel(get(), get(), get()) }
-    factory { LoginViewModel(get(), get()) }
+    factory { LoginViewModel(get(), get(), get(), get(), get()) }
     single { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { StadiumViewModel(get(), get()) }
     factory { AddPitchViewModel(get(), get(), get(), get(), get(), get(), get()) }
@@ -120,6 +113,7 @@ val appModule = module {
     factory { TournamentsViewModel(get(), get(), get()) }
     factory { SettingsViewModel(get(), get()) }
     factory { EditProfileViewModel(get(), get()) }
+    factory { SendNotificationViewModel(get()) }
 }
 
 expect fun platformModule(): Module

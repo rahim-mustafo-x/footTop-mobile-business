@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "638075712715",
+    "project_id": "bron-5e04b",
+    "storage_bucket": "bron-5e04b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:638075712715:android:6f4865a67dfcf561fcd74e",
+        "android_client_info": {
+          "package_name": "me.ruyeo.foottop"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDnVhw_kKu3foZ2z9LsCq-P0P3STs-GTFs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:638075712715:android:b00fb7ed531476c2fcd74e",
+        "android_client_info": {
+          "package_name": "uz.coder.foottopbusiness"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDnVhw_kKu3foZ2z9LsCq-P0P3STs-GTFs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

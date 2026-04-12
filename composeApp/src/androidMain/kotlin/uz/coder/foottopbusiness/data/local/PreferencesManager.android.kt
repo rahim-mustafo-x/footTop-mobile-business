@@ -16,14 +16,21 @@ actual class PreferencesManager(private val context: Context) {
 
     companion object {
         private val TOKEN = stringPreferencesKey("token")
+        private val REFRESH_TOKEN = stringPreferencesKey("refresh_token")
         private val AUTHORISED = booleanPreferencesKey("authorised")
         private val USER_ID = intPreferencesKey("user_id")
         private val REGION_ID = intPreferencesKey("region_id")
         private val DISTRICT_ID = intPreferencesKey("district_id")
+        private val ACCESS_TOKEN_EXPIRATION = longPreferencesKey("access_token_expiration")
+        private val REFRESH_TOKEN_EXPIRATION = longPreferencesKey("refresh_token_expiration")
     }
 
     actual val token: Flow<String?> = context.dataStore.data.map { preferences ->
         normalizeBearerToken(preferences[TOKEN])
+    }
+
+    actual val refreshToken: Flow<String?> = context.dataStore.data.map { preferences ->
+        normalizeBearerToken(preferences[REFRESH_TOKEN])
     }
 
     actual val authorised: Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -42,6 +49,14 @@ actual class PreferencesManager(private val context: Context) {
         preferences[DISTRICT_ID] ?: 0
     }
 
+    actual val accessTokenExpiration: Flow<Long> = context.dataStore.data.map { preferences ->
+        preferences[ACCESS_TOKEN_EXPIRATION] ?: 0L
+    }
+
+    actual val refreshTokenExpiration: Flow<Long> = context.dataStore.data.map { preferences ->
+        preferences[REFRESH_TOKEN_EXPIRATION] ?: 0L
+    }
+
     actual suspend fun setToken(token: String) {
         val cleaned = normalizeBearerToken(token)
         context.dataStore.edit { preferences ->
@@ -49,6 +64,17 @@ actual class PreferencesManager(private val context: Context) {
                 preferences.remove(TOKEN)
             } else {
                 preferences[TOKEN] = cleaned
+            }
+        }
+    }
+
+    actual suspend fun setRefreshToken(token: String) {
+        val cleaned = normalizeBearerToken(token)
+        context.dataStore.edit { preferences ->
+            if (cleaned.isNullOrEmpty()) {
+                preferences.remove(REFRESH_TOKEN)
+            } else {
+                preferences[REFRESH_TOKEN] = cleaned
             }
         }
     }
@@ -74,6 +100,18 @@ actual class PreferencesManager(private val context: Context) {
     actual suspend fun setDistrictId(id: Int) {
         context.dataStore.edit { preferences ->
             preferences[DISTRICT_ID] = id
+        }
+    }
+
+    actual suspend fun setAccessTokenExpiration(timestamp: Long) {
+        context.dataStore.edit { preferences ->
+            preferences[ACCESS_TOKEN_EXPIRATION] = timestamp
+        }
+    }
+
+    actual suspend fun setRefreshTokenExpiration(timestamp: Long) {
+        context.dataStore.edit { preferences ->
+            preferences[REFRESH_TOKEN_EXPIRATION] = timestamp
         }
     }
 

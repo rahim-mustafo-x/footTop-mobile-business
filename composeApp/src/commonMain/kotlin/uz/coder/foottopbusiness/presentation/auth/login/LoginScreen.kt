@@ -190,7 +190,7 @@ fun OtpCode(otpCode: String, onOtpChange: (String) -> Unit) {
             modifier = Modifier.fillMaxWidth().clickable { focusRequester.requestFocus() },
             horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)
         ) {
-            repeat(6) {
+            repeat(4) {
                 val digit = otpCode.getOrNull(it) ?: ""
                 val isFocused = otpCode.length == it
                 Box(

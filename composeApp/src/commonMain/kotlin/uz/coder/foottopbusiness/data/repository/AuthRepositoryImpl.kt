@@ -9,6 +9,7 @@ import uz.coder.foottopbusiness.data.network.AuthApiService
 import uz.coder.foottopbusiness.data.network.dto.auth.LoginStatus
 import uz.coder.foottopbusiness.domain.repository.AuthRepository
 import uz.coder.foottopbusiness.domain.repository.LoginResult
+import kotlin.time.Clock
 
 class AuthRepositoryImpl(
     private val authApiService: AuthApiService,
@@ -32,13 +33,20 @@ class AuthRepositoryImpl(
             }
             else -> {
                 val access = normalizeBearerToken(response.resolvedAccessToken())
-                if (access == null) {
+                val refreshToken = normalizeBearerToken(response.refreshToken)
+                if (access == null || refreshToken == null) {
                     emit(LoginResult.InvalidOtp)
                     return@flow
                 }
-                
-                // 1. Save Token
+
+                // 1. Save tokens
+                val currentTime = Clock.System.now().toEpochMilliseconds()
                 preferencesManager.setToken(access)
+                preferencesManager.setRefreshToken(refreshToken)
+                val accessExpiresIn = response.resolvedAccessTokenExpiresIn() ?: 900L
+                val refreshExpiresIn = response.resolvedRefreshTokenExpiresIn() ?: 900L
+                preferencesManager.setAccessTokenExpiration(currentTime + accessExpiresIn * 1000L)
+                preferencesManager.setRefreshTokenExpiration(currentTime + refreshExpiresIn * 1000L)
                 
                 // 2. Mark as authorised immediately since we have a token
                 preferencesManager.setAuthorised(true)

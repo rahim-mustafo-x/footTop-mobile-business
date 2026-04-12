@@ -4,6 +4,9 @@ import uz.coder.foottopbusiness.core.log
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.domain.repository.StadiumRepository
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
+import kotlinx.datetime.toLocalDateTime
 
 class StadiumDetailsViewModel(
     stadium: StadiumResponse,
@@ -11,6 +14,36 @@ class StadiumDetailsViewModel(
 ) : BaseViewModel<StadiumDetailsContract.State, StadiumDetailsContract.Effect, StadiumDetailsContract.Event>(
     initialState = StadiumDetailsContract.State(stadium = stadium)
 ) {
+    init {
+        refreshStadium()
+    }
+
+    private fun refreshStadium() {
+        val currentStadium = state.value.stadium ?: return
+        val now = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        val dateStr = "${now.year}-${now.month.
+        number.toString().padStart(2, '0')}-${now.dayOfMonth.toString().padStart(2, '0')}"
+        
+        executeAsync(
+            onLoading = { updateState { copy(isLoading = true) } },
+            block = {
+                var result: List<StadiumResponse>? = null
+                stadiumRepository.getStadiumById(
+                    id = currentStadium.id ?: return@executeAsync emptyList(),
+                    date = dateStr,
+                    duration = currentStadium.duration ?: "01:00"
+                ).collect { result = it }
+                result
+            },
+            onSuccess = { list ->
+                updateState { copy(stadium = list?.firstOrNull() ?: currentStadium, isLoading = false) }
+            },
+            onError = {
+                updateState { copy(isLoading = false) }
+                sendEffect(StadiumDetailsContract.Effect.ShowToast("Ma'lumotlarni yangilashda xatolik: ${it.message}"))
+            }
+        )
+    }
     override fun handleEvent(event: StadiumDetailsContract.Event) {
         when (event) {
             StadiumDetailsContract.Event.BackClick -> sendEffect(StadiumDetailsContract.Effect.NavigateBack)
@@ -47,7 +80,23 @@ class StadiumDetailsViewModel(
             StadiumDetailsContract.Event.SavePitch -> {
                 savePitch()
             }
+            is StadiumDetailsContract.Event.SlotClick -> {
+                updateState { copy(selectedSlot = event.slot, showSlotActionDialog = true) }
+            }
+            StadiumDetailsContract.Event.DismissSlotDialog -> {
+                updateState { copy(showSlotActionDialog = false, selectedSlot = null) }
+            }
+            StadiumDetailsContract.Event.BookSlot -> {
+                bookSlot()
+            }
         }
+    }
+
+    private fun bookSlot() {
+        val slot = state.value.selectedSlot ?: return
+        // Trigger booking API
+        sendEffect(StadiumDetailsContract.Effect.ShowToast("Band qilish so'rovi yuborildi: ${slot.start}"))
+        updateState { copy(showSlotActionDialog = false, selectedSlot = null) }
     }
 
     private fun updateStatus(isActive: Boolean) {
@@ -89,6 +138,13 @@ class StadiumDetailsViewModel(
         val s = state.value
         if (s.pitchName.isBlank() || s.pitchStartTime.isBlank() || s.pitchEndTime.isBlank()) {
             sendEffect(StadiumDetailsContract.Effect.ShowToast("Barcha maydonlarni to'ldiring"))
+            return
+        }
+
+        // Validation for HH:mm format
+        val timeRegex = Regex("^([01]?[0-9]|2[0-3]):[0-5][0-9]$")
+        if (!timeRegex.matches(s.pitchStartTime) || !timeRegex.matches(s.pitchEndTime)) {
+            sendEffect(StadiumDetailsContract.Effect.ShowToast("Vaqt formati noto'g'ri (HH:mm)"))
             return
         }
 

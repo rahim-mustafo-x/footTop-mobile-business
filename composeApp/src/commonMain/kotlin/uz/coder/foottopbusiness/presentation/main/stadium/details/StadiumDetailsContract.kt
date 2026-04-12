@@ -3,6 +3,7 @@ package uz.coder.foottopbusiness.presentation.main.stadium.details
 import uz.coder.foottopbusiness.core.mvi.MviEffect
 import uz.coder.foottopbusiness.core.mvi.MviEvent
 import uz.coder.foottopbusiness.core.mvi.MviState
+import uz.coder.foottopbusiness.data.network.dto.stadium.SlotDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 
 // TODO: Pitch - name, start_time, end_time
@@ -21,7 +22,9 @@ sealed interface StadiumDetailsContract {
         val pitchName: String = "",
         val pitchStartTime: String = "",
         val pitchEndTime: String = "",
-        val pitches: List<PitchDto> = emptyList()
+        val pitches: List<PitchDto> = emptyList(),
+        val selectedSlot: SlotDto? = null,
+        val showSlotActionDialog: Boolean = false
     ) : MviState
 
     sealed interface Effect : MviEffect {
@@ -40,5 +43,8 @@ sealed interface StadiumDetailsContract {
         data class PitchStartTimeChanged(val time: String) : Event
         data class PitchEndTimeChanged(val time: String) : Event
         object SavePitch : Event
+        data class SlotClick(val slot: SlotDto) : Event
+        object DismissSlotDialog : Event
+        object BookSlot : Event
     }
 }

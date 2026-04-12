@@ -1,6 +1,11 @@
 package uz.coder.foottopbusiness.presentation.main.stadium.details
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -147,6 +152,50 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                         } ?: ""}")
 
                     Spacer(Modifier.height(24.dp))
+                    Text("Bo'sh vaqtlar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Primary)
+                    Spacer(Modifier.height(12.dp))
+
+                    if (stadium.slots.isNullOrEmpty()) {
+                        Text("Ma'lumot mavjud emas", fontSize = 14.sp, color = Color.Gray)
+                    } else {
+                        LazyVerticalGrid(
+                            columns = GridCells.Adaptive(80.dp),
+                            modifier = Modifier.heightIn(max = 400.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(stadium.slots) { slot ->
+                                val isAvailable = slot.status == "AVAILABLE"
+                                val isBooked = slot.status == "BOOKED"
+                                val isPast = slot.status == "PAST"
+                                val color = when {
+                                    isAvailable -> Color(0xFF4CAF50)
+                                    isBooked -> Color(0xFFF44336)
+                                    isPast -> Color.Gray
+                                    else -> Color.DarkGray
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .background(
+                                            color = color.copy(alpha = 0.1f),
+                                            shape = RoundedCornerShape(8.dp)
+                                        )
+                                        .clickable { viewModel.handleEvent(StadiumDetailsContract.Event.SlotClick(slot)) }
+                                        .padding(8.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = slot.start?.take(5) ?: "",
+                                        color = color,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(24.dp))
                     Text("Tavsif", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Primary)
                     Spacer(Modifier.height(8.dp))
                     Text(
@@ -230,6 +279,37 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
             dismissButton = {
                 TextButton(onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissAddPitchDialog) }) {
                     Text("Bekor qilish")
+                }
+            }
+        )
+    }
+
+    // Slot Action Dialog
+    if (state.showSlotActionDialog && state.selectedSlot != null) {
+        val slot = state.selectedSlot!!
+        AlertDialog(
+            onDismissRequest = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissSlotDialog) },
+            title = { Text("Vaqt: ${slot.start?.take(5)} - ${slot.end?.take(5)}", color = Primary) },
+            text = {
+                Column {
+                    Text("Holati: ${slot.status ?: "Noma'lum"}")
+                    Spacer(Modifier.height(8.dp))
+                    Text("Ushbu vaqtni band qilmoqchimisiz yoki holatini o'zgartirmoqchimisiz?")
+                }
+            },
+            confirmButton = {
+                if (slot.status == "AVAILABLE") {
+                    Button(
+                        onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.BookSlot) },
+                        colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                    ) {
+                        Text("Band qilish")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissSlotDialog) }) {
+                    Text("Yopish")
                 }
             }
         )

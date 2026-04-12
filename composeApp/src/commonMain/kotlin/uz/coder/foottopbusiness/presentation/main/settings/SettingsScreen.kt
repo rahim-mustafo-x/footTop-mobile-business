@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -61,6 +62,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import uz.coder.foottopbusiness.core.ui.Primary
 import uz.coder.foottopbusiness.presentation.auth.otp.SendOtpVoyager
 import uz.coder.foottopbusiness.presentation.main.settings.editprofile.EditProfileVoyager
+import uz.coder.foottopbusiness.presentation.main.settings.notification.SendNotificationVoyager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

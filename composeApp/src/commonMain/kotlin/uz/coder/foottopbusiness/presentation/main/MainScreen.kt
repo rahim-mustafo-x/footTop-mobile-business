@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Settings
@@ -63,6 +64,7 @@ import uz.coder.foottopbusiness.presentation.main.home.HomeContract
 import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
 import uz.coder.foottopbusiness.presentation.main.home.HomeVoyager
 import uz.coder.foottopbusiness.presentation.main.settings.SettingsVoyager
+import uz.coder.foottopbusiness.presentation.main.settings.notification.SendNotificationVoyager
 import uz.coder.foottopbusiness.presentation.main.stadium.StadiumVoyager
 import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.AddPitchScreen
 import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.AddPitchViewModel
@@ -91,6 +93,7 @@ fun MainScreen() {
             DrawerItem("Stadion", Icons.Default.Place) { StadiumVoyager.ContentWithNav(onNavigateToAddPitch = { showAddPitch = true }) },
             DrawerItem("Murabbiylar", Icons.Default.Person) { CoachesVoyager.Content() },
             DrawerItem("Turnirlar", Icons.Default.DateRange) { TournamentsVoyager.Content() },
+            DrawerItem("Xabarnoma yuborish", Icons.Default.Notifications) { SendNotificationVoyager.Content() },
             DrawerItem("Sozlamalar", Icons.Default.Settings) { SettingsVoyager.Content() },
         )
     }

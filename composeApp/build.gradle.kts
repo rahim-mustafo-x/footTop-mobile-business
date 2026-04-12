@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlin.serilization)
+    alias(libs.plugins.google.services)
 }
 
 kotlin {
@@ -32,12 +33,20 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.koin.android)
-            implementation(libs.androidx.datastore.preferences)
             implementation(libs.ktor.client.okhttp)
+
+            implementation(project.dependencies.platform(libs.firebase.bom))
+            implementation(libs.firebase.analytics)
+            implementation(libs.firebase.messaging)
+            implementation(libs.kotlinx.coroutines.play.services)
         }
         commonMain.dependencies {
             //icon
             implementation(compose.materialIconsExtended)
+
+            //datastore
+            implementation(libs.androidx.datastore)
+            implementation(libs.androidx.datastore.preferences)
 
             //ktor
             implementation(libs.ktor.client.core)

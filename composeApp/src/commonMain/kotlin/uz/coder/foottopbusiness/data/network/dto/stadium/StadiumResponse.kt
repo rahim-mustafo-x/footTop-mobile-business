@@ -29,5 +29,5 @@ data class StadiumResponse(
 data class SlotDto(
     @SerialName("start") val start: String? = null,
     @SerialName("end") val end: String? = null,
-    @SerialName("available") val available: Boolean? = null,
+    @SerialName("status") val status: String? = null,
 ) : KmpSerializable

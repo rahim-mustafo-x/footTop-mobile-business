@@ -16,7 +16,6 @@ import uz.coder.foottopbusiness.data.network.dto.stadium.LocationDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.PageStadiumResponseDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.domain.repository.StadiumRepository
-import kotlin.time.Clock
 
 class StadiumRepositoryImpl(
     private val stadiumApiService: StadiumApiService,
@@ -27,7 +26,7 @@ class StadiumRepositoryImpl(
         if (timeStr.contains("T")) return timeStr
         
         return try {
-            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            val now = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
             val datePart = "${now.year}-${now.month.number.toString().padStart(2, '0')}-${now.day.toString().padStart(2, '0')}"
             "${datePart}T${timeStr}:00"
         } catch (_: Exception) {
@@ -103,7 +102,7 @@ class StadiumRepositoryImpl(
                  closeTime = closeTime
              )
         } else {
-             val baseResponse = response.body<BaseResponse<StadiumResponse>>()
+             val baseResponse: BaseResponse<StadiumResponse> = response.body()
              baseResponse.data ?: throw Exception(baseResponse.message ?: "Xatolik yuz berdi")
         }
         

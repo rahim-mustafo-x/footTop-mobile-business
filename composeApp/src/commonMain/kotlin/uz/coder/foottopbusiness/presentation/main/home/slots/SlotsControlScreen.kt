@@ -26,8 +26,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -83,22 +81,7 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
             )
         },
         bottomBar = {
-            if (state.selectedSlot != null) {
-                Box(modifier = Modifier.padding(16.dp)) {
-                    Button(
-                        onClick = { /* Bron qilish */ },
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Primary)
-                    ) {
-                        Text(
-                            "Bron qilish ${state.selectedSlot.first.formatAsTime()} – ${state.selectedSlot.second.formatAsTime()}",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
+            // Booking action is intentionally disabled for available slots list.
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -205,7 +188,6 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(bgColor)
                                 .border(width = 1.dp, color = borderColor, shape = RoundedCornerShape(12.dp))
-                                .clickable(enabled = available) { viewModel.handleEvent(HomeContract.Event.SelectSlot(slot)) }
                                 .padding(vertical = 12.dp),
                             contentAlignment = Alignment.Center
                         ) {

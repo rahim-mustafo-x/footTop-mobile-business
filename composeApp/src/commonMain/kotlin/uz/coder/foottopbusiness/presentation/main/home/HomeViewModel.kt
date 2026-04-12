@@ -176,7 +176,7 @@ class HomeViewModel(
                     Triple(
                         LocalDateTime.parse(it.start ?: ""),
                         LocalDateTime.parse(it.end ?: ""),
-                        it.available?:false
+                        it.status == "AVAILABLE"
                     )
                 }?:emptyList()
                 updateState { copy(stadiumSlots = triples, isLoadingSlots = false) }

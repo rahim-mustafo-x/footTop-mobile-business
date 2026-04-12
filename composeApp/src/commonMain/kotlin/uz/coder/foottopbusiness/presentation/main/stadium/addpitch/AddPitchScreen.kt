@@ -47,6 +47,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -137,12 +138,17 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
         snackbarHost = { SnackbarHost(hostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Yangi stadion qo'shish", color = Primary, fontWeight = FontWeight.Bold) },
+                title = { Text("Yangi stadion", color = Color.White, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Primary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Primary,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
+                )
             )
         }
     ) { paddingValues ->
@@ -151,212 +157,234 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
+                .background(MaterialTheme.colorScheme.background)
+                .padding(horizontal = 16.dp, vertical = 20.dp)
         ) {
-            Spacer(Modifier.height(16.dp))
-
-            // --- IMAGE UPLOAD & PREVIEW SECTION ---
-            Text("Stadion muqovasi", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Primary)
-            Spacer(Modifier.height(8.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Primary.copy(alpha = 0.05f))
-                    .border(1.dp, Primary.copy(alpha = 0.2f), RoundedCornerShape(16.dp)),
-                contentAlignment = Alignment.Center
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                tonalElevation = 8.dp,
+                shadowElevation = 8.dp,
+                color = MaterialTheme.colorScheme.surface
             ) {
-                if (state.imageUrl.isBlank()) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.AddAPhoto, null, tint = Primary, modifier = Modifier.size(48.dp))
-                        Spacer(Modifier.height(8.dp))
-                        Text("Rasm URL manzilini kiriting", color = Primary, fontSize = 14.sp)
-                    }
-                } else {
-                    var isError by remember(state.imageUrl) { mutableStateOf(false) }
-                    var isLoading by remember(state.imageUrl) { mutableStateOf(true) }
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text("Stadion ma'lumotlarini to'ldiring", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = Primary)
+                    Spacer(Modifier.height(20.dp))
 
-                    AsyncImage(
-                        model = state.imageUrl,
-                        contentDescription = "Preview",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                        onSuccess = { isLoading = false; isError = false },
-                        onError = { isLoading = false; isError = true }
+                    Text("Stadion muqovasi", fontWeight = FontWeight.Medium, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Spacer(Modifier.height(12.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Primary.copy(alpha = 0.06f))
+                            .border(1.dp, Primary.copy(alpha = 0.2f), RoundedCornerShape(20.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (state.imageUrl.isBlank()) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(Icons.Default.AddAPhoto, null, tint = Primary, modifier = Modifier.size(44.dp))
+                                Spacer(Modifier.height(8.dp))
+                                Text("Rasm URL manzilini kiriting", color = Primary, fontSize = 14.sp)
+                            }
+                        } else {
+                            var isError by remember(state.imageUrl) { mutableStateOf(false) }
+                            var isLoading by remember(state.imageUrl) { mutableStateOf(true) }
+
+                            AsyncImage(
+                                model = state.imageUrl,
+                                contentDescription = "Preview",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop,
+                                onSuccess = { isLoading = false; isError = false },
+                                onError = { isLoading = false; isError = true }
+                            )
+
+                            if (isLoading) CircularProgressIndicator(color = Primary)
+
+                            Box(Modifier.fillMaxSize().padding(12.dp), contentAlignment = Alignment.TopEnd) {
+                                Surface(
+                                    color = (if (isError) Color.Red else Color(0xFF4CAF50)).copy(alpha = 0.9f),
+                                    shape = RoundedCornerShape(20.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            if (isError) Icons.Default.Error else Icons.Default.CheckCircle,
+                                            null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                        Spacer(Modifier.width(4.dp))
+                                        Text(
+                                            if (isError) "URL noto'g'ri" else "Internetda ko'rinadi",
+                                            color = Color.White,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = state.imageUrl,
+                        onValueChange = { viewModel.handleEvent(AddPitchContract.Event.ImageUrl(it)) },
+                        label = { Text("Rasm manzili (HTTP URL)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        singleLine = true,
+                        placeholder = { Text("https://...") },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        )
                     )
-                    
-                    if (isLoading) CircularProgressIndicator(color = Primary)
-                    
-                    // Status overlay
-                    Box(Modifier.fillMaxSize().padding(12.dp), contentAlignment = Alignment.TopEnd) {
-                        Surface(
-                            color = (if (isError) Color.Red else Color(0xFF4CAF50)).copy(alpha = 0.9f),
-                            shape = RoundedCornerShape(20.dp)
-                        ) {
-                            Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(if (isError) Icons.Default.Error else Icons.Default.CheckCircle, null, tint = Color.White, modifier = Modifier.size(14.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text(if (isError) "URL noto'g'ri" else "Internetda ko'rinadi", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+
+                    Spacer(Modifier.height(24.dp))
+                    Text("Stadion ma'lumotlari", fontWeight = FontWeight.Medium, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Spacer(Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = state.name,
+                        onValueChange = { viewModel.handleEvent(AddPitchContract.Event.Name(it)) },
+                        label = { Text("Stadion nomi") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { descFocus.requestFocus() })
+                    )
+                    Spacer(Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = state.description,
+                        onValueChange = { viewModel.handleEvent(AddPitchContract.Event.Description(it)) },
+                        label = { Text("Tavsif") },
+                        modifier = Modifier.fillMaxWidth().focusRequester(descFocus),
+                        shape = RoundedCornerShape(16.dp),
+                        minLines = 3,
+                        maxLines = 5,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.clearFocus() })
+                    )
+                    Spacer(Modifier.height(16.dp))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Box(Modifier.weight(1f)) {
+                            ExposedDropdownMenuBox(
+                                expanded = state.showRegionDropdown,
+                                onExpandedChange = { viewModel.handleEvent(AddPitchContract.Event.ShowRegionDropdown(it)) }
+                            ) {
+                                OutlinedTextField(
+                                    value = state.selectedRegion?.name ?: "Viloyat",
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showRegionDropdown) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                                ExposedDropdownMenu(
+                                    expanded = state.showRegionDropdown,
+                                    onDismissRequest = { viewModel.handleEvent(AddPitchContract.Event.ShowRegionDropdown(false)) }
+                                ) {
+                                    state.regions.forEach { region ->
+                                        DropdownMenuItem(
+                                            text = { Text(region.name) },
+                                            onClick = { viewModel.handleEvent(AddPitchContract.Event.SelectRegion(region)) }
+                                        )
+                                    }
+                                }
                             }
+                        }
+                        Box(Modifier.weight(1f)) {
+                            ExposedDropdownMenuBox(
+                                expanded = state.showDistrictDropdown,
+                                onExpandedChange = { if (state.selectedRegion != null) viewModel.handleEvent(AddPitchContract.Event.ShowDistrictDropdown(it)) }
+                            ) {
+                                OutlinedTextField(
+                                    value = state.selectedDistrict?.name ?: "Tuman",
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    enabled = state.selectedRegion != null,
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showDistrictDropdown) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                                ExposedDropdownMenu(
+                                    expanded = state.showDistrictDropdown && state.districts.isNotEmpty(),
+                                    onDismissRequest = { viewModel.handleEvent(AddPitchContract.Event.ShowDistrictDropdown(false)) }
+                                ) {
+                                    state.districts.forEach { district ->
+                                        DropdownMenuItem(
+                                            text = { Text(district.name ?: "") },
+                                            onClick = { viewModel.handleEvent(AddPitchContract.Event.SelectDistrict(district)) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(16.dp))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedTextField(
+                            value = state.capacity,
+                            onValueChange = { viewModel.handleEvent(AddPitchContract.Event.Capacity(it)) },
+                            label = { Text("Sig'imi") },
+                            modifier = Modifier.weight(1f).focusRequester(capacityFocus),
+                            shape = RoundedCornerShape(16.dp),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                            keyboardActions = KeyboardActions(onNext = { priceFocus.requestFocus() })
+                        )
+                        OutlinedTextField(
+                            value = state.pricePerHour,
+                            onValueChange = { viewModel.handleEvent(AddPitchContract.Event.PricePerHour(it)) },
+                            label = { Text("Narxi/soat") },
+                            modifier = Modifier.weight(1f).focusRequester(priceFocus),
+                            shape = RoundedCornerShape(16.dp),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
+                        )
+                    }
+                    Spacer(Modifier.height(16.dp))
+
+                    Text("Ish vaqti", fontWeight = FontWeight.Medium, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Spacer(Modifier.height(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        TimePickerField("Ochilishi", state.openTime, Modifier.weight(1f)) {
+                            showOpenTimePicker = true
+                        }
+                        TimePickerField("Yopilishi", state.closeTime, Modifier.weight(1f)) {
+                            showCloseTimePicker = true
+                        }
+                    }
+                    Spacer(Modifier.height(24.dp))
+
+                    Button(
+                        onClick = { viewModel.handleEvent(AddPitchContract.Event.Save) },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        enabled = !state.isLoading,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                    ) {
+                        if (state.isLoading) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                        } else {
+                            Text("Stadionni saqlash", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
             }
-            Spacer(Modifier.height(12.dp))
-            OutlinedTextField(
-                value = state.imageUrl,
-                onValueChange = { viewModel.handleEvent(AddPitchContract.Event.ImageUrl(it)) },
-                label = { Text("Rasm manzili (HTTP URL)") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-                placeholder = { Text("https://...") },
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Primary)
-            )
-            
             Spacer(Modifier.height(24.dp))
-            Text("Stadion ma'lumotlari", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Primary)
-            Spacer(Modifier.height(12.dp))
-
-            // Name
-            OutlinedTextField(
-                value = state.name,
-                onValueChange = { viewModel.handleEvent(AddPitchContract.Event.Name(it)) },
-                label = { Text("Stadion nomi") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(onNext = { descFocus.requestFocus() })
-            )
-            Spacer(Modifier.height(12.dp))
-
-            // Description
-            OutlinedTextField(
-                value = state.description,
-                onValueChange = { viewModel.handleEvent(AddPitchContract.Event.Description(it)) },
-                label = { Text("Tavsif") },
-                modifier = Modifier.fillMaxWidth().focusRequester(descFocus),
-                shape = RoundedCornerShape(12.dp),
-                minLines = 2,
-                maxLines = 4,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(onNext = { focusManager.clearFocus() })
-            )
-            Spacer(Modifier.height(12.dp))
-
-            // Region & District Dropdowns
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                // Region
-                Box(Modifier.weight(1f)) {
-                    ExposedDropdownMenuBox(
-                        expanded = state.showRegionDropdown,
-                        onExpandedChange = { viewModel.handleEvent(AddPitchContract.Event.ShowRegionDropdown(it)) }
-                    ) {
-                        OutlinedTextField(
-                            value = state.selectedRegion?.name ?: "Viloyat",
-                            onValueChange = {},
-                            readOnly = true,
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showRegionDropdown) },
-                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                        ExposedDropdownMenu(
-                            expanded = state.showRegionDropdown,
-                            onDismissRequest = { viewModel.handleEvent(AddPitchContract.Event.ShowRegionDropdown(false)) }
-                        ) {
-                            state.regions.forEach { region ->
-                                DropdownMenuItem(
-                                    text = { Text(region.name) },
-                                    onClick = { viewModel.handleEvent(AddPitchContract.Event.SelectRegion(region)) }
-                                )
-                            }
-                        }
-                    }
-                }
-                // District
-                Box(Modifier.weight(1f)) {
-                    ExposedDropdownMenuBox(
-                        expanded = state.showDistrictDropdown,
-                        onExpandedChange = { if (state.selectedRegion != null) viewModel.handleEvent(AddPitchContract.Event.ShowDistrictDropdown(it)) }
-                    ) {
-                        OutlinedTextField(
-                            value = state.selectedDistrict?.name ?: "Tuman",
-                            onValueChange = {},
-                            readOnly = true,
-                            enabled = state.selectedRegion != null,
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showDistrictDropdown) },
-                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                        ExposedDropdownMenu(
-                            expanded = state.showDistrictDropdown && state.districts.isNotEmpty(),
-                            onDismissRequest = { viewModel.handleEvent(AddPitchContract.Event.ShowDistrictDropdown(false)) }
-                        ) {
-                            state.districts.forEach { district ->
-                                DropdownMenuItem(
-                                    text = { Text(district.name?:"") },
-                                    onClick = { viewModel.handleEvent(AddPitchContract.Event.SelectDistrict(district)) }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-            Spacer(Modifier.height(12.dp))
-
-            // Capacity + Price
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = state.capacity,
-                    onValueChange = { viewModel.handleEvent(AddPitchContract.Event.Capacity(it)) },
-                    label = { Text("Sig'imi") },
-                    modifier = Modifier.weight(1f).focusRequester(capacityFocus),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(onNext = { priceFocus.requestFocus() })
-                )
-                OutlinedTextField(
-                    value = state.pricePerHour,
-                    onValueChange = { viewModel.handleEvent(AddPitchContract.Event.PricePerHour(it)) },
-                    label = { Text("Narxi/soat") },
-                    modifier = Modifier.weight(1f).focusRequester(priceFocus),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
-                )
-            }
-            Spacer(Modifier.height(12.dp))
-
-            // Time Selection
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                TimePickerField("Ochilishi", state.openTime, Modifier.weight(1f)) {
-                    showOpenTimePicker = true
-                }
-                TimePickerField("Yopilishi", state.closeTime, Modifier.weight(1f)) {
-                    showCloseTimePicker = true
-                }
-            }
-            Spacer(Modifier.height(32.dp))
-
-            // Save Button
-            Button(
-                onClick = { viewModel.handleEvent(AddPitchContract.Event.Save) },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                enabled = !state.isLoading,
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Primary)
-            ) {
-                if (state.isLoading) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                } else {
-                    Text("Stadionni saqlash", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-            Spacer(Modifier.height(40.dp))
         }
     }
 }
@@ -392,31 +420,34 @@ fun TimePickerDialog(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimePickerField(label: String, value: String, modifier: Modifier, onClick: () -> Unit) {
-    Box(
+    OutlinedTextField(
+        value = value,
+        onValueChange = {},
+        readOnly = true,
+        label = { Text(label) },
+        placeholder = { Text("Vaqtni tanlang") },
+        trailingIcon = {
+            Icon(
+                Icons.Outlined.AccessTime,
+                contentDescription = null,
+                tint = Primary
+            )
+        },
         modifier = modifier
-            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
-            .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
-            .padding(12.dp)
-    ) {
-        Column {
-            Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Outlined.AccessTime, contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                    tint = Primary
-                )
-                Text(
-                    text = value.ifBlank { "Vaqtni tanlang" },
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(start = 6.dp)
-                )
-            }
-        }
-    }
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        singleLine = true,
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = Primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+            disabledBorderColor = MaterialTheme.colorScheme.outline,
+            focusedLabelColor = Primary,
+            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    )
 }

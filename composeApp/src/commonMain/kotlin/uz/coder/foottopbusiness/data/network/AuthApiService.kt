@@ -9,12 +9,15 @@ import io.ktor.http.contentType
 import uz.coder.foottopbusiness.data.network.dto.BaseResponse
 import uz.coder.foottopbusiness.data.network.dto.auth.LoginRequest
 import uz.coder.foottopbusiness.data.network.dto.auth.LoginResponse
+import uz.coder.foottopbusiness.data.network.dto.auth.RefreshTokenRequest
 import uz.coder.foottopbusiness.data.network.dto.auth.SendOtpResponse
+import uz.coder.foottopbusiness.data.network.dto.auth.TokenResponse
 
 class AuthApiService(private val client: HttpClient) {
     companion object{
         private const val SEND_OTP_END_POINT = "/api/auth/send-otp"
         private const val LOGIN_END_POINT = "/api/auth/login"
+        private const val REFRESH_END_POINT = "/api/auth/refresh"
     }
     suspend fun sendOtp(phoneNumber: String) = client.post(SEND_OTP_END_POINT) {
         url{
@@ -26,4 +29,9 @@ class AuthApiService(private val client: HttpClient) {
         setBody(LoginRequest(phoneNumber, otpCode))
         contentType(ContentType.Application.Json)
     }.body<LoginResponse>()
+
+    suspend fun refreshToken(refreshToken: String) = client.post(REFRESH_END_POINT) {
+        setBody(RefreshTokenRequest(refreshToken))
+        contentType(ContentType.Application.Json)
+    }.body<TokenResponse>()
 }
