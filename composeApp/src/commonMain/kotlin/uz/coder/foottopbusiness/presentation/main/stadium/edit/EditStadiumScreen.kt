@@ -2,6 +2,7 @@ package uz.coder.foottopbusiness.presentation.main.stadium.edit
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -65,7 +66,6 @@ import coil3.compose.AsyncImage
 import uz.coder.foottopbusiness.core.BackHandler
 import uz.coder.foottopbusiness.core.ui.Primary
 import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.TimePickerDialog
-import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.TimePickerField
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -340,6 +340,31 @@ fun EditStadiumScreen(viewModel: EditStadiumViewModel, onBack: () -> Unit) {
                 }
             }
             Spacer(Modifier.height(40.dp))
+        }
+    }
+}
+
+@Composable
+fun TimePickerField(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Column(modifier = modifier) {
+        Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Primary)
+        Spacer(Modifier.height(4.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .background(Color.Transparent, RoundedCornerShape(12.dp))
+                .border(1.dp, Color.Gray.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                .clickable { onClick() }
+                .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Text(value, fontSize = 16.sp)
         }
     }
 }

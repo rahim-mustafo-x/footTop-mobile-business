@@ -31,12 +31,14 @@ import uz.coder.foottopbusiness.domain.usecase.stadium.UpdateOpenCloseTimeUseCas
 import uz.coder.foottopbusiness.domain.usecase.stadium.UpdateStadiumUseCase
 import uz.coder.foottopbusiness.domain.usecase.tournament.CreateTournamentUseCase
 import uz.coder.foottopbusiness.domain.usecase.tournament.GetTournamentsUseCase
+import uz.coder.foottopbusiness.domain.usecase.user.GetAllUsersUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.UserIdUseCase
 import uz.coder.foottopbusiness.presentation.auth.login.LoginViewModel
 import uz.coder.foottopbusiness.presentation.auth.otp.SendOtpViewModel
 import uz.coder.foottopbusiness.presentation.main.coaches.CoachesViewModel
 import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
+import uz.coder.foottopbusiness.presentation.main.home.user.UserCreateViewModel
 import uz.coder.foottopbusiness.presentation.main.settings.SettingsViewModel
 import uz.coder.foottopbusiness.presentation.main.settings.editprofile.EditProfileViewModel
 import uz.coder.foottopbusiness.presentation.main.settings.notification.SendNotificationViewModel
@@ -94,6 +96,7 @@ val appModule = module {
     factory { CreateTournamentUseCase(get()) }
     factory { GetMatchesUseCase(get()) }
     factory { GetUserUseCase(get()) }
+    factory { GetAllUsersUseCase(get()) }
     factory { UserIdUseCase(get()) }
     factory { SendNotificationUseCase(get()) }
     factory { SendToAllUseCase(get()) }
@@ -104,9 +107,9 @@ val appModule = module {
     factory { SplashViewModel(get()) }
     factory { SendOtpViewModel(get(), get(), get()) }
     factory { LoginViewModel(get(), get(), get(), get(), get()) }
-    single { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    factory { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { StadiumViewModel(get(), get()) }
-    factory { AddPitchViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    factory { AddPitchViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { (stadium: StadiumResponse) -> EditStadiumViewModel(stadium, get(), get(), get()) }
     factory { (stadium: StadiumResponse) -> StadiumDetailsViewModel(stadium, get()) }
     factory { CoachesViewModel(get(), get()) }
@@ -114,6 +117,7 @@ val appModule = module {
     factory { SettingsViewModel(get(), get()) }
     factory { EditProfileViewModel(get(), get()) }
     factory { SendNotificationViewModel(get()) }
+    factory { UserCreateViewModel(get()) }
 }
 
 expect fun platformModule(): Module

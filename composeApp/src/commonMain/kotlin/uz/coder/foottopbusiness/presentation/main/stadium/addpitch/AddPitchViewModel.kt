@@ -14,6 +14,7 @@ import uz.coder.foottopbusiness.domain.usecase.stadium.SaveDistrictIdUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.SaveRegionIdUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetSavedDistrictIdUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetSavedRegionIdUseCase
+import uz.coder.foottopbusiness.domain.usecase.user.UserIdUseCase
 
 class AddPitchViewModel(
     private val createStadiumUseCase: CreateStadiumUseCase,
@@ -23,6 +24,7 @@ class AddPitchViewModel(
     private val saveDistrictIdUseCase: SaveDistrictIdUseCase,
     private val getSavedRegionIdUseCase: GetSavedRegionIdUseCase,
     private val getSavedDistrictIdUseCase: GetSavedDistrictIdUseCase,
+    private val userIdUseCase: UserIdUseCase,
 ) : BaseViewModel<AddPitchContract.State, AddPitchContract.Effect, AddPitchContract.Event>(
     initialState = AddPitchContract.State()
 ) {
@@ -148,7 +150,8 @@ class AddPitchViewModel(
             block = {
                 val regionId = getSavedRegionIdUseCase().first()
                 val districtId = getSavedDistrictIdUseCase().first()
-                log(logLabel, "Using IDs: region=$regionId, district=$districtId")
+                val userId = userIdUseCase()
+                log(logLabel, "Using IDs: region=$regionId, district=$districtId, userId=$userId")
                 
                 createStadiumUseCase(
                     name = s.name,

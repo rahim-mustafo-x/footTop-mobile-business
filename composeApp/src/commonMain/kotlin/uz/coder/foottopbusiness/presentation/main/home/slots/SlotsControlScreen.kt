@@ -146,12 +146,12 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                 Text("Available Slots", fontWeight = FontWeight.Bold, fontSize = 20.sp)
                 Spacer(Modifier.height(8.dp))
                 
-                state.stadiumSlots.firstOrNull { it.third }?.let { earliest ->
+                state.stadiumSlots.firstOrNull { it.third }?.let { (start, _, _) ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.AccessTime, null, modifier = Modifier.size(18.dp), tint = Color(0xFF388E3C))
                         Spacer(Modifier.width(6.dp))
                         Text("Earliest available: ", fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                        Text(earliest.first.formatAsTime(), color = Color(0xFF388E3C), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(start.formatAsTime(), color = Color(0xFF388E3C), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
                 }
             }

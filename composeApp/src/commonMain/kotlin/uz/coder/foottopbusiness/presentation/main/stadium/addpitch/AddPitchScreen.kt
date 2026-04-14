@@ -1,75 +1,25 @@
 package uz.coder.foottopbusiness.presentation.main.stadium.addpitch
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AddAPhoto
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.outlined.AccessTime
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberTimePickerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import uz.coder.foottopbusiness.core.BackHandler
 import uz.coder.foottopbusiness.core.log
 import uz.coder.foottopbusiness.core.ui.Primary
@@ -78,12 +28,7 @@ import uz.coder.foottopbusiness.core.ui.Primary
 @Composable
 fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val focusManager = LocalFocusManager.current
     val hostState = remember { SnackbarHostState() }
-
-    val descFocus = remember { FocusRequester() }
-    val capacityFocus = remember { FocusRequester() }
-    val priceFocus = remember { FocusRequester() }
 
     BackHandler { onBack() }
 
@@ -136,20 +81,37 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState) },
+        containerColor = Color(0xFFF5F5F5),
         topBar = {
-            TopAppBar(
-                title = { Text("Yangi stadion", color = Color.White, fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
+            val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
+                    .background(Color(0xFF0F3D2E))
+                    .padding(top = statusBarPadding, start = 24.dp, end = 24.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 32.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White.copy(alpha = 0.1f))
+                    ) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Primary,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
-            )
+                    Spacer(Modifier.width(16.dp))
+                    Text(
+                        "Yangi stadion",
+                        color = Color.White,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
     ) { paddingValues ->
         Column(
@@ -157,235 +119,98 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = 16.dp, vertical = 20.dp)
+                .padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                tonalElevation = 8.dp,
-                shadowElevation = 8.dp,
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text("Stadion ma'lumotlarini to'ldiring", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = Primary)
-                    Spacer(Modifier.height(20.dp))
+            Text(
+                "${state.selectedRegion?.name ?: "Toshkent"}, ${state.selectedDistrict?.name ?: "Yunusobod"}",
+                color = Color.Gray,
+                fontSize = 16.sp
+            )
 
-                    Text("Stadion muqovasi", fontWeight = FontWeight.Medium, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
-                    Spacer(Modifier.height(12.dp))
+            LabelAndField("ANIQ MANZIL", state.name, "Ko'cha, uy raqami") {
+                viewModel.handleEvent(AddPitchContract.Event.Name(it))
+            }
 
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp)
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(Primary.copy(alpha = 0.06f))
-                            .border(1.dp, Primary.copy(alpha = 0.2f), RoundedCornerShape(20.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (state.imageUrl.isBlank()) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.Default.AddAPhoto, null, tint = Primary, modifier = Modifier.size(44.dp))
-                                Spacer(Modifier.height(8.dp))
-                                Text("Rasm URL manzilini kiriting", color = Primary, fontSize = 14.sp)
-                            }
-                        } else {
-                            var isError by remember(state.imageUrl) { mutableStateOf(false) }
-                            var isLoading by remember(state.imageUrl) { mutableStateOf(true) }
+            LabelAndField("MAYDONLAR SONI", state.capacity, "3", KeyboardType.Number) {
+                viewModel.handleEvent(AddPitchContract.Event.Capacity(it))
+            }
 
-                            AsyncImage(
-                                model = state.imageUrl,
-                                contentDescription = "Preview",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop,
-                                onSuccess = { isLoading = false; isError = false },
-                                onError = { isLoading = false; isError = true }
-                            )
+            LabelAndField("SPORT TURI", "Futbol", "Futbol") {
+                // TODO: Update sport type
+            }
 
-                            if (isLoading) CircularProgressIndicator(color = Primary)
+            LabelAndField("SOATLIK NARX (SO'M)", state.pricePerHour, "50 000", KeyboardType.Number) {
+                viewModel.handleEvent(AddPitchContract.Event.PricePerHour(it))
+            }
 
-                            Box(Modifier.fillMaxSize().padding(12.dp), contentAlignment = Alignment.TopEnd) {
-                                Surface(
-                                    color = (if (isError) Color.Red else Color(0xFF4CAF50)).copy(alpha = 0.9f),
-                                    shape = RoundedCornerShape(20.dp)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            if (isError) Icons.Default.Error else Icons.Default.CheckCircle,
-                                            null,
-                                            tint = Color.White,
-                                            modifier = Modifier.size(14.dp)
-                                        )
-                                        Spacer(Modifier.width(4.dp))
-                                        Text(
-                                            if (isError) "URL noto'g'ri" else "Internetda ko'rinadi",
-                                            color = Color.White,
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = state.imageUrl,
-                        onValueChange = { viewModel.handleEvent(AddPitchContract.Event.ImageUrl(it)) },
-                        label = { Text("Rasm manzili (HTTP URL)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        singleLine = true,
-                        placeholder = { Text("https://...") },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                        )
-                    )
-
-                    Spacer(Modifier.height(24.dp))
-                    Text("Stadion ma'lumotlari", fontWeight = FontWeight.Medium, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
-                    Spacer(Modifier.height(16.dp))
-
-                    OutlinedTextField(
-                        value = state.name,
-                        onValueChange = { viewModel.handleEvent(AddPitchContract.Event.Name(it)) },
-                        label = { Text("Stadion nomi") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                        keyboardActions = KeyboardActions(onNext = { descFocus.requestFocus() })
-                    )
-                    Spacer(Modifier.height(12.dp))
-
-                    OutlinedTextField(
-                        value = state.description,
-                        onValueChange = { viewModel.handleEvent(AddPitchContract.Event.Description(it)) },
-                        label = { Text("Tavsif") },
-                        modifier = Modifier.fillMaxWidth().focusRequester(descFocus),
-                        shape = RoundedCornerShape(16.dp),
-                        minLines = 3,
-                        maxLines = 5,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                        keyboardActions = KeyboardActions(onNext = { focusManager.clearFocus() })
-                    )
-                    Spacer(Modifier.height(16.dp))
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Box(Modifier.weight(1f)) {
-                            ExposedDropdownMenuBox(
-                                expanded = state.showRegionDropdown,
-                                onExpandedChange = { viewModel.handleEvent(AddPitchContract.Event.ShowRegionDropdown(it)) }
-                            ) {
-                                OutlinedTextField(
-                                    value = state.selectedRegion?.name ?: "Viloyat",
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showRegionDropdown) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(16.dp)
-                                )
-                                ExposedDropdownMenu(
-                                    expanded = state.showRegionDropdown,
-                                    onDismissRequest = { viewModel.handleEvent(AddPitchContract.Event.ShowRegionDropdown(false)) }
-                                ) {
-                                    state.regions.forEach { region ->
-                                        DropdownMenuItem(
-                                            text = { Text(region.name) },
-                                            onClick = { viewModel.handleEvent(AddPitchContract.Event.SelectRegion(region)) }
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                        Box(Modifier.weight(1f)) {
-                            ExposedDropdownMenuBox(
-                                expanded = state.showDistrictDropdown,
-                                onExpandedChange = { if (state.selectedRegion != null) viewModel.handleEvent(AddPitchContract.Event.ShowDistrictDropdown(it)) }
-                            ) {
-                                OutlinedTextField(
-                                    value = state.selectedDistrict?.name ?: "Tuman",
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    enabled = state.selectedRegion != null,
-                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showDistrictDropdown) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(16.dp)
-                                )
-                                ExposedDropdownMenu(
-                                    expanded = state.showDistrictDropdown && state.districts.isNotEmpty(),
-                                    onDismissRequest = { viewModel.handleEvent(AddPitchContract.Event.ShowDistrictDropdown(false)) }
-                                ) {
-                                    state.districts.forEach { district ->
-                                        DropdownMenuItem(
-                                            text = { Text(district.name ?: "") },
-                                            onClick = { viewModel.handleEvent(AddPitchContract.Event.SelectDistrict(district)) }
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(16.dp))
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedTextField(
-                            value = state.capacity,
-                            onValueChange = { viewModel.handleEvent(AddPitchContract.Event.Capacity(it)) },
-                            label = { Text("Sig'imi") },
-                            modifier = Modifier.weight(1f).focusRequester(capacityFocus),
-                            shape = RoundedCornerShape(16.dp),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                            keyboardActions = KeyboardActions(onNext = { priceFocus.requestFocus() })
-                        )
-                        OutlinedTextField(
-                            value = state.pricePerHour,
-                            onValueChange = { viewModel.handleEvent(AddPitchContract.Event.PricePerHour(it)) },
-                            label = { Text("Narxi/soat") },
-                            modifier = Modifier.weight(1f).focusRequester(priceFocus),
-                            shape = RoundedCornerShape(16.dp),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-                            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
-                        )
-                    }
-                    Spacer(Modifier.height(16.dp))
-
-                    Text("Ish vaqti", fontWeight = FontWeight.Medium, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
-                    Spacer(Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        TimePickerField("Ochilishi", state.openTime, Modifier.weight(1f)) {
-                            showOpenTimePicker = true
-                        }
-                        TimePickerField("Yopilishi", state.closeTime, Modifier.weight(1f)) {
-                            showCloseTimePicker = true
-                        }
-                    }
-                    Spacer(Modifier.height(24.dp))
-
-                    Button(
-                        onClick = { viewModel.handleEvent(AddPitchContract.Event.Save) },
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        enabled = !state.isLoading,
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Primary)
-                    ) {
-                        if (state.isLoading) {
-                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                        } else {
-                            Text("Stadionni saqlash", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
+            Column {
+                Text("ISH VAQTI", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(state.openTime, fontSize = 16.sp, modifier = Modifier.clickable { showOpenTimePicker = true })
+                    Text("          ", fontSize = 16.sp)
+                    Text(state.closeTime, fontSize = 16.sp, modifier = Modifier.clickable { showCloseTimePicker = true })
                 }
             }
+
+            Column {
+                Text("RASM YUKLASH", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Spacer(Modifier.height(12.dp))
+                Button(
+                    onClick = { /* TODO: Image picker */ },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                ) {
+                    Text("Rasm tanlang")
+                }
+            }
+
             Spacer(Modifier.height(24.dp))
+
+            Button(
+                onClick = { viewModel.handleEvent(AddPitchContract.Event.Save) },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                enabled = !state.isLoading,
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F3D2E))
+            ) {
+                if (state.isLoading) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text("Saqlash", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun LabelAndField(
+    label: String,
+    value: String,
+    placeholder: String,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    onValueChange: (String) -> Unit
+) {
+    Column {
+        Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+        TextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text(placeholder, color = Color.Gray) },
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent,
+                focusedIndicatorColor = Color.LightGray,
+                unfocusedIndicatorColor = Color.LightGray
+            )
+        )
     }
 }
 
@@ -417,37 +242,5 @@ fun TimePickerDialog(
                 TimePicker(state = timePickerState)
             }
         }
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TimePickerField(label: String, value: String, modifier: Modifier, onClick: () -> Unit) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = {},
-        readOnly = true,
-        label = { Text(label) },
-        placeholder = { Text("Vaqtni tanlang") },
-        trailingIcon = {
-            Icon(
-                Icons.Outlined.AccessTime,
-                contentDescription = null,
-                tint = Primary
-            )
-        },
-        modifier = modifier
-            .clickable(onClick = onClick)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        singleLine = true,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = Primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-            disabledBorderColor = MaterialTheme.colorScheme.outline,
-            focusedLabelColor = Primary,
-            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     )
 }

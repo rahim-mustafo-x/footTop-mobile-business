@@ -20,8 +20,18 @@ class UserRepositoryImpl(
         response.data?.let { emit(it) }
     }
 
+    override fun createUser(dto: UserRequestDto) = flow {
+        val response = api.createUser(dto)
+        response.data?.let { emit(it) }
+    }
+
     override fun updateUser(id: Long, dto: UserRequestDto) = flow {
         val response = api.updateUser(id, dto)
+        response.data?.let { emit(it) }
+    }
+
+    override fun getAllUsers() = flow {
+        val response = api.getAllUsers()
         response.data?.let { emit(it) }
     }
 

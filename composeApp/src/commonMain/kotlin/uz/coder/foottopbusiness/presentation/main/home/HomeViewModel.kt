@@ -13,6 +13,7 @@ import uz.coder.foottopbusiness.domain.usecase.stadium.GetStadiumByIdUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetStadiumsUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.UpdateOpenCloseTimeUseCase
 import uz.coder.foottopbusiness.domain.usecase.tournament.GetTournamentsUseCase
+import uz.coder.foottopbusiness.domain.usecase.user.GetAllUsersUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import kotlinx.datetime.TimeZone
@@ -28,6 +29,7 @@ class HomeViewModel(
     private val logoutUseCase: LogoutUseCase,
     private val getStadiumByIdUseCase: GetStadiumByIdUseCase,
     private val getUserUseCase: GetUserUseCase,
+    private val getAllUsersUseCase: GetAllUsersUseCase,
     private val preferencesManager: PreferencesManager,
 ) : BaseViewModel<HomeContract.State, HomeContract.Effect, HomeContract.Event>(
     initialState = HomeContract.State(
@@ -196,6 +198,8 @@ class HomeViewModel(
                 }
             }.zip(getMatchesUseCase()) { _, matches ->
                 updateState { copy(totalMatches = matches.size) }
+            }.zip(getAllUsersUseCase()) { _, users ->
+                updateState { copy(totalUsers = users.size) }
             }.collect {}
         }
     }

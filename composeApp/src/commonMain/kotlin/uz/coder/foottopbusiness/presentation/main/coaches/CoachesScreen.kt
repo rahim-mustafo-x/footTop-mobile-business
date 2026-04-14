@@ -1,26 +1,34 @@
 package uz.coder.foottopbusiness.presentation.main.coaches
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uz.coder.foottopbusiness.core.ui.Primary
 import uz.coder.foottopbusiness.data.network.dto.CoachResponseDto
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CoachesScreen(viewModel: CoachesViewModel) {
     val state by viewModel.state.collectAsState()
@@ -51,16 +59,106 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
     }
 
     Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(onClick = { viewModel.handleEvent(CoachesContract.Event.ShowCreateDialog) }, containerColor = Primary) {
-                Icon(Icons.Default.Add, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White)
+        containerColor = Color(0xFFF5F5F5),
+        topBar = {
+            val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
+                    .background(Color(0xFF0F3D2E))
+                    .padding(top = statusBarPadding, start = 24.dp, end = 24.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 32.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Foydalanuvchilar",
+                        color = Color.White,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(
+                        onClick = { viewModel.handleEvent(CoachesContract.Event.ShowCreateDialog) },
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White.copy(alpha = 0.1f))
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
+                    }
+                }
             }
         }
-    ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = paddingValues.calculateTopPadding(), start = paddingValues.calculateStartPadding(
+                    LayoutDirection.Ltr), end = paddingValues.calculateEndPadding(LayoutDirection.Rtl))
+                .background(Color(0xFFF5F5F5))
+        ) {
+            // Search and Filters
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedTextField(
+                        value = state.searchQuery,
+                        onValueChange = { viewModel.handleEvent(CoachesContract.Event.Search(it)) },
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text("Qidirish...", color = Color.Gray) },
+                        leadingIcon = { Icon(Icons.Default.Search, null, tint = Color.Gray) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
+                    )
+                    Text("Filter", color = Color.Gray, fontSize = 14.sp)
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                val filterTabs = listOf("Barchasi", "Admin", "Egasi", "Coach")
+
+                ScrollableTabRow(
+                    selectedTabIndex = state.selectedRoleFilter,
+                    edgePadding = 0.dp,
+                    containerColor = Color.Transparent,
+                    divider = {},
+                    indicator = {}
+                ) {
+                    filterTabs.forEachIndexed { index, title ->
+                            Tab(
+                                selected = state.selectedRoleFilter == index,
+                                onClick = { viewModel.handleEvent(CoachesContract.Event.FilterByRole(index)) },
+                                modifier = Modifier
+                                    .padding(end = 8.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(if (state.selectedRoleFilter == index) Color(0xFF0F3D2E) else Color.White)
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                            ) {
+                                Text(
+                                    title,
+                                    color = if (state.selectedRoleFilter == index) Color.White else Color.Black,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+            }
+
             when {
                 state.isLoading || state.isCreating -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Primary)
+                    CircularProgressIndicator(color = Color(0xFF0F3D2E))
                 }
                 state.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -68,17 +166,13 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
                         TextButton(onClick = { viewModel.handleEvent(CoachesContract.Event.Load) }) { Text("Qayta urinish") }
                     }
                 }
-                state.coaches.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.Person, null, modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                        Spacer(Modifier.height(8.dp))
-                        Text("Murabbiylar yo'q", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-                else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(state.coaches, key = { it.id ?: 0L }) { coach ->
-                        CoachCard(coach = coach, onClick = { viewModel.handleEvent(CoachesContract.Event.SelectCoach(coach)) })
+                else -> LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(state.filteredCoaches, key = { it.id ?: 0L }) { coach ->
+                        UserListItem(coach = coach, onClick = { viewModel.handleEvent(CoachesContract.Event.SelectCoach(coach)) })
                     }
                 }
             }
@@ -87,15 +181,64 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
 }
 
 @Composable
+private fun UserListItem(coach: CoachResponseDto, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Avatar
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFF5F5F5)),
+                contentAlignment = Alignment.Center
+            ) {
+                val initial = coach.coachName?.firstOrNull()?.toString() ?: "U"
+                Text(initial, color = Color(0xFF0F3D2E), fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(Modifier.width(12.dp))
+
+            // Info
+            Column(modifier = Modifier.weight(1f)) {
+                Text(coach.coachName ?: "—", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color.Black)
+                Text(coach.specialty ?: "user@malaeb.uz", fontSize = 12.sp, color = Color.Gray)
+            }
+
+            // Role and Action
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Coach", color = Color(0xFF2196F3), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                IconButton(onClick = {}) {
+                    Icon(Icons.Default.MoreVert, null, tint = Color.LightGray, modifier = Modifier.size(20.dp))
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 private fun CreateCoachDialog(
     onDismiss: () -> Unit,
     onCreate: (userId: Long, specialty: String, experienceYears: Int, hourlyRate: Double, availability: String?) -> Unit,
 ) {
     var userId by remember { mutableStateOf("") }
-    var specialty by remember { mutableStateOf("") }
+    var specialty by remember { mutableStateOf("MURABBIY") }
     var expYears by remember { mutableStateOf("") }
     var hourlyRate by remember { mutableStateOf("") }
     var availability by remember { mutableStateOf("") }
+
+    val specialties = listOf("MURABBIY", "ADMIN", "EGASI")
+    var expanded by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -105,8 +248,37 @@ private fun CreateCoachDialog(
                 OutlinedTextField(value = userId, onValueChange = { userId = it.filter { c -> c.isDigit() } },
                     label = { Text("Foydalanuvchi ID") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                OutlinedTextField(value = specialty, onValueChange = { specialty = it },
-                    label = { Text("Mutaxassislik") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = specialty,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Mutaxassislik") },
+                        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        specialties.forEach { item ->
+                            DropdownMenuItem(
+                                text = { Text(item) },
+                                onClick = {
+                                    specialty = item
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
                 OutlinedTextField(value = expYears, onValueChange = { expYears = it.filter { c -> c.isDigit() } },
                     label = { Text("Tajriba (yil)") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
@@ -131,25 +303,6 @@ private fun CreateCoachDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Bekor qilish") } }
     )
-}
-
-@Composable
-private fun CoachCard(coach: CoachResponseDto, onClick: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp), elevation = CardDefaults.cardElevation(2.dp)) {
-        Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.Person, null, modifier = Modifier.size(40.dp), tint = Primary)
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(coach.coachName ?: "—", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                Text(coach.specialty ?: "—", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text("${coach.hourlyRate?.toInt() ?: 0} so'm/soat", fontSize = 12.sp, color = Primary)
-                Text("${coach.experienceYears ?: 0} yil", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

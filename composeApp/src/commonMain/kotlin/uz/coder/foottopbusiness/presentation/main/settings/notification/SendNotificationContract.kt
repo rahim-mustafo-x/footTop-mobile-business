@@ -8,6 +8,7 @@ sealed interface SendNotificationContract {
     data class State(
         val title: String = "",
         val body: String = "",
+        val type: String = "SYSTEM",
         val isLoading: Boolean = false,
         val isSuccess: Boolean = false
     ) : MviState
@@ -15,6 +16,7 @@ sealed interface SendNotificationContract {
     sealed interface Event : MviEvent {
         data class UpdateTitle(val title: String) : Event
         data class UpdateBody(val body: String) : Event
+        data class UpdateType(val type: String) : Event
         data object SendToAll : Event
         data object ResetSuccess : Event
     }

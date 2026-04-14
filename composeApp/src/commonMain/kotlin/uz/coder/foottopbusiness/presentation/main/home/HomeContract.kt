@@ -24,6 +24,7 @@ sealed interface HomeContract {
         val activeStadiums: Int = 0,
         val totalTournaments: Int = 0,
         val totalMatches: Int = 0,
+        val totalUsers: Int = 0,
         
         // stadiums & slots
         val stadiums: List<StadiumResponse> = emptyList(),

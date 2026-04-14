@@ -9,11 +9,13 @@ import org.koin.core.parameter.parametersOf
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.presentation.main.stadium.details.StadiumDetailsScreen
 import uz.coder.foottopbusiness.presentation.main.stadium.details.StadiumDetailsViewModel
+import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.AddPitchVoyager
 
 object StadiumVoyager : Screen {
     @Composable
     override fun Content() {
-        ContentWithNav()
+        val navigator = LocalNavigator.currentOrThrow
+        ContentWithNav(onNavigateToAddPitch = { navigator.push(AddPitchVoyager) })
     }
 
     @Composable

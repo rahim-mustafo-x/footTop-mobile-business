@@ -8,6 +8,9 @@ import uz.coder.foottopbusiness.data.network.dto.CoachResponseDto
 sealed interface CoachesContract {
     data class State(
         val coaches: List<CoachResponseDto> = emptyList(),
+        val filteredCoaches: List<CoachResponseDto> = emptyList(),
+        val searchQuery: String = "",
+        val selectedRoleFilter: Int = 0, // 0: All, 1: Admin, 2: Owner, 3: Coach
         val isLoading: Boolean = false,
         val error: String? = null,
         val selectedCoach: CoachResponseDto? = null,
@@ -32,5 +35,7 @@ sealed interface CoachesContract {
             val hourlyRate: Double,
             val availability: String?,
         ) : Event
+        data class Search(val query: String) : Event
+        data class FilterByRole(val roleIndex: Int) : Event
     }
 }

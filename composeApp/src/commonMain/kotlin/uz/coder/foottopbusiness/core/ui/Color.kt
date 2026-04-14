@@ -4,19 +4,19 @@ import androidx.compose.ui.graphics.Color
 
 // Sports / Football Oriented Palette
 // Light Theme
-val Primary = Color(0xFF2E7D32) // Deep Pitch Green
+val Primary = Color(0xFF0F3D2E) // Deep Pitch Green (Mockup Primary)
 val OnPrimary = Color(0xFFFFFFFF)
 val Secondary = Color(0xFF1B5E20) // Darker Turf Green
 val OnSecondary = Color(0xFFFFFFFF)
 val Tertiary = Color(0xFFFFA000) // Trophy Gold / Warning Yellow
 val OnTertiary = Color(0xFF000000)
-val Background = Color(0xFFF1F8E9) // Very Light Mint/Grass
+val Background = Color(0xFFF8F9FA) // Lighter greyish background from mockup
 val OnBackground = Color(0xFF1B1B1B)
 val Surface = Color(0xFFFFFFFF)
 val OnSurface = Color(0xFF1B1B1B)
-val SurfaceVariant = Color(0xFFE8F5E9)
-val OnSurfaceVariant = Color(0xFF424242)
-val Outline = Color(0xFFBDBDBD)
+val SurfaceVariant = Color(0xFFF1F4F2)
+val OnSurfaceVariant = Color(0xFF666666)
+val Outline = Color(0xFFE0E0E0)
 
 // Dark Theme (Night Game Vibe)
 val PrimaryDark = Color(0xFF81C784) // Bright Grass Green

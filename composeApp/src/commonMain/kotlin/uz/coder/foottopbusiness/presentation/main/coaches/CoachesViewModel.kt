@@ -20,7 +20,7 @@ class CoachesViewModel(
                 updateState { copy(isLoading = true, error = null) }
                 executeAsync(
                     block = { getCoachesUseCase().let { flow -> var result = emptyList<CoachResponseDto>(); flow.collect { result = it }; result } },
-                    onSuccess = { updateState { copy(coaches = it, isLoading = false) } },
+                    onSuccess = { updateState { copy(coaches = it, filteredCoaches = it, isLoading = false) } },
                     onError = { updateState { copy(error = it.message, isLoading = false) } }
                 )
             }
@@ -46,6 +46,7 @@ class CoachesViewModel(
                     },
                     onSuccess = { created ->
                         updateState { copy(isCreating = false, coaches = coaches + created) }
+                        applyFilter()
                         sendEffect(CoachesContract.Effect.ShowToast("Murabbiy qo'shildi"))
                     },
                     onError = {
@@ -54,6 +55,38 @@ class CoachesViewModel(
                     }
                 )
             }
+            is CoachesContract.Event.Search -> {
+                updateState { copy(searchQuery = event.query) }
+                applyFilter()
+            }
+            is CoachesContract.Event.FilterByRole -> {
+                updateState { copy(selectedRoleFilter = event.roleIndex) }
+                applyFilter()
+            }
         }
+    }
+
+    private fun applyFilter() {
+        val state = state.value
+        val query = state.searchQuery.lowercase()
+        val roleIndex = state.selectedRoleFilter
+
+        val filtered = state.coaches.filter { coach ->
+            val matchesQuery = query.isEmpty() ||
+                coach.coachName?.lowercase()?.contains(query) == true ||
+                coach.specialty?.lowercase()?.contains(query) == true
+
+            val matchesRole = when (roleIndex) {
+                0 -> true // All
+                1 -> coach.specialty == "ADMIN"
+                2 -> coach.specialty == "EGASI" || coach.specialty == "OWNER"
+                3 -> coach.specialty == "MURABBIY" || coach.specialty == "COACH"
+                else -> true
+            }
+
+            matchesQuery && matchesRole
+        }
+
+        updateState { copy(filteredCoaches = filtered) }
     }
 }

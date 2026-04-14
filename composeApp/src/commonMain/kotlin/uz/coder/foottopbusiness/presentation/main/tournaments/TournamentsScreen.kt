@@ -11,21 +11,30 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import uz.coder.foottopbusiness.presentation.main.tournaments.create.TournamentCreateScreen
 import uz.coder.foottopbusiness.core.ui.Primary
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TournamentsScreen(viewModel: TournamentsViewModel) {
     val state by viewModel.state.collectAsState()
+    val navigator = LocalNavigator.currentOrThrow
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
@@ -43,23 +52,103 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
         return
     }
 
-    if (state.showCreateDialog) {
-        CreateTournamentDialog(
-            onDismiss = { viewModel.handleEvent(TournamentsContract.Event.HideCreateDialog) },
-            onCreate = { name, start, end, maxTeams, fee, address ->
-                viewModel.handleEvent(TournamentsContract.Event.Create(name, start, end, maxTeams, fee, address))
-            }
-        )
-    }
-
     Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(onClick = { viewModel.handleEvent(TournamentsContract.Event.ShowCreateDialog) }, containerColor = Primary) {
-                Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
+        topBar = {
+            val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
+                    .background(Color(0xFF0F3D2E))
+                    .padding(top = statusBarPadding + 16.dp, start = 24.dp, end = 24.dp, bottom = 32.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Turnirlar",
+                        color = Color.White,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(
+                        onClick = { navigator.push(TournamentCreateScreen()) },
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White.copy(alpha = 0.1f))
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
+                    }
+                }
             }
         }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = padding.calculateTopPadding(), start = padding.calculateStartPadding(
+                    LayoutDirection.Rtl), end = padding.calculateEndPadding(LayoutDirection.Ltr))
+                .background(Color(0xFFF5F5F5))
+        ) {
+            // Search and Filters
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedTextField(
+                        value = "",
+                        onValueChange = {},
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text("Qidirish...", color = Color.Gray) },
+                        leadingIcon = { Icon(Icons.Default.Search, null, tint = Color.Gray) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                val filterTabs = listOf("Barchasi", "Kutilmoqda", "Davom etmoqda", "Tugagan")
+                var selectedFilterIndex by remember { mutableStateOf(0) }
+
+                ScrollableTabRow(
+                    selectedTabIndex = selectedFilterIndex,
+                    edgePadding = 0.dp,
+                    containerColor = Color.Transparent,
+                    divider = {},
+                    indicator = {}
+                ) {
+                    filterTabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedFilterIndex == index,
+                            onClick = { selectedFilterIndex = index },
+                            modifier = Modifier
+                                .padding(end = 8.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(if (selectedFilterIndex == index) Color(0xFF0F3D2E) else Color.White)
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                        ) {
+                            Text(
+                                title,
+                                color = if (selectedFilterIndex == index) Color.White else Color.Black,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            }
+
             when {
                 state.isLoading || state.isCreating -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = Primary)
@@ -78,7 +167,11 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
                         Text("Turnirlar yo'q", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                else -> LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     items(state.tournaments, key = { it.id ?: 0L }) { t ->
                         TournamentCard(t, onClick = { viewModel.handleEvent(TournamentsContract.Event.Select(t)) })
                     }
@@ -140,22 +233,61 @@ private fun CreateTournamentDialog(
 
 @Composable
 private fun TournamentCard(t: TournamentResponseDto, onClick: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp), elevation = CardDefaults.cardElevation(2.dp)) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(t.name ?: "—", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                    Spacer(Modifier.height(2.dp))
-                    Text("${t.startDate ?: "—"} – ${t.endDate ?: "—"}", fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                StatusChip(t.status)
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Icon
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFFF5F5F5)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.EmojiEvents,
+                    contentDescription = null,
+                    tint = Color(0xFF0F3D2E),
+                    modifier = Modifier.size(20.dp)
+                )
             }
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                InfoChip("${t.teamApplied ?: 0}/${t.maxTeams ?: 0} jamoa")
-                InfoChip("${t.entryFee?.toInt() ?: 0} so'm")
+
+            Spacer(Modifier.width(12.dp))
+
+            // Info
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    t.name ?: "—",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                    color = Color.Black
+                )
+                Text(
+                    "${t.startDate ?: "—"} - ${t.endDate ?: "—"}",
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
+            }
+
+            // Status and Badge
+            Column(horizontalAlignment = Alignment.End) {
+                StatusChip(t.status)
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "${t.teamApplied ?: 0}/${t.maxTeams ?: 0} jamoa",
+                    fontSize = 11.sp,
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
     }
@@ -168,7 +300,8 @@ private fun TournamentDetailScreen(tournament: TournamentResponseDto, onBack: ()
         TopAppBar(title = { Text(tournament.name ?: "Turnir") },
             navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } })
     }) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
+        Column(modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding(), start = padding.calculateStartPadding(
+            LayoutDirection.Ltr), end = padding.calculateEndPadding(LayoutDirection.Rtl)).padding(16.dp)) {
             Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = Primary)) {
                 Column(modifier = Modifier.padding(20.dp)) {

@@ -2,6 +2,7 @@ package uz.coder.foottopbusiness.core
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
@@ -133,6 +134,14 @@ class SessionManager(private val preferencesManager: PreferencesManager) {
                     }
                 }
                 level = LogLevel.ALL
+            }
+            expectSuccess = true
+            HttpResponseValidator {
+                validateResponse {
+                    if (it.status.value==500){
+                        emitEvent(SessionEvent.Logout)
+                    }
+                }
             }
         }
 

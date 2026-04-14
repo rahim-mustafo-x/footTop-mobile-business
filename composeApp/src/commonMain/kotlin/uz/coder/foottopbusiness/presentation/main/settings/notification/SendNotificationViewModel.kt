@@ -18,6 +18,7 @@ class SendNotificationViewModel(
         when (event) {
             is SendNotificationContract.Event.UpdateTitle -> updateState { copy(title = event.title) }
             is SendNotificationContract.Event.UpdateBody -> updateState { copy(body = event.body) }
+            is SendNotificationContract.Event.UpdateType -> updateState { copy(type = event.type) }
             SendNotificationContract.Event.SendToAll -> sendNotification()
             SendNotificationContract.Event.ResetSuccess -> updateState { copy(isSuccess = false) }
         }
@@ -26,6 +27,7 @@ class SendNotificationViewModel(
     private fun sendNotification() {
         val title = state.value.title
         val body = state.value.body
+        val type = state.value.type
 
         if (title.isBlank() || body.isBlank()) {
             sendEffect(SendNotificationContract.Effect.ShowToast("Iltimos, barcha maydonlarni to'ldiring"))
@@ -51,7 +53,7 @@ class SendNotificationViewModel(
             val request = NotificationRequest(
                 title = title,
                 body = body,
-                type = "SYSTEM",
+                type = type,
                 targetType = "ALL"
             )
             sendToAllUseCase(request).first()

@@ -18,9 +18,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Stadium
 import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,6 +26,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -36,6 +35,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.compose.AsyncImage
 import kotlinx.datetime.LocalDateTime
 import uz.coder.foottopbusiness.core.formatAsTime
+import uz.coder.foottopbusiness.core.formatToTime
 import uz.coder.foottopbusiness.core.ui.Primary
 import uz.coder.foottopbusiness.presentation.main.stadium.edit.EditStadiumVoyager
 
@@ -89,7 +89,8 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
+                    .padding(top = paddingValues.calculateTopPadding(), start = paddingValues.calculateStartPadding(
+                        LayoutDirection.Ltr), end = paddingValues.calculateEndPadding(LayoutDirection.Rtl))
                     .verticalScroll(rememberScrollState())
             ) {
                 // Image Header
@@ -143,13 +144,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     DetailItem(Icons.Default.Stadium, "Tur", stadium.type ?: "Football")
                     DetailItem(Icons.Default.Stadium, "Sig'im", "${stadium.capacity ?: 0} kishi")
                     DetailItem(Icons.Default.Stadium, "Narx", "${stadium.pricePerHour?.toInt() ?: 0} so'm/soat")
-                    DetailItem(Icons.Default.Stadium, "Ish vaqti", "${
-                        stadium.openTime?.let {
-                            try { LocalDateTime.parse(it).formatAsTime() } catch (_: Exception) { it.take(5) }
-                        } ?: ""} - ${
-                        stadium.closeTime?.let { 
-                            try { LocalDateTime.parse(it).formatAsTime() } catch (_: Exception) { it.take(5) }
-                        } ?: ""}")
+                    DetailItem(Icons.Default.Stadium, "Ish vaqti", "${stadium.openTime.formatToTime()} - ${stadium.closeTime.formatToTime()}")
 
                     Spacer(Modifier.height(24.dp))
                     Text("Bo'sh vaqtlar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Primary)
@@ -185,7 +180,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        text = slot.start?.take(5) ?: "",
+                                        text = slot.start.formatToTime(),
                                         color = color,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 14.sp
@@ -239,6 +234,37 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
 
     // Add Pitch Dialog
     if (state.showAddPitchDialog) {
+        var showStartTimePicker by remember { mutableStateOf(false) }
+        var showEndTimePicker by remember { mutableStateOf(false) }
+
+        if (showStartTimePicker) {
+            val initialHour = try { state.pitchStartTime.split(":")[0].toInt() } catch (_: Exception) { 9 }
+            val initialMinute = try { state.pitchStartTime.split(":")[1].toInt() } catch (_: Exception) { 0 }
+            uz.coder.foottopbusiness.presentation.main.stadium.addpitch.TimePickerDialog(
+                initialHour = initialHour,
+                initialMinute = initialMinute,
+                onDismiss = { showStartTimePicker = false },
+                onConfirm = { h, m ->
+                    viewModel.handleEvent(StadiumDetailsContract.Event.PitchStartTimeChanged("${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}"))
+                    showStartTimePicker = false
+                }
+            )
+        }
+
+        if (showEndTimePicker) {
+            val initialHour = try { state.pitchEndTime.split(":")[0].toInt() } catch (_: Exception) { 18 }
+            val initialMinute = try { state.pitchEndTime.split(":")[1].toInt() } catch (_: Exception) { 0 }
+            uz.coder.foottopbusiness.presentation.main.stadium.addpitch.TimePickerDialog(
+                initialHour = initialHour,
+                initialMinute = initialMinute,
+                onDismiss = { showEndTimePicker = false },
+                onConfirm = { h, m ->
+                    viewModel.handleEvent(StadiumDetailsContract.Event.PitchEndTimeChanged("${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}"))
+                    showEndTimePicker = false
+                }
+            )
+        }
+
         AlertDialog(
             onDismissRequest = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissAddPitchDialog) },
             title = { Text("Pitch qo'shish", color = Primary, fontWeight = FontWeight.Bold) },
@@ -251,23 +277,31 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
+                    
                     OutlinedTextField(
                         value = state.pitchStartTime,
-                        onValueChange = { viewModel.handleEvent(StadiumDetailsContract.Event.PitchStartTimeChanged(it)) },
-                        label = { Text("Boshlanish vaqti (HH:mm)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        placeholder = { Text("09:00") }
+                        onValueChange = { },
+                        label = { Text("Boshlanish vaqti") },
+                        modifier = Modifier.fillMaxWidth().clickable { showStartTimePicker = true },
+                        enabled = false,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                            disabledBorderColor = MaterialTheme.colorScheme.outline,
+                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
+
                     OutlinedTextField(
                         value = state.pitchEndTime,
-                        onValueChange = { viewModel.handleEvent(StadiumDetailsContract.Event.PitchEndTimeChanged(it)) },
-                        label = { Text("Tugash vaqti (HH:mm)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        placeholder = { Text("18:00") }
+                        onValueChange = { },
+                        label = { Text("Tugash vaqti") },
+                        modifier = Modifier.fillMaxWidth().clickable { showEndTimePicker = true },
+                        enabled = false,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                            disabledBorderColor = MaterialTheme.colorScheme.outline,
+                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
                 }
             },
@@ -289,7 +323,11 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
         val slot = state.selectedSlot!!
         AlertDialog(
             onDismissRequest = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissSlotDialog) },
-            title = { Text("Vaqt: ${slot.start?.take(5)} - ${slot.end?.take(5)}", color = Primary) },
+            title = { 
+                val startTime = slot.start.formatToTime()
+                val endTime = slot.end.formatToTime()
+                Text("Vaqt: $startTime - $endTime", color = Primary) 
+            },
             text = {
                 Column {
                     Text("Holati: ${slot.status ?: "Noma'lum"}")

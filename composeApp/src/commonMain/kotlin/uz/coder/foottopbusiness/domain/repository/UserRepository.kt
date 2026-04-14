@@ -6,6 +6,8 @@ import uz.coder.foottopbusiness.data.network.dto.UserRequestDto
 
 interface UserRepository {
     fun getUserById(id: Long): Flow<UserDto>
+    fun createUser(dto: UserRequestDto): Flow<UserDto>
     fun updateUser(id: Long, dto: UserRequestDto): Flow<UserDto>
+    fun getAllUsers(): Flow<List<UserDto>>
     suspend fun userId(): Long
 }

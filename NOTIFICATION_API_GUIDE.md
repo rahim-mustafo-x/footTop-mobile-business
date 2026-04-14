@@ -198,7 +198,44 @@ Barcha o'qilmagan notificationlarni bir vaqtda o'qilgan deb belgilash.
 
 ## 8. Push notification qabul qilish (Mobile)
 
-Backend FCM orqali push yuboradi. Mobile tarafda quyidagi holatlar uchun push notification keladi:
+Backend FCM orqali push yuboradi. Mobile tarafda quyidagi holatlar uchun push notification keladi.
+
+### Push payload formati
+
+Har bir push notification `notification` va `data` bloklaridan iborat:
+
+```json
+{
+  "notification": {
+    "title": "Bron tasdiqlandi",
+    "body": "Mega Arena stadioniga 2026-04-10T15:00 da broningiz tasdiqlandi"
+  },
+  "data": {
+    "notificationId": "15",
+    "type": "BOOKING",
+    "targetType": "USER"
+  }
+}
+```
+
+**`data` fieldlari:**
+
+| Field | Type | Tavsif |
+|-------|------|--------|
+| `notificationId` | String | Notification ID — `PUT /{id}/read` uchun ishlatiladi |
+| `type` | String | `BOOKING`, `MATCH`, `TOURNAMENT`, `SYSTEM` — qaysi ekranga o'tkazish kerakligini aniqlash uchun |
+| `targetType` | String | `USER` (shaxsiy) yoki `ALL` (umumiy) |
+
+> **Muhim:** FCM `data` fieldlari doimo `String` tipida keladi. Mobile tarafda parse qilish kerak.
+
+### `type` bo'yicha navigatsiya
+
+| type | Qaysi ekranga o'tkazish kerak |
+|------|-------------------------------|
+| `BOOKING` | Booking detail ekrani |
+| `MATCH` | Match detail ekrani |
+| `TOURNAMENT` | Tournament detail ekrani |
+| `SYSTEM` | Umumiy notification ekrani |
 
 ### Avtomatik pushlar (backend event orqali)
 
@@ -228,23 +265,37 @@ Admin yoki stadion egasi ixtiyoriy matnda push yuborishi mumkin (aksiya, yangili
 ```kotlin
 class MyFirebaseService : FirebaseMessagingService() {
 
-    // Yangi token olinganda
     override fun onNewToken(token: String) {
-        // Backend ga yangi tokenni yuborish
         api.registerDeviceToken(
             DeviceTokenRequest(userId, token, "ANDROID")
         )
     }
 
-    // Push kelganda
     override fun onMessageReceived(message: RemoteMessage) {
         val title = message.notification?.title ?: return
         val body = message.notification?.body ?: return
 
-        showNotification(title, body)
+        // data payload dan type va notificationId ni olish
+        val data = message.data
+        val type = data["type"]                   // "BOOKING", "MATCH", ...
+        val notificationId = data["notificationId"] // "15"
+        val targetType = data["targetType"]         // "USER", "ALL"
 
-        // Notification ro'yxatini yangilash
-        // (agar ilova ochiq bo'lsa, LiveData/Flow orqali UI ni yangilang)
+        showNotification(title, body, type, notificationId)
+    }
+
+    private fun showNotification(title: String, body: String, type: String?, notificationId: String?) {
+        // type ga qarab qaysi ekranga o'tkazishni aniqlash
+        val intent = when (type) {
+            "BOOKING"    -> Intent(this, BookingDetailActivity::class.java)
+            "MATCH"      -> Intent(this, MatchDetailActivity::class.java)
+            "TOURNAMENT" -> Intent(this, TournamentDetailActivity::class.java)
+            else         -> Intent(this, NotificationListActivity::class.java)
+        }
+        intent.putExtra("notificationId", notificationId)
+
+        // PendingIntent va NotificationCompat.Builder bilan notification ko'rsatish
+        // ...
     }
 }
 ```
