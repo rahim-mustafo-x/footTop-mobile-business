@@ -1,5 +1,6 @@
 package uz.coder.foottopbusiness.presentation.main.home.history
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,14 +25,14 @@ import androidx.compose.ui.unit.sp
 import kotlinx.datetime.LocalDateTime
 import uz.coder.foottopbusiness.core.formatAsDate
 import uz.coder.foottopbusiness.core.formatAsTime
-import uz.coder.foottopbusiness.core.ui.Primary
+import androidx.compose.material3.MaterialTheme
 import uz.coder.foottopbusiness.data.network.dto.MatchResponseDto
 import uz.coder.foottopbusiness.presentation.main.home.HomeContract
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(state: HomeContract.State) {
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Row(
             modifier = Modifier.padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -49,7 +50,8 @@ fun HistoryScreen(state: HomeContract.State) {
                 Text(
                     text = "Yaqindagi o'yinlar",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             }
             items(state.matches) { match ->
@@ -65,26 +67,26 @@ private fun MatchRow(match: MatchResponseDto, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("Match #${match.id}", fontWeight = FontWeight.Bold)
+                Text("Match #${match.id}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 Text(
                     match.dateTime?.let { LocalDateTime.parse(it) }?.formatAsDate() ?: "",
-                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
                 Text(
                     match.dateTime?.let { LocalDateTime.parse(it) }?.formatAsTime() ?: "",
-                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
             }
             Text(
                 "${match.pricePerPlayer?.toInt()} so'm",
-                color = Primary,
+                color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold
             )
         }

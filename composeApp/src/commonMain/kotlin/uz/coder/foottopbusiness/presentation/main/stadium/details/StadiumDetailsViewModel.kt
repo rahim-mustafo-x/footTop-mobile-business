@@ -86,17 +86,7 @@ class StadiumDetailsViewModel(
             StadiumDetailsContract.Event.DismissSlotDialog -> {
                 updateState { copy(showSlotActionDialog = false, selectedSlot = null) }
             }
-            StadiumDetailsContract.Event.BookSlot -> {
-                bookSlot()
-            }
         }
-    }
-
-    private fun bookSlot() {
-        val slot = state.value.selectedSlot ?: return
-        // Trigger booking API
-        sendEffect(StadiumDetailsContract.Effect.ShowToast("Band qilish so'rovi yuborildi: ${slot.start}"))
-        updateState { copy(showSlotActionDialog = false, selectedSlot = null) }
     }
 
     private fun updateStatus(isActive: Boolean) {

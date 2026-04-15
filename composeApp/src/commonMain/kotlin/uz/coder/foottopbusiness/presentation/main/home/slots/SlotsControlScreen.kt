@@ -51,7 +51,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import uz.coder.foottopbusiness.core.formatAsTime
-import uz.coder.foottopbusiness.core.ui.Primary
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.presentation.main.home.HomeContract
 import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
@@ -109,10 +108,10 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                         modifier = Modifier
                             .width(64.dp)
                             .clip(RoundedCornerShape(16.dp))
-                            .background(if (isSelected) Primary else MaterialTheme.colorScheme.surface)
+                            .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface)
                             .border(
                                 width = 1.dp,
-                                color = if (isSelected) Primary else MaterialTheme.colorScheme.outlineVariant,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                                 shape = RoundedCornerShape(16.dp)
                             )
                             .clickable { viewModel.handleEvent(HomeContract.Event.ChangeDate(dateStr)) }
@@ -121,7 +120,7 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                     ) {
                         Text(
                             text = day,
-                            color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
+                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp
                         )
@@ -134,7 +133,7 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                         if (label.isNotEmpty()) {
                             Text(
                                 text = label,
-                                color = if (isSelected) Color.White.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 10.sp
                             )
                         }
@@ -146,19 +145,19 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                 Text("Available Slots", fontWeight = FontWeight.Bold, fontSize = 20.sp)
                 Spacer(Modifier.height(8.dp))
                 
-                state.stadiumSlots.firstOrNull { it.third }?.let { (start, _, _) ->
+            state.stadiumSlots.firstOrNull { it.third }?.let { (start, _, _) ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.AccessTime, null, modifier = Modifier.size(18.dp), tint = Color(0xFF388E3C))
+                        Icon(Icons.Default.AccessTime, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(6.dp))
                         Text("Earliest available: ", fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                        Text(start.formatAsTime(), color = Color(0xFF388E3C), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(start.formatAsTime(), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
                 }
             }
 
             if (state.isLoadingSlots) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { 
-                    CircularProgressIndicator(color = Primary) 
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) 
                 }
             } else if (state.stadiumSlots.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -179,9 +178,12 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                     items(state.stadiumSlots) { slot ->
                         val (start, _, available) = slot
                         val isSelected = state.selectedSlot == slot
-                        val baseColor = if (!available) Color(0xFFF44336) else if (isSelected) Color.White else Color(0xFF388E3C)
-                        val bgColor = if (!available) Color(0xFFF44336).copy(alpha = 0.1f) else if (isSelected) Color(0xFF388E3C) else Color(0xFF388E3C).copy(alpha = 0.1f)
-                        val borderColor = if (isSelected) Color(0xFF388E3C) else baseColor.copy(alpha = 0.3f)
+                        val successColor = MaterialTheme.colorScheme.primary
+                        val errorColor = MaterialTheme.colorScheme.error
+                        
+                        val baseColor = if (!available) errorColor else if (isSelected) MaterialTheme.colorScheme.onPrimary else successColor
+                        val bgColor = if (!available) errorColor.copy(alpha = 0.1f) else if (isSelected) successColor else successColor.copy(alpha = 0.1f)
+                        val borderColor = if (isSelected) successColor else baseColor.copy(alpha = 0.3f)
 
                         Box(
                             modifier = Modifier
@@ -205,13 +207,13 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    LegendItem("Bo'sh", Color(0xFF388E3C))
+                    LegendItem("Bo'sh", MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.width(16.dp))
-                    LegendItem("Band", Color(0xFFF44336))
+                    LegendItem("Band", MaterialTheme.colorScheme.error)
                     Spacer(Modifier.width(16.dp))
-                    LegendItem("Sig'maydi", Color.LightGray)
+                    LegendItem("Sig'maydi", MaterialTheme.colorScheme.outline)
                     Spacer(Modifier.width(16.dp))
-                    LegendItem("O'tib ketgan", Color.LightGray)
+                    LegendItem("O'tib ketgan", MaterialTheme.colorScheme.outline)
                 }
             }
         }
@@ -225,12 +227,12 @@ fun DurationChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
             .height(48.dp)
             .width(100.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(if (isSelected) Primary else Color.White)
-            .border(1.dp, if (isSelected) Primary else Color.LightGray.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+            .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface)
+            .border(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Text(text, color = if (isSelected) Color.White else Color.Black, fontWeight = FontWeight.Bold)
+        Text(text, color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -239,6 +241,6 @@ fun LegendItem(label: String, color: Color) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(10.dp).clip(CircleShape).background(color))
         Spacer(Modifier.width(6.dp))
-        Text(label, fontSize = 12.sp, color = Color.Gray)
+        Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

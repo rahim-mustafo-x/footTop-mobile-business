@@ -15,6 +15,10 @@ sealed interface HomeContract {
         val currentTab: Int = 0, // 0: Home, 1: History, 2: Profile
         val showStadiumTable: Boolean = false,
         
+        // Role info
+        val isAdmin: Boolean = false,
+        val isOwner: Boolean = false,
+        
         // User info
         val user: UserDto? = null,
         val isLoadingUser: Boolean = false,
@@ -56,6 +60,13 @@ sealed interface HomeContract {
         val matches: List<MatchResponseDto> = emptyList(),
         val isLoadingMatches: Boolean = false,
         val selectedMatch: MatchResponseDto? = null,
+        
+        // Dynamic home data
+        val coaches: List<uz.coder.foottopbusiness.data.network.dto.CoachResponseDto> = emptyList(),
+        val isLoadingCoaches: Boolean = false,
+        
+        // Notification permission
+        val showNotificationPermissionDialog: Boolean = false,
     ) : MviState
 
     sealed interface Effect : MviEffect {
@@ -96,5 +107,8 @@ sealed interface HomeContract {
         object Stadium: Event
         object Match: Event
         object Tournament: Event
+        
+        data class SetShowNotificationPermissionDialog(val show: Boolean) : Event
+        object RequestNotificationPermission : Event
     }
 }

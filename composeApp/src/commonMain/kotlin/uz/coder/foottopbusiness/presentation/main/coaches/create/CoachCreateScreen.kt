@@ -41,6 +41,8 @@ class CoachCreateScreen : Screen {
         val navigator = LocalNavigator.currentOrThrow
         val viewModel = koinInject<CoachesViewModel>()
         val state by viewModel.state.collectAsState()
+        val userState by koinInject<uz.coder.foottopbusiness.presentation.main.settings.SettingsViewModel>().state.collectAsState()
+        val isAdmin = userState.user?.roles?.any { it.name == "ROLE_ADMIN" } ?: false
 
         var userId by remember { mutableStateOf("") }
         var specialty by remember { mutableStateOf("MURABBIY") }
@@ -48,7 +50,7 @@ class CoachCreateScreen : Screen {
         var hourlyRate by remember { mutableStateOf("") }
         var availability by remember { mutableStateOf("") }
 
-        val specialties = listOf("MURABBIY", "ADMIN", "EGASI")
+        val specialties = if (isAdmin) listOf("MURABBIY", "ADMIN", "EGASI") else listOf("MURABBIY")
         var expanded by remember { mutableStateOf(false) }
 
         val snackbarHostState = remember { SnackbarHostState() }
@@ -72,18 +74,18 @@ class CoachCreateScreen : Screen {
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                        .background(Color(0xFF0F3D2E))
+                        .background(MaterialTheme.colorScheme.primary)
                         .padding(top = statusBarPadding + 16.dp, start = 8.dp, end = 24.dp, bottom = 32.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(onClick = { navigator.pop() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = MaterialTheme.colorScheme.onPrimary)
                         }
                         Text(
                             "Coach qo'shish",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -96,7 +98,7 @@ class CoachCreateScreen : Screen {
                     .fillMaxSize()
                     .padding(top = padding.calculateTopPadding(), start = padding.calculateStartPadding(
                         LayoutDirection.Ltr), end = padding.calculateEndPadding(LayoutDirection.Rtl))
-                    .background(Color(0xFFF5F5F5))
+                    .background(MaterialTheme.colorScheme.surface)
                     .verticalScroll(rememberScrollState())
                     .padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -105,7 +107,7 @@ class CoachCreateScreen : Screen {
                     "Murabbiy ma'lumotlari",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 CoachInputField(
@@ -117,42 +119,59 @@ class CoachCreateScreen : Screen {
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Mutaxassislik", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.Gray)
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = !expanded },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
+                    Text("Mutaxassislik", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (isAdmin) {
+                        ExposedDropdownMenuBox(
+                            expanded = expanded,
+                            onExpandedChange = { expanded = !expanded },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedTextField(
+                                value = specialty,
+                                onValueChange = {},
+                                readOnly = true,
+                                modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+                                leadingIcon = { Icon(Icons.Default.Badge, null, tint = MaterialTheme.colorScheme.primary) },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                                )
+                            )
+                            ExposedDropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false },
+                                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                            ) {
+                                specialties.forEach { item ->
+                                    DropdownMenuItem(
+                                        text = { Text(item) },
+                                        onClick = {
+                                            specialty = item
+                                            expanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    } else {
                         OutlinedTextField(
                             value = specialty,
                             onValueChange = {},
                             readOnly = true,
-                            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
-                            leadingIcon = { Icon(Icons.Default.Badge, null, tint = Color(0xFF0F3D2E)) },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                            modifier = Modifier.fillMaxWidth(),
+                            leadingIcon = { Icon(Icons.Default.Badge, null, tint = MaterialTheme.colorScheme.primary) },
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFF0F3D2E),
-                                unfocusedBorderColor = Color.LightGray,
-                                focusedContainerColor = Color.White,
-                                unfocusedContainerColor = Color.White
-                            )
+                                disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                disabledContainerColor = MaterialTheme.colorScheme.surface,
+                                disabledTextColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            enabled = false
                         )
-                        ExposedDropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false },
-                            modifier = Modifier.background(Color.White)
-                        ) {
-                            specialties.forEach { item ->
-                                DropdownMenuItem(
-                                    text = { Text(item) },
-                                    onClick = {
-                                        specialty = item
-                                        expanded = false
-                                    }
-                                )
-                            }
-                        }
                     }
                 }
 
@@ -180,7 +199,7 @@ class CoachCreateScreen : Screen {
                 )
 
                 if (state.error != null) {
-                    Text(state.error!!, color = Color.Red, fontSize = 14.sp)
+                    Text(state.error!!, color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
                 }
 
                 Spacer(Modifier.weight(1f))
@@ -201,13 +220,13 @@ class CoachCreateScreen : Screen {
                         .fillMaxWidth()
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F3D2E)),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     enabled = !state.isCreating && userId.isNotBlank() && specialty.isNotBlank()
                 ) {
                     if (state.isCreating) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                     } else {
-                        Text("Saqlash", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("Saqlash", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
             }
@@ -223,19 +242,19 @@ class CoachCreateScreen : Screen {
         keyboardType: KeyboardType = KeyboardType.Text
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(label, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.Gray)
+            Text(label, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             OutlinedTextField(
                 value = value,
                 onValueChange = onValueChange,
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(icon, null, tint = Color(0xFF0F3D2E)) },
+                leadingIcon = { Icon(icon, null, tint = MaterialTheme.colorScheme.primary) },
                 shape = RoundedCornerShape(12.dp),
                 keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF0F3D2E),
-                    unfocusedBorderColor = Color.LightGray,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
                 )
             )
         }

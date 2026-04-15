@@ -1,6 +1,7 @@
 package uz.coder.foottopbusiness.presentation.main.stadium.addpitch
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -22,7 +23,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import uz.coder.foottopbusiness.core.BackHandler
 import uz.coder.foottopbusiness.core.log
-import uz.coder.foottopbusiness.core.ui.Primary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,14 +81,14 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState) },
-        containerColor = Color(0xFFF5F5F5),
+        containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                    .background(Color(0xFF0F3D2E))
+                    .background(MaterialTheme.colorScheme.primary)
                     .padding(top = statusBarPadding, start = 24.dp, end = 24.dp)
             ) {
                 Row(
@@ -99,14 +99,14 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                         onClick = onBack,
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
-                            .background(Color.White.copy(alpha = 0.1f))
+                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f))
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
                     }
                     Spacer(Modifier.width(16.dp))
                     Text(
                         "Yangi stadion",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -123,21 +123,38 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                "${state.selectedRegion?.name ?: "Toshkent"}, ${state.selectedDistrict?.name ?: "Yunusobod"}",
-                color = Color.Gray,
-                fontSize = 16.sp
+                "Maydon haqida",
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
             )
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Box(modifier = Modifier.weight(1f)) {
+                    RegionDropdown(state, viewModel)
+                }
+                Box(modifier = Modifier.weight(1f)) {
+                    DistrictDropdown(state, viewModel)
+                }
+            }
 
             LabelAndField("ANIQ MANZIL", state.name, "Ko'cha, uy raqami") {
                 viewModel.handleEvent(AddPitchContract.Event.Name(it))
             }
 
-            LabelAndField("MAYDONLAR SONI", state.capacity, "3", KeyboardType.Number) {
-                viewModel.handleEvent(AddPitchContract.Event.Capacity(it))
+            LabelAndField("TAVSIF (DESCRIPTION)", state.description, "Stadion haqida qo'shimcha ma'lumot...", singleLine = false) {
+                viewModel.handleEvent(AddPitchContract.Event.Description(it))
             }
 
-            LabelAndField("SPORT TURI", "Futbol", "Futbol") {
-                // TODO: Update sport type
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Box(modifier = Modifier.weight(1f)) {
+                    LabelAndField("MAYDONLAR SONI", state.capacity, "3", KeyboardType.Number) {
+                        viewModel.handleEvent(AddPitchContract.Event.Capacity(it))
+                    }
+                }
+                Box(modifier = Modifier.weight(1f)) {
+                    SportTypeDropdown(state, viewModel)
+                }
             }
 
             LabelAndField("SOATLIK NARX (SO'M)", state.pricePerHour, "50 000", KeyboardType.Number) {
@@ -145,23 +162,44 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
             }
 
             Column {
-                Text("ISH VAQTI", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Text("ISH VAQTI", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
                 Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(state.openTime, fontSize = 16.sp, modifier = Modifier.clickable { showOpenTimePicker = true })
-                    Text("          ", fontSize = 16.sp)
-                    Text(state.closeTime, fontSize = 16.sp, modifier = Modifier.clickable { showCloseTimePicker = true })
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surface)
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        state.openTime.ifBlank { "08:00" },
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.clickable { showOpenTimePicker = true }.weight(1f)
+                    )
+                    Text("-", modifier = Modifier.padding(horizontal = 8.dp))
+                    Text(
+                        state.closeTime.ifBlank { "22:00" },
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.clickable { showCloseTimePicker = true }.weight(1f),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End
+                    )
                 }
             }
 
             Column {
-                Text("RASM YUKLASH", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Text("RASM YUKLASH", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 Spacer(Modifier.height(12.dp))
                 Button(
                     onClick = { /* TODO: Image picker */ },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
                 ) {
                     Text("Rasm tanlang")
@@ -175,10 +213,13 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 enabled = !state.isLoading,
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F3D2E))
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
             ) {
                 if (state.isLoading) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                 } else {
                     Text("Saqlash", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
@@ -193,24 +234,165 @@ private fun LabelAndField(
     value: String,
     placeholder: String,
     keyboardType: KeyboardType = KeyboardType.Text,
+    singleLine: Boolean = true,
     onValueChange: (String) -> Unit
 ) {
     Column {
-        Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-        TextField(
+        Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(placeholder, color = Color.Gray) },
+            placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent,
-                focusedIndicatorColor = Color.LightGray,
-                unfocusedIndicatorColor = Color.LightGray
+            singleLine = singleLine,
+            minLines = if (singleLine) 1 else 3,
+            maxLines = if (singleLine) 1 else 5,
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface
             )
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RegionDropdown(
+    state: AddPitchContract.State,
+    viewModel: AddPitchViewModel
+) {
+    Column {
+        Text("VILOYAT", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
+        Spacer(Modifier.height(8.dp))
+        ExposedDropdownMenuBox(
+            expanded = state.showRegionDropdown,
+            onExpandedChange = { viewModel.handleEvent(AddPitchContract.Event.ShowRegionDropdown(it)) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            OutlinedTextField(
+                value = state.selectedRegion?.name ?: "Tanlang",
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showRegionDropdown) },
+                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                )
+            )
+            ExposedDropdownMenu(
+                expanded = state.showRegionDropdown,
+                onDismissRequest = { viewModel.handleEvent(AddPitchContract.Event.ShowRegionDropdown(false)) }
+            ) {
+                state.regions.forEach { region ->
+                    DropdownMenuItem(
+                        text = { Text(region.name ?: "") },
+                        onClick = {
+                            viewModel.handleEvent(AddPitchContract.Event.SelectRegion(region))
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DistrictDropdown(
+    state: AddPitchContract.State,
+    viewModel: AddPitchViewModel
+) {
+    Column {
+        Text("TUMAN/SHAHAR", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
+        Spacer(Modifier.height(8.dp))
+        ExposedDropdownMenuBox(
+            expanded = state.showDistrictDropdown,
+            onExpandedChange = { viewModel.handleEvent(AddPitchContract.Event.ShowDistrictDropdown(it)) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            OutlinedTextField(
+                value = state.selectedDistrict?.name ?: "Tanlang",
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showDistrictDropdown) },
+                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                )
+            )
+            ExposedDropdownMenu(
+                expanded = state.showDistrictDropdown,
+                onDismissRequest = { viewModel.handleEvent(AddPitchContract.Event.ShowDistrictDropdown(false)) }
+            ) {
+                state.districts.forEach { district ->
+                    DropdownMenuItem(
+                        text = { Text(district.name ?: "") },
+                        onClick = {
+                            viewModel.handleEvent(AddPitchContract.Event.SelectDistrict(district))
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SportTypeDropdown(
+    state: AddPitchContract.State,
+    viewModel: AddPitchViewModel
+) {
+    Column {
+        Text("SPORT TURI", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
+        Spacer(Modifier.height(8.dp))
+        ExposedDropdownMenuBox(
+            expanded = state.showTypeDropdown,
+            onExpandedChange = { viewModel.handleEvent(AddPitchContract.Event.ShowTypeDropdown(it)) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            OutlinedTextField(
+                value = state.type.label,
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showTypeDropdown) },
+                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                )
+            )
+            ExposedDropdownMenu(
+                expanded = state.showTypeDropdown,
+                onDismissRequest = { viewModel.handleEvent(AddPitchContract.Event.ShowTypeDropdown(false)) }
+            ) {
+                StadiumType.entries.forEach { type ->
+                    DropdownMenuItem(
+                        text = { Text(type.label) },
+                        onClick = {
+                            viewModel.handleEvent(AddPitchContract.Event.Type(type))
+                            viewModel.handleEvent(AddPitchContract.Event.ShowTypeDropdown(false))
+                        }
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -231,15 +413,32 @@ fun TimePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = { onConfirm(timePickerState.hour, timePickerState.minute) }) {
-                Text("OK", color = Primary, fontWeight = FontWeight.Bold)
+                Text("OK", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text("Bekor qilish", color = MaterialTheme.colorScheme.secondary) }
         },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                TimePicker(state = timePickerState)
+                TimePicker(
+                    state = timePickerState,
+                    colors = TimePickerDefaults.colors(
+                        clockDialColor = MaterialTheme.colorScheme.surfaceVariant,
+                        clockDialSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
+                        clockDialUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        selectorColor = MaterialTheme.colorScheme.primary,
+                        periodSelectorBorderColor = MaterialTheme.colorScheme.primary,
+                        periodSelectorSelectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        periodSelectorUnselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        periodSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        periodSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        timeSelectorSelectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        timeSelectorUnselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        timeSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        timeSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                )
             }
         }
     )

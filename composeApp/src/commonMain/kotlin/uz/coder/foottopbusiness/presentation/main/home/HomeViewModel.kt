@@ -31,6 +31,7 @@ class HomeViewModel(
     private val getUserUseCase: GetUserUseCase,
     private val getAllUsersUseCase: GetAllUsersUseCase,
     private val preferencesManager: PreferencesManager,
+    private val getCoachesUseCase: uz.coder.foottopbusiness.domain.usecase.coach.GetCoachesUseCase,
 ) : BaseViewModel<HomeContract.State, HomeContract.Effect, HomeContract.Event>(
     initialState = HomeContract.State(
         selectedDate = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
@@ -38,6 +39,21 @@ class HomeViewModel(
 ) {
     init {
         handleEvent(HomeContract.Event.Load)
+        checkNotificationPermission()
+    }
+
+    private fun checkNotificationPermission() {
+        // This is a placeholder for checking permission.
+        // In a real app, you would use a platform-specific check.
+        // For now, we'll assume we need to ask if the user is an owner/admin
+        // and show the dialog once.
+        executeAsync {
+            // Simulate checking if we've already asked or if permission is granted
+            val alreadyAsked = preferencesManager.userId.first() != 0 // Just a dummy condition
+            if (!alreadyAsked) {
+                updateState { copy(showNotificationPermissionDialog = true) }
+            }
+        }
     }
 
     override fun handleEvent(event: HomeContract.Event) {
@@ -49,6 +65,7 @@ class HomeViewModel(
                 loadTournaments()
                 loadMatches()
                 loadDashboardStats()
+                loadCoaches()
             }
 
             is HomeContract.Event.ChangeTab -> updateState { copy(currentTab = event.index) }
@@ -156,6 +173,13 @@ class HomeViewModel(
             HomeContract.Event.Match -> sendEffect(Match)
             HomeContract.Event.Stadium -> sendEffect(Stadium)
             HomeContract.Event.Tournament -> sendEffect(Tournament)
+
+            is HomeContract.Event.SetShowNotificationPermissionDialog -> updateState { copy(showNotificationPermissionDialog = event.show) }
+            HomeContract.Event.RequestNotificationPermission -> {
+                updateState { copy(showNotificationPermissionDialog = false) }
+                // Since this is KMP, the actual permission request will be handled in the UI layer 
+                // or via a platform-specific side effect.
+            }
         }
     }
 
@@ -164,7 +188,15 @@ class HomeViewModel(
             val userId = preferencesManager.userId.first()
             if (userId == 0) return@executeAsync
             getUserUseCase(userId.toLong()).collect { result ->
-                updateState { copy(user = result) }
+                val isAdmin = result.roles?.any { uz.coder.foottopbusiness.core.RoleConstants.isAdmin(it.name) } ?: false
+                val isOwner = result.roles?.any { uz.coder.foottopbusiness.core.RoleConstants.isOwner(it.name) } ?: false
+                updateState { 
+                    copy(
+                        user = result,
+                        isAdmin = isAdmin,
+                        isOwner = isOwner
+                    ) 
+                }
             }
         }
     }
@@ -255,6 +287,19 @@ class HomeViewModel(
             },
             onSuccess = { updateState { copy(matches = it, isLoadingMatches = false) } },
             onError = { updateState { copy(isLoadingMatches = false) } }
+        )
+    }
+
+    private fun loadCoaches() {
+        updateState { copy(isLoadingCoaches = true) }
+        executeAsync(
+            block = {
+                var r = emptyList<uz.coder.foottopbusiness.data.network.dto.CoachResponseDto>()
+                getCoachesUseCase().collect { r = it }
+                r
+            },
+            onSuccess = { updateState { copy(coaches = it, isLoadingCoaches = false) } },
+            onError = { updateState { copy(isLoadingCoaches = false) } }
         )
     }
 }

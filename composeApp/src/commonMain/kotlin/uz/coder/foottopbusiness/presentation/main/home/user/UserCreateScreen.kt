@@ -34,7 +34,6 @@ import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.flow.collectLatest
-import uz.coder.foottopbusiness.core.ui.Primary
 
 class UserCreateScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -65,7 +64,7 @@ class UserCreateScreen : Screen {
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                        .background(Color(0xFF0F3D2E))
+                        .background(MaterialTheme.colorScheme.primary)
                         .padding(top = statusBarPadding, start = 24.dp, end = 24.dp)
                 ) {
                     Row(
@@ -76,14 +75,14 @@ class UserCreateScreen : Screen {
                             onClick = { navigator.pop() },
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color.White.copy(alpha = 0.1f))
+                                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f))
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Color.White)
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
                         }
                         Spacer(Modifier.width(16.dp))
                         Text(
                             "Hisob yaratish",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -91,7 +90,7 @@ class UserCreateScreen : Screen {
                 }
             },
             snackbarHost = { SnackbarHost(snackbarHostState) },
-            containerColor = Color(0xFFF5F5F5)
+            containerColor = MaterialTheme.colorScheme.surface
         ) { padding ->
             Column(
                 modifier = Modifier
@@ -115,30 +114,30 @@ class UserCreateScreen : Screen {
                 }
 
                 Column {
-                    Text("PAROL", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text("PAROL", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     var passwordVisible by remember { mutableStateOf(false) }
                     TextField(
                         value = "",
                         onValueChange = { },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Parol kiriting", color = Color.Gray) },
+                        placeholder = { Text("Parol kiriting", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                Icon(if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, null, tint = Color.Gray)
+                                Icon(if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         },
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,
-                            focusedIndicatorColor = Color.LightGray,
-                            unfocusedIndicatorColor = Color.LightGray
+                            focusedIndicatorColor = MaterialTheme.colorScheme.outline,
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant
                         )
                     )
                 }
 
                 Column {
-                    Text("ROL TANLANG", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text("ROL TANLANG", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         RoleItem("Admin", Icons.Default.Settings, "To'liq boshqaruv", state.role == "ADMIN", Modifier.weight(1f)) {
@@ -167,11 +166,11 @@ class UserCreateScreen : Screen {
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFFE0F2F1))
+                        .background(MaterialTheme.colorScheme.primaryContainer)
                         .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Login va parol SMS orqali yuboriladi", color = Color(0xFF00695C), fontSize = 14.sp)
+                    Text("Login va parol SMS orqali yuboriladi", color = MaterialTheme.colorScheme.onPrimaryContainer, fontSize = 14.sp)
                 }
 
                 Spacer(Modifier.height(8.dp))
@@ -181,12 +180,12 @@ class UserCreateScreen : Screen {
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     enabled = !state.isLoading,
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F3D2E))
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     if (state.isLoading) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                     } else {
-                        Text("Hisobni yaratish", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("Hisobni yaratish", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
             }
@@ -203,19 +202,19 @@ private fun LabelAndField(
     onValueChange: (String) -> Unit
 ) {
     Column {
-        Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+        Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
         TextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(placeholder, color = Color.Gray) },
+            placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant) },
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color.Transparent,
                 unfocusedContainerColor = Color.Transparent,
                 disabledContainerColor = Color.Transparent,
-                focusedIndicatorColor = Color.LightGray,
-                unfocusedIndicatorColor = Color.LightGray
+                focusedIndicatorColor = MaterialTheme.colorScheme.outline,
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant
             )
         )
     }
@@ -233,14 +232,14 @@ private fun RoleItem(
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(if (isSelected) Color(0xFFE0F2F1) else Color.White)
+            .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             .clickable(onClick = onClick)
             .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(icon, null, tint = if (isSelected) Color(0xFF00695C) else Color.Gray, modifier = Modifier.size(24.dp))
+        Icon(icon, null, tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
         Spacer(Modifier.height(8.dp))
-        Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-        Text(subtitle, fontSize = 10.sp, color = Color.Gray)
+        Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+        Text(subtitle, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

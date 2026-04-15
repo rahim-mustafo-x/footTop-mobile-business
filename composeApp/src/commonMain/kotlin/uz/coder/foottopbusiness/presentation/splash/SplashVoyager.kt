@@ -21,7 +21,6 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.koin.compose.koinInject
-import uz.coder.foottopbusiness.core.ui.Primary
 import uz.coder.foottopbusiness.presentation.auth.otp.SendOtpVoyager
 import uz.coder.foottopbusiness.presentation.main.MainVoyager
 
@@ -82,12 +81,12 @@ fun SplashScreenContent() {
                     .size(120.dp)
                     .offset(y = bounce.dp)
                     .rotate(rotation),
-                tint = Primary
+                tint = MaterialTheme.colorScheme.primary
             )
 
             val title = buildAnnotatedString {
                 withStyle(SpanStyle(fontSize = 32.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)) { append("Foot") }
-                withStyle(SpanStyle(color = Primary, fontSize = 32.sp, fontWeight = FontWeight.Bold)) { append("Top") }
+                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, fontSize = 32.sp, fontWeight = FontWeight.Bold)) { append("Top") }
             }
             Text(title, modifier = Modifier.padding(top = 16.dp))
             Text(
@@ -101,7 +100,7 @@ fun SplashScreenContent() {
             
             CircularProgressIndicator(
                 modifier = Modifier.size(24.dp),
-                color = Primary,
+                color = MaterialTheme.colorScheme.primary,
                 strokeWidth = 2.dp
             )
         }

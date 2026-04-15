@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uz.coder.foottopbusiness.presentation.main.tournaments.create.TournamentCreateScreen
-import uz.coder.foottopbusiness.core.ui.Primary
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -59,7 +58,7 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                    .background(Color(0xFF0F3D2E))
+                    .background(MaterialTheme.colorScheme.primary)
                     .padding(top = statusBarPadding + 16.dp, start = 24.dp, end = 24.dp, bottom = 32.dp)
             ) {
                 Row(
@@ -69,7 +68,7 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
                 ) {
                     Text(
                         "Turnirlar",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -77,9 +76,9 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
                         onClick = { navigator.push(TournamentCreateScreen()) },
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
-                            .background(Color.White.copy(alpha = 0.1f))
+                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f))
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
+                        Icon(Icons.Default.Add, contentDescription = "Add", tint = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
             }
@@ -90,7 +89,7 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
                 .fillMaxSize()
                 .padding(top = padding.calculateTopPadding(), start = padding.calculateStartPadding(
                     LayoutDirection.Rtl), end = padding.calculateEndPadding(LayoutDirection.Ltr))
-                .background(Color(0xFFF5F5F5))
+                .background(MaterialTheme.colorScheme.surface)
         ) {
             // Search and Filters
             Column(modifier = Modifier.padding(16.dp)) {
@@ -103,15 +102,15 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
                         value = "",
                         onValueChange = {},
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("Qidirish...", color = Color.Gray) },
-                        leadingIcon = { Icon(Icons.Default.Search, null, tint = Color.Gray) },
+                        placeholder = { Text("Qidirish...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color.Transparent,
                             unfocusedBorderColor = Color.Transparent,
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                         )
                     )
                 }
@@ -135,12 +134,12 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
                             modifier = Modifier
                                 .padding(end = 8.dp)
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(if (selectedFilterIndex == index) Color(0xFF0F3D2E) else Color.White)
+                                .background(if (selectedFilterIndex == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
                                 .padding(horizontal = 12.dp, vertical = 6.dp),
                         ) {
                             Text(
                                 title,
-                                color = if (selectedFilterIndex == index) Color.White else Color.Black,
+                                color = if (selectedFilterIndex == index) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium
                             )
@@ -151,7 +150,7 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
 
             when {
                 state.isLoading || state.isCreating -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Primary)
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
                 state.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -222,7 +221,10 @@ private fun CreateTournamentDialog(
                             entryFee.toDoubleOrNull() ?: 0.0, address.takeIf { it.isNotBlank() })
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
             ) { Text("Yaratish") }
         },
         dismissButton = {
@@ -238,7 +240,7 @@ private fun TournamentCard(t: TournamentResponseDto, onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
@@ -250,13 +252,13 @@ private fun TournamentCard(t: TournamentResponseDto, onClick: () -> Unit) {
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFFF5F5F5)),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     Icons.Default.EmojiEvents,
                     contentDescription = null,
-                    tint = Color(0xFF0F3D2E),
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -269,12 +271,12 @@ private fun TournamentCard(t: TournamentResponseDto, onClick: () -> Unit) {
                     t.name ?: "—",
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     "${t.startDate ?: "—"} - ${t.endDate ?: "—"}",
                     fontSize = 12.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -285,7 +287,7 @@ private fun TournamentCard(t: TournamentResponseDto, onClick: () -> Unit) {
                 Text(
                     "${t.teamApplied ?: 0}/${t.maxTeams ?: 0} jamoa",
                     fontSize = 11.sp,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Medium
                 )
             }
@@ -303,11 +305,11 @@ private fun TournamentDetailScreen(tournament: TournamentResponseDto, onBack: ()
         Column(modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding(), start = padding.calculateStartPadding(
             LayoutDirection.Ltr), end = padding.calculateEndPadding(LayoutDirection.Rtl)).padding(16.dp)) {
             Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Primary)) {
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    Text(tournament.name ?: "—", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.White)
+                    Text(tournament.name ?: "—", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onPrimary)
                     Spacer(Modifier.height(4.dp))
-                    Text("${tournament.startDate ?: "—"} – ${tournament.endDate ?: "—"}", color = Color.White.copy(alpha = 0.85f))
+                    Text("${tournament.startDate ?: "—"} – ${tournament.endDate ?: "—"}", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f))
                 }
             }
             Spacer(Modifier.height(16.dp))
@@ -335,9 +337,9 @@ private fun TournamentDetailScreen(tournament: TournamentResponseDto, onBack: ()
 @Composable
 private fun StatusChip(status: String?) {
     val (bg, fg) = when (status) {
-        "UPCOMING" -> Color(0xFF2196F3) to Color.White
-        "ONGOING" -> Color(0xFF4CAF50) to Color.White
-        "FINISHED" -> Color(0xFF9E9E9E) to Color.White
+        "UPCOMING" -> MaterialTheme.colorScheme.secondary to MaterialTheme.colorScheme.onSecondary
+        "ONGOING" -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
+        "FINISHED" -> MaterialTheme.colorScheme.outline to MaterialTheme.colorScheme.onSurface
         else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
     }
     val label = when (status) {
@@ -350,8 +352,8 @@ private fun StatusChip(status: String?) {
 
 @Composable
 private fun InfoChip(text: String) {
-    Box(modifier = Modifier.background(Primary.copy(alpha = 0.1f), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp, vertical = 3.dp)) {
-        Text(text, fontSize = 12.sp, color = Primary)
+    Box(modifier = Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp, vertical = 3.dp)) {
+        Text(text, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
     }
 }
 

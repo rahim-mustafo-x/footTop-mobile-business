@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import uz.coder.foottopbusiness.core.ui.Primary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,14 +51,14 @@ fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = Color(0xFFF5F5F5),
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                    .background(Color(0xFF0F3D2E))
+                    .background(MaterialTheme.colorScheme.primary)
                     .padding(top = statusBarPadding, start = 24.dp, end = 24.dp)
             ) {
                 Row(
@@ -70,14 +69,14 @@ fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
                         onClick = { navigator.pop() },
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
-                            .background(Color.White.copy(alpha = 0.1f))
+                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f))
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
                     }
                     Spacer(Modifier.width(16.dp))
                     Text(
                         "Xabarnoma yuborish",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -97,7 +96,7 @@ fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
                 "XABAR TURI",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black
+                color = MaterialTheme.colorScheme.onBackground
             )
 
             Row(
@@ -107,7 +106,7 @@ fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
                 TypeItem(
                     title = "Booking",
                     icon = Icons.Default.CalendarMonth,
-                    color = Color(0xFF4CAF50),
+                    color = MaterialTheme.colorScheme.primary,
                     isSelected = state.type == "BOOKING",
                     modifier = Modifier.weight(1f)
                 ) {
@@ -116,7 +115,7 @@ fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
                 TypeItem(
                     title = "Match",
                     icon = Icons.Default.SportsSoccer,
-                    color = Color(0xFF2196F3),
+                    color = MaterialTheme.colorScheme.secondary,
                     isSelected = state.type == "MATCH",
                     modifier = Modifier.weight(1f)
                 ) {
@@ -130,7 +129,7 @@ fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
                 TypeItem(
                     title = "Turnir",
                     icon = Icons.Default.EmojiEvents,
-                    color = Color(0xFFFFB74D),
+                    color = MaterialTheme.colorScheme.tertiary,
                     isSelected = state.type == "TOURNAMENT",
                     modifier = Modifier.weight(1f)
                 ) {
@@ -139,7 +138,7 @@ fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
                 TypeItem(
                     title = "Sistema",
                     icon = Icons.Default.Campaign,
-                    color = Color(0xFF757575),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     isSelected = state.type == "SYSTEM",
                     modifier = Modifier.weight(1f)
                 ) {
@@ -172,11 +171,11 @@ fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
                 onClick = { viewModel.handleEvent(SendNotificationContract.Event.SendToAll) },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F3D2E)),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 enabled = !state.isLoading
             ) {
                 if (state.isLoading) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                 } else {
                     Text("Yuborish", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
@@ -197,7 +196,7 @@ private fun TypeItem(
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(if (isSelected) color.copy(alpha = 0.1f) else Color.White)
+            .background(if (isSelected) color.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surface)
             .clickable(onClick = onClick)
             .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -206,13 +205,13 @@ private fun TypeItem(
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(if (isSelected) color.copy(alpha = 0.2f) else Color(0xFFF5F5F5)),
+                .background(if (isSelected) color.copy(alpha = 0.2f) else MaterialTheme.colorScheme.background),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 icon,
                 contentDescription = null,
-                tint = if (isSelected) color else Color.Gray,
+                tint = if (isSelected) color else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -221,7 +220,7 @@ private fun TypeItem(
             title,
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
-            color = if (isSelected) color else Color.Black
+            color = if (isSelected) color else MaterialTheme.colorScheme.onSurface
         )
     }
 }
@@ -235,18 +234,20 @@ private fun LabelAndField(
     onValueChange: (String) -> Unit
 ) {
     Column {
-        Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+        Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
         TextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth().let { if (isMultiline) it.height(120.dp) else it },
-            placeholder = { Text(placeholder, color = Color.Gray) },
+            placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant) },
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color.Transparent,
                 unfocusedContainerColor = Color.Transparent,
                 disabledContainerColor = Color.Transparent,
-                focusedIndicatorColor = Color.LightGray,
-                unfocusedIndicatorColor = Color.LightGray
+                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
             )
         )
     }

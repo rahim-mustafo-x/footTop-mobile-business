@@ -46,6 +46,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -59,7 +61,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import uz.coder.foottopbusiness.core.ui.Primary
 import uz.coder.foottopbusiness.presentation.auth.otp.SendOtpVoyager
 import uz.coder.foottopbusiness.presentation.main.settings.editprofile.EditProfileVoyager
 import uz.coder.foottopbusiness.presentation.main.settings.notification.SendNotificationVoyager
@@ -77,8 +78,50 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
         viewModel.effect.collect { effect ->
             when (effect) {
                 SettingsContract.Effect.NavigateToAuth -> navigator.replaceAll(SendOtpVoyager)
+                is SettingsContract.Effect.ShowToast -> {
+                    // Toast logic here
+                }
             }
         }
+    }
+
+    if (state.showDeleteAccountDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.handleEvent(SettingsContract.Event.DismissDeleteAccount) },
+            title = { Text("Hisobni o'chirish", color = MaterialTheme.colorScheme.error) },
+            text = {
+                Column {
+                    Text("Hisobingizni o'chirishni tasdiqlash uchun foydalanuvchi nomingizni (@${state.user?.username ?: ""}) pastga kiriting:")
+                    Spacer(Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = state.deleteConfirmText,
+                        onValueChange = { viewModel.handleEvent(SettingsContract.Event.UpdateDeleteConfirmText(it)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text(state.user?.username ?: "") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.handleEvent(SettingsContract.Event.DeleteAccount) },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    enabled = !state.isDeleting && state.deleteConfirmText == state.user?.username
+                ) {
+                    if (state.isDeleting) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
+                    } else {
+                        Text("O'chirish")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.handleEvent(SettingsContract.Event.DismissDeleteAccount) }) {
+                    Text("Bekor qilish")
+                }
+            }
+        )
     }
 
     if (showLogoutSheet) {
@@ -99,7 +142,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 Box(
                     modifier = Modifier
                         .size(56.dp)
-                        .clip(CircleShape)
+                        .clip(RoundedCornerShape(16.dp))
                         .background(MaterialTheme.colorScheme.errorContainer),
                     contentAlignment = Alignment.Center
                 ) {
@@ -195,7 +238,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                             modifier = Modifier.fillMaxWidth().padding(32.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            CircularProgressIndicator(color = Primary, modifier = Modifier.size(32.dp))
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
                         }
                     } else {
                         Row(
@@ -206,13 +249,13 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                                 modifier = Modifier
                                     .size(64.dp)
                                     .clip(CircleShape)
-                                    .background(Primary.copy(alpha = 0.1f)),
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     Icons.Default.Person,
                                     null,
-                                    tint = Primary,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(36.dp)
                                 )
                             }
@@ -234,7 +277,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                                     Text(
                                         "@${state.user?.username}",
                                         fontSize = 12.sp,
-                                        color = Primary,
+                                        color = MaterialTheme.colorScheme.primary,
                                         fontWeight = FontWeight.Medium
                                     )
                                 }
@@ -260,8 +303,8 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
 
                 SettingsItem(
                     icon = Icons.Default.Edit,
-                    iconTint = Primary,
-                    iconBg = Primary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.primary,
+                    iconBg = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                     title = "Profilni tahrirlash",
                     onClick = { navigator.push(EditProfileVoyager) }
                 )
@@ -282,6 +325,14 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     onClick = { viewModel.handleEvent(SettingsContract.Event.ShowAboutApp) }
                 )
 
+                SettingsItem(
+                    icon = Icons.Default.DeleteOutline,
+                    iconTint = MaterialTheme.colorScheme.error,
+                    iconBg = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
+                    title = "Hisobni o'chirish",
+                    onClick = { viewModel.handleEvent(SettingsContract.Event.ShowDeleteAccount) }
+                )
+
                 Spacer(Modifier.height(8.dp))
 
                 // Chiqish tugmasi
@@ -296,7 +347,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     Box(
                         modifier = Modifier
                             .size(40.dp)
-                            .clip(RoundedCornerShape(10.dp))
+                            .clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.errorContainer),
                         contentAlignment = Alignment.Center
                     ) {

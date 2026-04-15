@@ -1,17 +1,34 @@
 package uz.coder.foottopbusiness.presentation.main.stadium
 
+import kotlinx.coroutines.flow.first
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
+import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.domain.usecase.stadium.DeleteStadiumUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetStadiumsUseCase
+import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
 
 class StadiumViewModel(
     private val getStadiumsUseCase: GetStadiumsUseCase,
-    private val deleteStadiumUseCase: DeleteStadiumUseCase
+    private val deleteStadiumUseCase: DeleteStadiumUseCase,
+    private val getUserUseCase: GetUserUseCase,
+    private val preferencesManager: PreferencesManager,
 ) : BaseViewModel<StadiumContract.State, StadiumContract.Effect, StadiumContract.Event>(
     initialState = StadiumContract.State()
 ) {
     init {
         handleEvent(StadiumContract.Event.Load)
+        loadUserRole()
+    }
+
+    private fun loadUserRole() {
+        executeAsync {
+            val userId = preferencesManager.userId.first()
+            if (userId == 0) return@executeAsync
+            getUserUseCase(userId.toLong()).collect { result ->
+                val isOwner = result.roles?.any { it.name == "STADIUM_OWNER" || it.name == "OWNER" } ?: false
+                updateState { copy(isOwner = isOwner) }
+            }
+        }
     }
 
     override fun handleEvent(event: StadiumContract.Event) {

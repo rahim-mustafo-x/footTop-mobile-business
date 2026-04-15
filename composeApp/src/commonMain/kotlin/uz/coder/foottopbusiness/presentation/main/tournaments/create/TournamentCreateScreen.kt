@@ -61,18 +61,18 @@ class TournamentCreateScreen : Screen {
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                        .background(Color(0xFF0F3D2E))
+                        .background(MaterialTheme.colorScheme.primary)
                         .padding(top = statusBarPadding + 16.dp, start = 8.dp, end = 24.dp, bottom = 32.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(onClick = { navigator.pop() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = MaterialTheme.colorScheme.onPrimary)
                         }
                         Text(
                             "Turnir yaratish",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -85,7 +85,7 @@ class TournamentCreateScreen : Screen {
                     .fillMaxSize()
                     .padding(top = padding.calculateTopPadding(), start = padding.calculateStartPadding(LayoutDirection.Ltr), end = padding.calculateEndPadding(
                         LayoutDirection.Ltr))
-                    .background(Color(0xFFF5F5F5))
+                    .background(MaterialTheme.colorScheme.surface)
                     .verticalScroll(rememberScrollState())
                     .padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -94,7 +94,7 @@ class TournamentCreateScreen : Screen {
                     "Turnir ma'lumotlari",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 TournamentInputField(
@@ -148,7 +148,7 @@ class TournamentCreateScreen : Screen {
                 )
 
                 if (state.error != null) {
-                    Text(state.error!!, color = Color.Red, fontSize = 14.sp)
+                    Text(state.error!!, color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
                 }
 
                 Spacer(Modifier.height(24.dp))
@@ -171,13 +171,13 @@ class TournamentCreateScreen : Screen {
                         .fillMaxWidth()
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F3D2E)),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     enabled = !state.isCreating && name.isNotBlank() && startDate.isNotBlank() && endDate.isNotBlank()
                 ) {
                     if (state.isCreating) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                     } else {
-                        Text("Yaratish", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("Yaratish", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
             }
@@ -194,19 +194,19 @@ class TournamentCreateScreen : Screen {
         keyboardType: KeyboardType = KeyboardType.Text
     ) {
         Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(label, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.Gray)
+            Text(label, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             OutlinedTextField(
                 value = value,
                 onValueChange = onValueChange,
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(icon, null, tint = Color(0xFF0F3D2E)) },
+                leadingIcon = { Icon(icon, null, tint = MaterialTheme.colorScheme.primary) },
                 shape = RoundedCornerShape(12.dp),
                 keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF0F3D2E),
-                    unfocusedBorderColor = Color.LightGray,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
                 )
             )
         }

@@ -34,4 +34,11 @@ class AuthApiService(private val client: HttpClient) {
         setBody(RefreshTokenRequest(refreshToken))
         contentType(ContentType.Application.Json)
     }.body<TokenResponse>()
+
+    suspend fun logout(fcmToken: String) = client.post("/api/auth/logout") {
+        url {
+            parameters.append("fcmToken", fcmToken)
+        }
+        contentType(ContentType.Application.Json)
+    }.body<BaseResponse<String>>()
 }

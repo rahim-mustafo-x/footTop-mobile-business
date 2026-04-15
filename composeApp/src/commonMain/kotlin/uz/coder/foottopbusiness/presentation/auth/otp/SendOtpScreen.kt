@@ -35,7 +35,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import uz.coder.foottopbusiness.core.ui.Info
-import uz.coder.foottopbusiness.core.ui.Primary
 import uz.coder.foottopbusiness.core.ui.UniversalClickableText
 import uz.coder.foottopbusiness.core.visualTransformation.PhoneTransformation
 
@@ -56,7 +55,7 @@ fun SendOtpScreen(
                 )){
                     append("Foot")
                 }
-                withStyle(SpanStyle(Primary,
+                withStyle(SpanStyle(MaterialTheme.colorScheme.primary,
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold)){
                     append("Top")
@@ -104,7 +103,7 @@ fun SendOtpScreen(
                 "ga rozilik bildirasiz" to null
             ),
             styles = mapOf(
-                USER_TERMS to SpanStyle(color = Info, fontSize = 14.sp)
+                USER_TERMS to SpanStyle(color = MaterialTheme.colorScheme.tertiary, fontSize = 14.sp)
             ), modifier = Modifier.fillMaxWidth()){ tag->
                 when(tag){
                     USER_TERMS->{
@@ -119,7 +118,7 @@ fun SendOtpScreen(
                 "Yordam xizmati" to HELP_CENTER,
                 "ga murojaat qiling" to null
             ), styles = mapOf(
-                HELP_CENTER to SpanStyle(color = Info, fontSize = 14.sp)
+                HELP_CENTER to SpanStyle(color = MaterialTheme.colorScheme.tertiary, fontSize = 14.sp)
             ), modifier = Modifier.fillMaxWidth()){tag->
                 when(tag){
                     HELP_CENTER->{
@@ -143,11 +142,11 @@ fun SendOtpScreen(
                 if (isLoading)
                     CircularProgressIndicator(
                         modifier = Modifier.height(24.dp).width(24.dp),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         strokeWidth = 2.dp
                     )
                 else
-                    Text("Continue", fontSize = 20.sp, color = Color.White)
+                    Text("Continue", fontSize = 20.sp, color = MaterialTheme.colorScheme.onPrimary)
             }
         }
 

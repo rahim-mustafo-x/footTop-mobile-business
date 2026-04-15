@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
-import uz.coder.foottopbusiness.core.ui.Primary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,7 +40,7 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddPitch: () -> Unit 
             confirmButton = {
                 TextButton(
                     onClick = { viewModel.handleEvent(StadiumContract.Event.ConfirmDelete) },
-                    colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("O'chirish")
                 }
@@ -55,14 +54,14 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddPitch: () -> Unit 
     }
 
     Scaffold(
-        containerColor = Color(0xFFF5F5F5),
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                    .background(Color(0xFF0F3D2E))
+                    .background(MaterialTheme.colorScheme.primary)
                     .padding(top = statusBarPadding, start = 24.dp, end = 24.dp)
             ) {
                 Row(
@@ -71,8 +70,8 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddPitch: () -> Unit 
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "Stadionlar",
-                        color = Color.White,
+                        if (state.isOwner) "Jadval" else "Stadionlar",
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -80,9 +79,9 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddPitch: () -> Unit 
                         onClick = onNavigateToAddPitch,
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
-                            .background(Color.White.copy(alpha = 0.1f))
+                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f))
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
+                        Icon(Icons.Default.Add, contentDescription = "Add", tint = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
             }
@@ -93,7 +92,7 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddPitch: () -> Unit 
                 .fillMaxSize()
                 .padding(top = paddingValues.calculateTopPadding(), start = paddingValues.calculateStartPadding(
                     LayoutDirection.Ltr), end = paddingValues.calculateEndPadding(LayoutDirection.Rtl))
-                .background(Color(0xFFF5F5F5))
+                .background(MaterialTheme.colorScheme.background)
         ) {
             // Search Bar
             OutlinedTextField(
@@ -102,21 +101,23 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddPitch: () -> Unit 
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                placeholder = { Text("Qidirish...", color = Color.Gray) },
-                leadingIcon = { Icon(Icons.Default.Search, null, tint = Color.Gray) },
+                placeholder = { Text("Qidirish...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color.Transparent,
                     unfocusedBorderColor = Color.Transparent,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                 )
             )
 
             if (state.isLoading && state.stadiums.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color(0xFF0F3D2E))
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
             } else {
                 val listState = rememberLazyListState()
@@ -148,7 +149,7 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddPitch: () -> Unit 
                     if (state.isLoading) {
                         item {
                             Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color(0xFF0F3D2E))
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }
@@ -169,29 +170,31 @@ private fun StadiumListItem(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val statusColor = when {
+                stadium.isActive == true -> Color(0xFF4CAF50)
+                stadium.description?.contains("ta'mir", ignoreCase = true) == true -> Color(0xFFFF9800)
+                else -> MaterialTheme.colorScheme.error
+            }
+
             // Icon
             Box(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFF5F5F5)),
+                    .background(MaterialTheme.colorScheme.background),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     Icons.Default.SportsSoccer,
                     contentDescription = null,
-                    tint = when {
-                        stadium.isActive == true -> Color(0xFF4CAF50)
-                        stadium.description?.contains("ta'mir", ignoreCase = true) == true -> Color(0xFFFF9800)
-                        else -> Color(0xFFE53935)
-                    },
+                    tint = statusColor,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -204,30 +207,30 @@ private fun StadiumListItem(
                     text = stadium.name ?: "Noma'lum",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = "${stadium.districtName}, ${stadium.regionName}",
                     fontSize = 12.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.GridView, null, tint = Color.Gray, modifier = Modifier.size(12.dp))
+                    Icon(Icons.Default.GridView, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("${stadium.capacity ?: 0} maydon", fontSize = 11.sp, color = Color.Gray)
+                    Text("${stadium.capacity ?: 0} maydon", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.width(12.dp))
-                    Icon(Icons.Default.Payments, null, tint = Color.Gray, modifier = Modifier.size(12.dp))
+                    Icon(Icons.Default.Payments, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("${stadium.pricePerHour?.toInt() ?: 0} so'm/s", fontSize = 11.sp, color = Color.Gray)
+                    Text("${stadium.pricePerHour?.toInt() ?: 0} so'm/s", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
             // Status Badge
-            val (statusText, statusColor) = when {
-                stadium.isActive == true -> "Aktiv" to Color(0xFF4CAF50)
-                stadium.description?.contains("ta'mir", ignoreCase = true) == true -> "Ta'mirda" to Color(0xFFFF9800)
-                else -> "Yopiq" to Color(0xFFE53935)
+            val statusText = when {
+                stadium.isActive == true -> "Aktiv"
+                stadium.description?.contains("ta'mir", ignoreCase = true) == true -> "Ta'mirda"
+                else -> "Yopiq"
             }
 
             Box(

@@ -2,13 +2,25 @@ package uz.coder.foottopbusiness.presentation.main.stadium.details
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -16,16 +28,36 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Stadium
-import androidx.compose.material.icons.filled.WifiOff
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,10 +65,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.compose.AsyncImage
-import kotlinx.datetime.LocalDateTime
-import uz.coder.foottopbusiness.core.formatAsTime
 import uz.coder.foottopbusiness.core.formatToTime
-import uz.coder.foottopbusiness.core.ui.Primary
 import uz.coder.foottopbusiness.presentation.main.stadium.edit.EditStadiumVoyager
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,16 +94,16 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(stadium?.name ?: "Stadium Details", color = Primary, fontWeight = FontWeight.Bold) },
+                title = { Text(stadium?.name ?: "Stadium Details", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.BackClick) }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Primary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
                 actions = {
                     if (stadium != null) {
                         IconButton(onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.EditClick) }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Primary)
+                            Icon(Icons.Default.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
@@ -83,7 +112,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
     ) { paddingValues ->
         if (stadium == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Primary)
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         } else {
             Column(
@@ -91,6 +120,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     .fillMaxSize()
                     .padding(top = paddingValues.calculateTopPadding(), start = paddingValues.calculateStartPadding(
                         LayoutDirection.Ltr), end = paddingValues.calculateEndPadding(LayoutDirection.Rtl))
+                    .background(MaterialTheme.colorScheme.surface)
                     .verticalScroll(rememberScrollState())
             ) {
                 // Image Header
@@ -112,16 +142,17 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                 text = stadium.name ?: "",
                                 fontSize = 24.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Primary
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                         
                         Row(verticalAlignment = Alignment.CenterVertically) {
+                            val statusColor = if (stadium.isActive == true) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurfaceVariant
                             Text(
                                 text = if (stadium.isActive == true) "Faol" else "Nofaol",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = if (stadium.isActive == true) Color(0xFF4CAF50) else Color.Gray
+                                color = statusColor
                             )
                             Spacer(Modifier.width(8.dp))
                             Switch(
@@ -132,7 +163,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                     checkedThumbColor = Color.White,
                                     checkedTrackColor = Color(0xFF4CAF50),
                                     uncheckedThumbColor = Color.White,
-                                    uncheckedTrackColor = Color.Gray.copy(alpha = 0.5f)
+                                    uncheckedTrackColor = MaterialTheme.colorScheme.outline
                                 )
                             )
                         }
@@ -147,11 +178,11 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     DetailItem(Icons.Default.Stadium, "Ish vaqti", "${stadium.openTime.formatToTime()} - ${stadium.closeTime.formatToTime()}")
 
                     Spacer(Modifier.height(24.dp))
-                    Text("Bo'sh vaqtlar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Primary)
+                    Text("Bo'sh vaqtlar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.height(12.dp))
 
                     if (stadium.slots.isNullOrEmpty()) {
-                        Text("Ma'lumot mavjud emas", fontSize = 14.sp, color = Color.Gray)
+                        Text("Ma'lumot mavjud emas", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else {
                         LazyVerticalGrid(
                             columns = GridCells.Adaptive(80.dp),
@@ -164,10 +195,10 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                 val isBooked = slot.status == "BOOKED"
                                 val isPast = slot.status == "PAST"
                                 val color = when {
-                                    isAvailable -> Color(0xFF4CAF50)
-                                    isBooked -> Color(0xFFF44336)
-                                    isPast -> Color.Gray
-                                    else -> Color.DarkGray
+                                    isAvailable -> MaterialTheme.colorScheme.primary
+                                    isBooked -> MaterialTheme.colorScheme.error
+                                    isPast -> MaterialTheme.colorScheme.outline
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
                                 }
                                 Box(
                                     modifier = Modifier
@@ -191,7 +222,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     }
 
                     Spacer(Modifier.height(24.dp))
-                    Text("Tavsif", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Primary)
+                    Text("Tavsif", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.height(8.dp))
                     Text(
                         text = stadium.description ?: "Tavsif mavjud emas.",
@@ -207,11 +238,11 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                         onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.ShowAddPitchDialog) },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = null)
+                        Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
                         Spacer(Modifier.width(8.dp))
-                        Text("Pitch qo'shish", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("Pitch qo'shish", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                     }
 
                     Spacer(Modifier.height(16.dp))
@@ -222,9 +253,9 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                     ) {
-                        Icon(Icons.Default.Edit, contentDescription = null, tint = Primary)
+                        Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(8.dp))
-                        Text("Stadionni tahrirlash", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Primary)
+                        Text("Stadionni tahrirlash", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     }
                     Spacer(Modifier.height(16.dp))
                 }
@@ -257,17 +288,17 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
             uz.coder.foottopbusiness.presentation.main.stadium.addpitch.TimePickerDialog(
                 initialHour = initialHour,
                 initialMinute = initialMinute,
-                onDismiss = { showEndTimePicker = false },
+                onDismiss = { showEndTimePicker = !showEndTimePicker },
                 onConfirm = { h, m ->
                     viewModel.handleEvent(StadiumDetailsContract.Event.PitchEndTimeChanged("${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}"))
-                    showEndTimePicker = false
+                    showEndTimePicker = !showEndTimePicker
                 }
             )
         }
 
         AlertDialog(
             onDismissRequest = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissAddPitchDialog) },
-            title = { Text("Pitch qo'shish", color = Primary, fontWeight = FontWeight.Bold) },
+            title = { Text("Pitch qo'shish", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(
@@ -282,7 +313,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                         value = state.pitchStartTime,
                         onValueChange = { },
                         label = { Text("Boshlanish vaqti") },
-                        modifier = Modifier.fillMaxWidth().clickable { showStartTimePicker = true },
+                        modifier = Modifier.fillMaxWidth().clickable { showStartTimePicker = !showStartTimePicker },
                         enabled = false,
                         colors = OutlinedTextFieldDefaults.colors(
                             disabledTextColor = MaterialTheme.colorScheme.onSurface,
@@ -307,7 +338,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
             },
             confirmButton = {
                 TextButton(onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.SavePitch) }) {
-                    Text("Saqlash", color = Primary)
+                    Text("Saqlash", color = MaterialTheme.colorScheme.primary)
                 }
             },
             dismissButton = {
@@ -326,11 +357,11 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
             title = { 
                 val startTime = slot.start.formatToTime()
                 val endTime = slot.end.formatToTime()
-                Text("Vaqt: $startTime - $endTime", color = Primary) 
+                Text("Vaqt: $startTime - $endTime", color = MaterialTheme.colorScheme.primary) 
             },
             text = {
                 Column {
-                    Text("Holati: ${slot.status ?: "Noma'lum"}")
+                    Text("Holati: ${slot.status?.lowercase() ?: "Noma'lum"}")
                     Spacer(Modifier.height(8.dp))
                     Text("Ushbu vaqtni band qilmoqchimisiz yoki holatini o'zgartirmoqchimisiz?")
                 }
@@ -338,10 +369,10 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
             confirmButton = {
                 if (slot.status == "AVAILABLE") {
                     Button(
-                        onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.BookSlot) },
-                        colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                        onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissSlotDialog) },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        Text("Band qilish")
+                        Text("Tushunarli", color = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
             },
@@ -360,7 +391,7 @@ private fun DetailItem(icon: ImageVector, label: String, value: String) {
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = null, tint = Primary, modifier = Modifier.size(20.dp))
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(12.dp))
         Column {
             Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)

@@ -42,6 +42,39 @@ class SettingsViewModel(
             SettingsContract.Event.DismissAboutDialog -> {
                 updateState { copy(showAboutDialog = false) }
             }
+            SettingsContract.Event.ShowDeleteAccount -> {
+                updateState { copy(showDeleteAccountDialog = true, deleteConfirmText = "") }
+            }
+            SettingsContract.Event.DismissDeleteAccount -> {
+                updateState { copy(showDeleteAccountDialog = false, deleteConfirmText = "") }
+            }
+            is SettingsContract.Event.UpdateDeleteConfirmText -> {
+                updateState { copy(deleteConfirmText = event.text) }
+            }
+            SettingsContract.Event.DeleteAccount -> {
+                val state = state.value
+                val username = state.user?.username ?: ""
+                if (state.deleteConfirmText == username) {
+                    updateState { copy(isDeleting = true) }
+                    executeAsync(
+                        block = {
+                            // TODO: Add DeleteAccountUseCase
+                            preferencesManager.setAuthorised(false)
+                            preferencesManager.setToken("")
+                        },
+                        onSuccess = {
+                            updateState { copy(isDeleting = false, showDeleteAccountDialog = false) }
+                            sendEffect(SettingsContract.Effect.NavigateToAuth)
+                        },
+                        onError = {
+                            updateState { copy(isDeleting = false) }
+                            sendEffect(SettingsContract.Effect.ShowToast("Xatolik yuz berdi"))
+                        }
+                    )
+                } else {
+                    sendEffect(SettingsContract.Effect.ShowToast("Username noto'g'ri kiritildi"))
+                }
+            }
         }
     }
 }

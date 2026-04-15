@@ -34,6 +34,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -42,6 +43,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -64,7 +66,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import uz.coder.foottopbusiness.core.BackHandler
-import uz.coder.foottopbusiness.core.ui.Primary
 import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.TimePickerDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -130,12 +131,17 @@ fun EditStadiumScreen(viewModel: EditStadiumViewModel, onBack: () -> Unit) {
         snackbarHost = { SnackbarHost(hostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Stadionni tahrirlash", color = Primary, fontWeight = FontWeight.Bold) },
+                title = { Text("Stadionni tahrirlash", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Primary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
             )
         }
     ) { paddingValues ->
@@ -143,27 +149,42 @@ fun EditStadiumScreen(viewModel: EditStadiumViewModel, onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .background(MaterialTheme.colorScheme.surface)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
         ) {
             Spacer(Modifier.height(16.dp))
 
-            Text("Stadion muqovasi", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Primary)
+            Text(
+                "Stadion muqovasi",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
             Spacer(Modifier.height(8.dp))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Primary.copy(alpha = 0.05f))
-                    .border(1.dp, Primary.copy(alpha = 0.2f), RoundedCornerShape(16.dp)),
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 if (state.imageUrl.isBlank()) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.AddAPhoto, null, tint = Primary, modifier = Modifier.size(48.dp))
+                        Icon(
+                            Icons.Default.AddAPhoto,
+                            null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(48.dp)
+                        )
                         Spacer(Modifier.height(8.dp))
-                        Text("Rasm URL manzilini kiriting", color = Primary, fontSize = 14.sp)
+                        Text(
+                            "Rasm URL manzilini kiriting",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 14.sp
+                        )
                     }
                 } else {
                     var isError by remember(state.imageUrl) { mutableStateOf(false) }
@@ -178,11 +199,11 @@ fun EditStadiumScreen(viewModel: EditStadiumViewModel, onBack: () -> Unit) {
                         onError = { isLoading = false; isError = true }
                     )
                     
-                    if (isLoading) CircularProgressIndicator(color = Primary)
+                    if (isLoading) CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     
                     Box(Modifier.fillMaxSize().padding(12.dp), contentAlignment = Alignment.TopEnd) {
                         Surface(
-                            color = (if (isError) Color.Red else Color(0xFF4CAF50)).copy(alpha = 0.9f),
+                            color = (if (isError) MaterialTheme.colorScheme.error else Color(0xFF4CAF50)).copy(alpha = 0.9f),
                             shape = RoundedCornerShape(20.dp)
                         ) {
                             Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -202,12 +223,16 @@ fun EditStadiumScreen(viewModel: EditStadiumViewModel, onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
-                placeholder = { Text("https://...") },
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Primary)
+                placeholder = { Text("https://...") }
             )
             
             Spacer(Modifier.height(24.dp))
-            Text("Stadion ma'lumotlari", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Primary)
+            Text(
+                "Stadion ma'lumotlari",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
             Spacer(Modifier.height(12.dp))
 
             OutlinedTextField(
@@ -331,10 +356,13 @@ fun EditStadiumScreen(viewModel: EditStadiumViewModel, onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 enabled = !state.isLoading,
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
             ) {
                 if (state.isLoading) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                 } else {
                     Text("O'zgarishlarni saqlash", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
@@ -352,19 +380,28 @@ fun TimePickerField(
     onClick: () -> Unit
 ) {
     Column(modifier = modifier) {
-        Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Primary)
+        Text(
+            label,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
         Spacer(Modifier.height(4.dp))
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
                 .background(Color.Transparent, RoundedCornerShape(12.dp))
-                .border(1.dp, Color.Gray.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                .border(
+                    1.dp,
+                    MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                    RoundedCornerShape(12.dp)
+                )
                 .clickable { onClick() }
                 .padding(horizontal = 16.dp),
             contentAlignment = Alignment.CenterStart
         ) {
-            Text(value, fontSize = 16.sp)
+            Text(value, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }

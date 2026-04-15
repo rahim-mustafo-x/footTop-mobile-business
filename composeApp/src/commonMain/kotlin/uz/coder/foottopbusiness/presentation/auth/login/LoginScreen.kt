@@ -23,6 +23,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,10 +46,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
-import uz.coder.foottopbusiness.core.ui.Border
-import uz.coder.foottopbusiness.core.ui.BorderFocused
-import uz.coder.foottopbusiness.core.ui.Info
-import uz.coder.foottopbusiness.core.ui.Primary
 import uz.coder.foottopbusiness.core.ui.UniversalClickableText
 
 @Composable
@@ -96,7 +93,7 @@ fun LoginScreen(
                 withStyle(SpanStyle(fontSize = 30.sp, fontWeight = FontWeight.Bold)) {
                     append("Foot")
                 }
-                withStyle(SpanStyle(color = Primary, fontSize = 30.sp, fontWeight = FontWeight.Bold)) {
+                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, fontSize = 30.sp, fontWeight = FontWeight.Bold)) {
                     append("Top")
                 }
             }
@@ -108,7 +105,7 @@ fun LoginScreen(
             Text(
                 "Enter the code sent to your phone ${state.phoneNumber}",
                 fontSize = 14.sp,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 30.dp)
             )
@@ -128,7 +125,7 @@ fun LoginScreen(
             Text(
                 "${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} vaqt qoldi",
                 fontSize = 14.sp,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(Modifier.height(16.dp))
@@ -141,7 +138,7 @@ fun LoginScreen(
                     "ga murojaat qiling." to null
                 ),
                 styles = mapOf(
-                    HELP_CENTER to SpanStyle(color = Info, fontSize = 14.sp)
+                    HELP_CENTER to SpanStyle(color = MaterialTheme.colorScheme.tertiary, fontSize = 14.sp)
                 ),
                 modifier = Modifier.fillMaxWidth()
             ) { tag->
@@ -163,10 +160,10 @@ fun LoginScreen(
                 contentPadding = PaddingValues(16.dp),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 30.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Primary,
-                    contentColor = Color.White,
-                    disabledContainerColor = Color(0xFFEEEEEE),
-                    disabledContentColor = Color.Gray
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                 )
             ) {
                 Text("Resend Code", fontSize = 16.sp)
@@ -200,9 +197,9 @@ fun OtpCode(otpCode: String, onOtpChange: (String) -> Unit) {
                         .border(
                             width = 2.dp,
                             color = when {
-                                isFocused -> BorderFocused
-                                digit.toString().isNotEmpty() -> BorderFocused
-                                else -> Border
+                                isFocused -> MaterialTheme.colorScheme.primary
+                                digit.toString().isNotEmpty() -> MaterialTheme.colorScheme.primary
+                                else -> MaterialTheme.colorScheme.outline
                             },
                             shape = RoundedCornerShape(10.dp)
                         ),

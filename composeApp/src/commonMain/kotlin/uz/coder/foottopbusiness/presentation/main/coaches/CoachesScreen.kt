@@ -25,7 +25,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import uz.coder.foottopbusiness.core.ui.Primary
 import uz.coder.foottopbusiness.data.network.dto.CoachResponseDto
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,14 +58,14 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
     }
 
     Scaffold(
-        containerColor = Color(0xFFF5F5F5),
+        containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                    .background(Color(0xFF0F3D2E))
+                    .background(MaterialTheme.colorScheme.primary)
                     .padding(top = statusBarPadding, start = 24.dp, end = 24.dp)
             ) {
                 Row(
@@ -76,7 +75,7 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
                 ) {
                     Text(
                         "Foydalanuvchilar",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -84,9 +83,9 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
                         onClick = { viewModel.handleEvent(CoachesContract.Event.ShowCreateDialog) },
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
-                            .background(Color.White.copy(alpha = 0.1f))
+                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f))
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
+                        Icon(Icons.Default.Add, contentDescription = "Add", tint = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
             }
@@ -97,7 +96,7 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
                 .fillMaxSize()
                 .padding(top = paddingValues.calculateTopPadding(), start = paddingValues.calculateStartPadding(
                     LayoutDirection.Ltr), end = paddingValues.calculateEndPadding(LayoutDirection.Rtl))
-                .background(Color(0xFFF5F5F5))
+                .background(MaterialTheme.colorScheme.surface)
         ) {
             // Search and Filters
             Column(modifier = Modifier.padding(16.dp)) {
@@ -110,18 +109,18 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
                         value = state.searchQuery,
                         onValueChange = { viewModel.handleEvent(CoachesContract.Event.Search(it)) },
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("Qidirish...", color = Color.Gray) },
-                        leadingIcon = { Icon(Icons.Default.Search, null, tint = Color.Gray) },
+                        placeholder = { Text("Qidirish...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color.Transparent,
-                            unfocusedBorderColor = Color.Transparent,
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                         )
                     )
-                    Text("Filter", color = Color.Gray, fontSize = 14.sp)
+                    Text("Filter", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                 }
 
                 Spacer(Modifier.height(16.dp))
@@ -142,12 +141,12 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
                                 modifier = Modifier
                                     .padding(end = 8.dp)
                                     .clip(RoundedCornerShape(16.dp))
-                                    .background(if (state.selectedRoleFilter == index) Color(0xFF0F3D2E) else Color.White)
+                                    .background(if (state.selectedRoleFilter == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
                                     .padding(horizontal = 12.dp, vertical = 6.dp),
                             ) {
                                 Text(
                                     title,
-                                    color = if (state.selectedRoleFilter == index) Color.White else Color.Black,
+                                    color = if (state.selectedRoleFilter == index) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Medium
                                 )
@@ -158,7 +157,7 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
 
             when {
                 state.isLoading || state.isCreating -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color(0xFF0F3D2E))
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
                 state.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -187,7 +186,7 @@ private fun UserListItem(coach: CoachResponseDto, onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
@@ -199,26 +198,26 @@ private fun UserListItem(coach: CoachResponseDto, onClick: () -> Unit) {
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFF5F5F5)),
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 val initial = coach.coachName?.firstOrNull()?.toString() ?: "U"
-                Text(initial, color = Color(0xFF0F3D2E), fontWeight = FontWeight.Bold)
+                Text(initial, color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.Bold)
             }
 
             Spacer(Modifier.width(12.dp))
 
             // Info
             Column(modifier = Modifier.weight(1f)) {
-                Text(coach.coachName ?: "—", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color.Black)
-                Text(coach.specialty ?: "user@malaeb.uz", fontSize = 12.sp, color = Color.Gray)
+                Text(coach.coachName ?: "—", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(coach.specialty ?: "user@malaeb.uz", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
             // Role and Action
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Coach", color = Color(0xFF2196F3), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                Text("Coach", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                 IconButton(onClick = {}) {
-                    Icon(Icons.Default.MoreVert, null, tint = Color.LightGray, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.MoreVert, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                 }
             }
         }
@@ -298,10 +297,13 @@ private fun CreateCoachDialog(
                             availability.takeIf { it.isNotBlank() })
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
             ) { Text("Qo'shish") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Bekor qilish") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Bekor qilish", color = MaterialTheme.colorScheme.secondary) } }
     )
 }
 
@@ -309,17 +311,33 @@ private fun CreateCoachDialog(
 @Composable
 private fun CoachDetailScreen(coach: CoachResponseDto, onBack: () -> Unit) {
     Scaffold(topBar = {
-        TopAppBar(title = { Text(coach.coachName ?: "Murabbiy") },
-            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } })
+        TopAppBar(
+            title = { Text(coach.coachName ?: "Murabbiy") },
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+            )
+        )
     }) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+        Column(modifier = Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface).padding(16.dp)) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Person, null, modifier = Modifier.size(56.dp), tint = Primary)
+                        Icon(
+                            Icons.Default.Person,
+                            null,
+                            modifier = Modifier.size(56.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                         Spacer(Modifier.width(16.dp))
                         Column {
-                            Text(coach.coachName ?: "—", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text(coach.coachName ?: "—", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
                             Text(coach.specialty ?: "—", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }

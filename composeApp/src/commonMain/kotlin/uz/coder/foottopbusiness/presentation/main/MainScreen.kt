@@ -15,61 +15,98 @@ import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import uz.coder.foottopbusiness.presentation.main.reports.ReportsScreen
+import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.Navigator
-import cafe.adriel.voyager.navigator.tab.CurrentTab
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
-import uz.coder.foottopbusiness.core.ui.Primary
 import uz.coder.foottopbusiness.presentation.main.coaches.CoachesVoyager
 import uz.coder.foottopbusiness.presentation.main.home.HomeVoyager
+import uz.coder.foottopbusiness.presentation.main.reports.ReportsScreen
 import uz.coder.foottopbusiness.presentation.main.stadium.StadiumVoyager
+
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import org.koin.compose.koinInject
+import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
+
+val LocalBottomBarVisible = staticCompositionLocalOf<MutableState<Boolean>> {
+    error("No BottomBarVisible provided")
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
-    TabNavigator(HomeTab) {
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
-            bottomBar = {
-                NavigationBar(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .windowInsetsPadding(WindowInsets.navigationBars),
-                    containerColor = Color.White,
-                    tonalElevation = 8.dp
-                ) {
-                    TabNavigationItem(HomeTab)
-                    TabNavigationItem(StadiumTab)
-                    TabNavigationItem(CoachesTab)
-                    TabNavigationItem(ReportsTab)
+    val bottomBarVisible = remember { mutableStateOf(true) }
+    val homeViewModel = koinInject<HomeViewModel>()
+    val homeState by homeViewModel.state.collectAsState()
+
+    CompositionLocalProvider(LocalBottomBarVisible provides bottomBarVisible) {
+        TabNavigator(HomeTab) {
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                bottomBar = {
+                    if (bottomBarVisible.value) {
+                        NavigationBar(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .windowInsetsPadding(WindowInsets.navigationBars),
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 8.dp
+                        ) {
+                            TabNavigationItem(HomeTab, if (homeState.isOwner) "Bosh" else "Panel")
+                            TabNavigationItem(StadiumTab, if (homeState.isOwner) "Jadval" else "Stadion")
+                            TabNavigationItem(CoachesTab, if (homeState.isOwner) "Coachlar" else "Rollar")
+                            TabNavigationItem(ReportsTab, "Daromad")
+                        }
+                    }
                 }
-            }
-        ) { paddingValues ->
-            Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-                CurrentTab()
+            ) { paddingValues ->
+                Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+                    CurrentTabContent(HomeTab)
+                    CurrentTabContent(StadiumTab)
+                    CurrentTabContent(CoachesTab)
+                    CurrentTabContent(ReportsTab)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun RowScope.TabNavigationItem(tab: Tab) {
+fun CurrentTabContent(tab: Tab) {
+    val tabNavigator = LocalTabNavigator.current
+    val isSelected = tabNavigator.current == tab
+    
+    // Use an Alpha-based approach or similar to keep the state alive but invisible
+    Box(modifier = Modifier.fillMaxSize(), propagateMinConstraints = true) {
+        if (isSelected) {
+            tab.Content()
+        }
+    }
+}
+
+@Composable
+private fun RowScope.TabNavigationItem(tab: Tab, label: String? = null) {
     val tabNavigator = LocalTabNavigator.current
     val isSelected = tabNavigator.current == tab
 
@@ -79,14 +116,14 @@ private fun RowScope.TabNavigationItem(tab: Tab) {
         icon = {
             Icon(
                 painter = tab.options.icon!!,
-                contentDescription = tab.options.title
+                contentDescription = label ?: tab.options.title
             )
         },
-        label = { Text(tab.options.title, fontSize = 10.sp) },
+        label = { Text(label ?: tab.options.title, fontSize = 10.sp) },
         colors = NavigationBarItemDefaults.colors(
-            selectedIconColor = Primary,
-            selectedTextColor = Primary,
-            indicatorColor = Primary.copy(alpha = 0.1f),
+            selectedIconColor = MaterialTheme.colorScheme.primary,
+            selectedTextColor = MaterialTheme.colorScheme.primary,
+            indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
             unselectedIconColor = Color.Gray,
             unselectedTextColor = Color.Gray,
         )
@@ -109,7 +146,13 @@ internal object HomeTab : Tab {
 
     @Composable
     override fun Content() {
-        Navigator(HomeVoyager)
+        val visibility = LocalBottomBarVisible.current
+        Navigator(HomeVoyager) { navigator ->
+            LaunchedEffect(navigator.size) {
+                visibility.value = navigator.size <= 1
+            }
+            CurrentScreen()
+        }
     }
 }
 
@@ -129,7 +172,13 @@ internal object StadiumTab : Tab {
 
     @Composable
     override fun Content() {
-        Navigator(StadiumVoyager)
+        val visibility = LocalBottomBarVisible.current
+        Navigator(StadiumVoyager) { navigator ->
+            LaunchedEffect(navigator.size) {
+                visibility.value = navigator.size <= 1
+            }
+            CurrentScreen()
+        }
     }
 }
 
@@ -149,7 +198,13 @@ internal object CoachesTab : Tab {
 
     @Composable
     override fun Content() {
-        Navigator(CoachesVoyager)
+        val visibility = LocalBottomBarVisible.current
+        Navigator(CoachesVoyager) { navigator ->
+            LaunchedEffect(navigator.size) {
+                visibility.value = navigator.size <= 1
+            }
+            CurrentScreen()
+        }
     }
 }
 

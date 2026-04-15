@@ -45,6 +45,5 @@ sealed interface StadiumDetailsContract {
         object SavePitch : Event
         data class SlotClick(val slot: SlotDto) : Event
         object DismissSlotDialog : Event
-        object BookSlot : Event
     }
 }

@@ -15,7 +15,8 @@ sealed interface StadiumContract {
         val isLastPage: Boolean = false,
         val error: String? = null,
         val stadiumToDelete: StadiumResponse? = null,
-        val hasError: Boolean = false // Internet yoki boshqa xatolik bo'lsa
+        val hasError: Boolean = false,
+        val isOwner: Boolean = false
     ) : MviState
 
     sealed interface Effect : MviEffect {

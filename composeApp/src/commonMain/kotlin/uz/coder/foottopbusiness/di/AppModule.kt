@@ -107,8 +107,8 @@ val appModule = module {
     factory { SplashViewModel(get()) }
     factory { SendOtpViewModel(get(), get(), get()) }
     factory { LoginViewModel(get(), get(), get(), get(), get()) }
-    factory { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    factory { StadiumViewModel(get(), get()) }
+    factory { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    factory { StadiumViewModel(get(), get(), get(), get()) }
     factory { AddPitchViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { (stadium: StadiumResponse) -> EditStadiumViewModel(stadium, get(), get(), get()) }
     factory { (stadium: StadiumResponse) -> StadiumDetailsViewModel(stadium, get()) }
