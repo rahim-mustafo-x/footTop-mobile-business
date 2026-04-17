@@ -6,7 +6,6 @@ import uz.coder.foottopbusiness.core.SessionManager
 import uz.coder.foottopbusiness.core.normalizeBearerToken
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.data.network.AuthApiService
-import uz.coder.foottopbusiness.data.network.dto.auth.LoginStatus
 import uz.coder.foottopbusiness.domain.repository.AuthRepository
 import uz.coder.foottopbusiness.domain.repository.LoginResult
 import kotlin.time.Clock
@@ -17,50 +16,46 @@ class AuthRepositoryImpl(
     private val sessionManager: SessionManager,
 ) : AuthRepository {
 
-    override fun sendOtp(phoneNumber: String) = flow {
-        val response = authApiService.sendOtp(phoneNumber)
-        emit(response.success ?: false)
+    override fun staffLogin(username: String, password: String) = flow {
+        val response = authApiService.staffLogin(uz.coder.foottopbusiness.data.network.dto.auth.StaffLoginRequest(username, password))
+        val access = normalizeBearerToken(response.accessToken)
+        val refresh = normalizeBearerToken(response.refreshToken)
+        if (access != null && refresh != null) {
+            saveAuthData(
+                accessToken = access,
+                refreshToken = refresh,
+                accessExpiresIn = response.accessTokenExpiresIn,
+                refreshExpiresIn = response.refreshTokenExpiresIn,
+                userId = response.id
+            )
+            emit(LoginResult.Success)
+        } else {
+            emit(LoginResult.InvalidOtp)
+        }
     }
 
-    override fun login(phoneNumber: String, otp: String) = flow {
-        val response = authApiService.login(phoneNumber, otp)
-        when (response.status) {
-            LoginStatus.REGISTER_REQUIRED -> {
-                emit(LoginResult.RegisterRequired)
-            }
-            LoginStatus.INVALID_OTP -> {
-                emit(LoginResult.InvalidOtp)
-            }
-            else -> {
-                val access = normalizeBearerToken(response.resolvedAccessToken())
-                val refreshToken = normalizeBearerToken(response.refreshToken)
-                if (access == null || refreshToken == null) {
-                    emit(LoginResult.InvalidOtp)
-                    return@flow
-                }
-
-                // 1. Save tokens
-                val currentTime = Clock.System.now().toEpochMilliseconds()
-                preferencesManager.setToken(access)
-                preferencesManager.setRefreshToken(refreshToken)
-                val accessExpiresIn = response.resolvedAccessTokenExpiresIn() ?: 900L
-                val refreshExpiresIn = response.resolvedRefreshTokenExpiresIn() ?: 900L
-                preferencesManager.setAccessTokenExpiration(currentTime + accessExpiresIn * 1000L)
-                preferencesManager.setRefreshTokenExpiration(currentTime + refreshExpiresIn * 1000L)
-                
-                // 2. Mark as authorised immediately since we have a token
-                preferencesManager.setAuthorised(true)
-                
-                // 3. Reset session state
-                sessionManager.onAuthorized()
-                
-                // 4. Save User ID if available
-                response.userId?.let {
-                    preferencesManager.setUserId(it)
-                }
-
-                emit(LoginResult.Success)
-            }
+    private suspend fun saveAuthData(
+        accessToken: String,
+        refreshToken: String,
+        accessExpiresIn: Long?,
+        refreshExpiresIn: Long?,
+        userId: Long?
+    ) {
+        val currentTime = Clock.System.now().toEpochMilliseconds()
+        preferencesManager.setToken(accessToken)
+        preferencesManager.setRefreshToken(refreshToken)
+        
+        val aExpires = accessExpiresIn ?: 3600L
+        val rExpires = refreshExpiresIn ?: 86400L
+        
+        preferencesManager.setAccessTokenExpiration(currentTime + aExpires * 1000L)
+        preferencesManager.setRefreshTokenExpiration(currentTime + rExpires * 1000L)
+        
+        preferencesManager.setAuthorised(true)
+        sessionManager.onAuthorized()
+        
+        userId?.let {
+            preferencesManager.setUserId(it.toInt())
         }
     }
 

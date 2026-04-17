@@ -30,8 +30,17 @@ class UserCreateViewModel(
             is UserCreateContract.Event.FullNameChanged -> {
                 _state.update { it.copy(fullName = event.name) }
             }
+            is UserCreateContract.Event.LoginChanged -> {
+                _state.update { it.copy(login = event.login) }
+            }
             is UserCreateContract.Event.PhoneChanged -> {
                 _state.update { it.copy(phone = event.phone) }
+            }
+            is UserCreateContract.Event.PasswordChanged -> {
+                _state.update { it.copy(password = event.password) }
+            }
+            is UserCreateContract.Event.AssignedStadiumChanged -> {
+                _state.update { it.copy(assignedStadium = event.stadium) }
             }
             is UserCreateContract.Event.RoleChanged -> {
                 _state.update { it.copy(role = event.role) }
@@ -42,7 +51,7 @@ class UserCreateViewModel(
 
     private fun createUser() {
         val currentState = _state.value
-        if (currentState.fullName.isBlank() || currentState.phone.isBlank()) {
+        if (currentState.fullName.isBlank() || currentState.phone.isBlank() || currentState.login.isBlank()) {
             screenModelScope.launch {
                 _effect.emit(UserCreateContract.Effect.ShowError("Iltimos, barcha maydonlarni to'ldiring"))
             }
@@ -52,8 +61,9 @@ class UserCreateViewModel(
         val request = UserRequestDto(
             fullName = currentState.fullName,
             phone = currentState.phone,
-            username = currentState.phone, // Using phone as username for simplicity
-            password = "password123" // Default password
+            username = currentState.login,
+            password = currentState.password.ifBlank { "password123" },
+            roles = listOf(currentState.role)
         )
 
         userRepository.createUser(request)

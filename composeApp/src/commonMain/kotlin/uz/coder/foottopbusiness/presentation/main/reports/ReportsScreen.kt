@@ -100,15 +100,16 @@ fun ReportsScreen() {
                             fontSize = 13.sp
                         )
                     }
-                    IconButton(
-                        onClick = { /* Download report */ },
+                    //todo continue it if asked
+                    /*IconButton(
+                        onClick = { *//* Download report *//* },
                         modifier = Modifier
                             .size(44.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .background(Color.White.copy(alpha = 0.15f))
                     ) {
                         Icon(Icons.Default.Download, contentDescription = "Download", tint = Color.White, modifier = Modifier.size(22.dp))
-                    }
+                    }*/
                 }
             }
         }

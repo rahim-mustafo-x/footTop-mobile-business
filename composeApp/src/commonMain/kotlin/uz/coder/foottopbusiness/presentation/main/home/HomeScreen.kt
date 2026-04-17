@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,45 +19,41 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.outlined.History
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SportsSoccer
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,23 +63,23 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import uz.coder.foottopbusiness.core.BackHandler
+import uz.coder.foottopbusiness.core.platform.exitApp
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
+import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.home.history.HistoryScreen
 import uz.coder.foottopbusiness.presentation.main.home.user.UserCreateScreen
-import uz.coder.foottopbusiness.presentation.main.settings.notification.SendNotificationVoyager
+import uz.coder.foottopbusiness.presentation.main.reports.ReportItem
 import uz.coder.foottopbusiness.presentation.main.settings.SettingsVoyager
+import uz.coder.foottopbusiness.presentation.main.settings.notification.SendNotificationVoyager
 import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.AddPitchVoyager
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsVoyager
-import uz.coder.foottopbusiness.presentation.main.reports.ReportItem
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.ui.unit.LayoutDirection
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,6 +90,29 @@ fun HomeScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val navigator = LocalNavigator.currentOrThrow
+    val snackbarHostState = remember { SnackbarHostState() }
+    var lastBackPressTime by remember { mutableStateOf(0L) }
+
+    BackHandler(enabled = state.currentTab == 0 && state.selectedTournament == null && state.selectedStadiumForTime == null) {
+        val currentTime = kotlin.time.Clock.System.now().toEpochMilliseconds()
+        if (currentTime - lastBackPressTime < 2000) {
+            exitApp()
+        } else {
+            lastBackPressTime = currentTime
+            viewModel.handleEvent(HomeContract.Event.ShowExitToast)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is HomeContract.Effect.ShowToast -> {
+                    snackbarHostState.showSnackbar(effect.message)
+                }
+                else -> {}
+            }
+        }
+    }
 
     // Placeholder for platform-specific permission check/request
     // In a real KMP app, you might use a library like MOKO Permissions 
@@ -132,7 +153,8 @@ fun HomeScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -140,30 +162,50 @@ fun HomeScreen(
                 .padding(top = padding.calculateTopPadding(), start = padding.calculateStartPadding(
                     LayoutDirection.Ltr), end = padding.calculateEndPadding(LayoutDirection.Rtl))
         ) {
-            when (state.currentTab) {
-                0 -> {
-                    if (state.isAdmin) {
-                        HomeTab(
-                            state = state,
-                            viewModel = viewModel,
-                            onAddStadium = { navigator.push(AddPitchVoyager) },
-                            onAddUser = { navigator.push(UserCreateScreen()) },
-                            onAddTournament = { navigator.push(TournamentsVoyager) },
-                            onAddCoach = { navigator.push(uz.coder.foottopbusiness.presentation.main.coaches.create.CoachCreateScreen()) },
-                            navigateToStadiums = navigateToStadiums,
-                            onProfileClick = { navigator.push(SettingsVoyager) },
-                            onNotificationClick = { navigator.push(SendNotificationVoyager) }
-                        )
-                    } else {
-                        OwnerHomeTab(
-                            state = state,
-                            viewModel = viewModel,
-                            onProfileClick = { navigator.push(SettingsVoyager) },
-                            onNotificationClick = { navigator.push(SendNotificationVoyager) }
-                        )
-                    }
+            if (state.isLoadingUser && state.userRole == UserRole.UNKNOWN) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
-                1 -> HistoryScreen(state)
+            } else {
+                when (state.currentTab) {
+                    0 -> {
+                        when (state.userRole) {
+                            UserRole.ADMIN -> {
+                                HomeTab(
+                                    state = state,
+                                    viewModel = viewModel,
+                                    onAddStadium = { navigator.push(AddPitchVoyager) },
+                                    onAddUser = { navigator.push(UserCreateScreen()) },
+                                    onAddTournament = { navigator.push(TournamentsVoyager) },
+                                    onAddCoach = { navigator.push(uz.coder.foottopbusiness.presentation.main.coaches.create.CoachCreateScreen()) },
+                                    navigateToStadiums = navigateToStadiums,
+                                    onProfileClick = { navigator.push(SettingsVoyager) },
+                                    onNotificationClick = { navigator.push(SendNotificationVoyager) }
+                                )
+                            }
+
+                            UserRole.OWNER -> {
+                                OwnerHomeTab(
+                                    state = state,
+                                    viewModel = viewModel,
+                                    onProfileClick = { navigator.push(SettingsVoyager) },
+                                    onNotificationClick = { navigator.push(SendNotificationVoyager) }
+                                )
+                            }
+
+                            else -> {
+                                // For other roles like COACH or USER, show a restricted view
+                                RestrictedAccessView(
+                                    role = state.userRole,
+                                    onRefresh = { viewModel.handleEvent(HomeContract.Event.Load) },
+                                    onLogout = { viewModel.handleEvent(HomeContract.Event.Logout) }
+                                )
+                            }
+                        }
+                    }
+
+                    1 -> HistoryScreen(state)
+                }
             }
         }
     }
@@ -193,25 +235,27 @@ private fun HomeTab(
             Column(modifier = Modifier.padding(16.dp)) {
                 MalaebDashboard(state, viewModel)
                 
-                Spacer(Modifier.height(24.dp))
-                
-                Text(
-                    "Tezkor amallar",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                
-                Spacer(Modifier.height(16.dp))
-                
-                QuickActionsGrid(
-                    onAddStadium = onAddStadium,
-                    onAddUser = onAddUser,
-                    onAddTournament = onAddTournament,
-                    onAddCoach = onAddCoach
-                )
-                
-                Spacer(Modifier.height(40.dp))
+                if (!state.isAdmin) {
+                    Spacer(Modifier.height(24.dp))
+
+                    Text(
+                        "Tezkor amallar",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+
+                    QuickActionsGrid(
+                        onAddStadium = onAddStadium,
+                        onAddUser = onAddUser,
+                        onAddTournament = onAddTournament,
+                        onAddCoach = onAddCoach
+                    )
+
+                    Spacer(Modifier.height(40.dp))
+                }
             }
         }
     }
@@ -584,7 +628,7 @@ private fun QuickActionsGrid(
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             QuickActionItem("Stadion qo'sh", Icons.Default.Home, primary, Modifier.weight(1f), onAddStadium)
-            QuickActionItem("Hisob yaratish", Icons.Default.AddCircle, primary, Modifier.weight(1f), onAddUser)
+            QuickActionItem("Xodim qo'shish", Icons.Default.AddCircle, primary, Modifier.weight(1f), onAddUser)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             QuickActionItem("Turnir yarat", Icons.Default.Add, primary, Modifier.weight(1f), onAddTournament)
@@ -712,6 +756,69 @@ private fun MalaebStadiumCard(stadium: StadiumResponse, modifier: Modifier = Mod
                 Text(stadium.name ?: "Noma'lum stadion", fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text("${stadium.districtName}, ${stadium.regionName}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+        }
+    }
+}
+
+@Composable
+private fun RestrictedAccessView(role: UserRole, onRefresh: () -> Unit, onLogout: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(120.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Default.Lock,
+                contentDescription = null,
+                modifier = Modifier.size(64.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+        
+        Spacer(Modifier.height(32.dp))
+        
+        Text(
+            "Kirish cheklangan",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        
+        Spacer(Modifier.height(8.dp))
+        
+        Text(
+            if (role == UserRole.UNKNOWN) 
+                "Sizning profilingiz yuklanmoqda yoki ruxsatnomalar aniqlanmadi." 
+            else 
+                "Sizning hisobingiz (${role.name}) ushbu panelga kirish huquqiga ega emas.",
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+        
+        Spacer(Modifier.height(48.dp))
+        
+        Button(
+            onClick = onRefresh,
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Icon(Icons.Default.Refresh, null)
+            Spacer(Modifier.width(8.dp))
+            Text("Yangilash")
+        }
+        
+        Spacer(Modifier.height(16.dp))
+        
+        TextButton(onClick = onLogout) {
+            Text("Boshqa hisobga o'tish", color = MaterialTheme.colorScheme.error)
         }
     }
 }

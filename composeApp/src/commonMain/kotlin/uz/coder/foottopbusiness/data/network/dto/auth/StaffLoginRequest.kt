@@ -4,9 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class LoginRequest(
-    @SerialName("phoneNumber")
-    val phoneNumber: String,
-    @SerialName("otpCode")
-    val otpCode: String
+data class StaffLoginRequest(
+    @SerialName("username") val username: String,
+    @SerialName("password") val password: String
 )

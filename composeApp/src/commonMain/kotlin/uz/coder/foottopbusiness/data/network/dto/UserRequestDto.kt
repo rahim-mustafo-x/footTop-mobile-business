@@ -12,4 +12,5 @@ data class UserRequestDto(
     val profileImageUrl: String? = null,
     val location: String? = null,
     val districtId: Long? = null,
+    val roles: List<String>? = null,
 )

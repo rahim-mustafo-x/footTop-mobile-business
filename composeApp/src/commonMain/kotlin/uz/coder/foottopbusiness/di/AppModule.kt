@@ -10,7 +10,6 @@ import uz.coder.foottopbusiness.domain.repository.*
 import uz.coder.foottopbusiness.domain.usecase.auth.IsLoginInUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.LoginUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.LogoutUseCase
-import uz.coder.foottopbusiness.domain.usecase.auth.SendOtpUseCase
 import uz.coder.foottopbusiness.domain.usecase.coach.CreateCoachUseCase
 import uz.coder.foottopbusiness.domain.usecase.coach.GetCoachesUseCase
 import uz.coder.foottopbusiness.domain.usecase.match.GetMatchesUseCase
@@ -35,7 +34,6 @@ import uz.coder.foottopbusiness.domain.usecase.user.GetAllUsersUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.UserIdUseCase
 import uz.coder.foottopbusiness.presentation.auth.login.LoginViewModel
-import uz.coder.foottopbusiness.presentation.auth.otp.SendOtpViewModel
 import uz.coder.foottopbusiness.presentation.main.coaches.CoachesViewModel
 import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
 import uz.coder.foottopbusiness.presentation.main.home.user.UserCreateViewModel
@@ -74,7 +72,6 @@ val appModule = module {
     single<NotificationRepository> { NotificationRepositoryImpl(get()) }
 
     // use-cases
-    factory { SendOtpUseCase(get()) }
     factory { LoginUseCase(get()) }
     factory { IsLoginInUseCase(get()) }
     factory { LogoutUseCase(get()) }
@@ -105,8 +102,7 @@ val appModule = module {
 
     // viewModels
     factory { SplashViewModel(get()) }
-    factory { SendOtpViewModel(get(), get(), get()) }
-    factory { LoginViewModel(get(), get(), get(), get(), get()) }
+    factory { LoginViewModel(get(), get(), get(), get()) }
     factory { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { StadiumViewModel(get(), get(), get(), get()) }
     factory { AddPitchViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }

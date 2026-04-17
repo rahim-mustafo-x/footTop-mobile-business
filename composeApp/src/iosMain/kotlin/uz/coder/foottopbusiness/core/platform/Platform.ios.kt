@@ -7,3 +7,8 @@ class IOSPlatform: Platform {
 }
 
 actual fun getPlatform(): Platform = IOSPlatform()
+
+actual fun exitApp() {
+    // iOS apps are not supposed to exit programmatically, but if forced:
+    // platform.posix.exit(0)
+}

@@ -170,9 +170,14 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     }
                     
                     Spacer(Modifier.height(16.dp))
-                    
-                    DetailItem(Icons.Default.LocationOn, "Manzil", "${stadium.regionName}, ${stadium.districtName}")
-                    DetailItem(Icons.Default.Stadium, "Tur", stadium.type ?: "Football")
+                    val addressName = if (stadium.regionName!=null && stadium.districtName!=null){
+                        "${stadium.regionName}, ${stadium.districtName}"
+                    }else{
+                        "Aniqlanmagan"
+                    }
+                    val stadiumType = stadium.type?.uppercase()?.first().toString()+stadium.type?.lowercase()?.substring(1, stadium.type.length)
+                    DetailItem(Icons.Default.LocationOn, "Manzil", addressName)
+                    DetailItem(Icons.Default.Stadium, "Tur", stadiumType)
                     DetailItem(Icons.Default.Stadium, "Sig'im", "${stadium.capacity ?: 0} kishi")
                     DetailItem(Icons.Default.Stadium, "Narx", "${stadium.pricePerHour?.toInt() ?: 0} so'm/soat")
                     DetailItem(Icons.Default.Stadium, "Ish vaqti", "${stadium.openTime.formatToTime()} - ${stadium.closeTime.formatToTime()}")

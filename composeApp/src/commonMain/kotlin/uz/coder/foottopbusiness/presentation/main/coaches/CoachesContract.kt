@@ -15,7 +15,6 @@ sealed interface CoachesContract {
         val error: String? = null,
         val selectedCoach: CoachResponseDto? = null,
         val isCreating: Boolean = false,
-        val showCreateDialog: Boolean = false,
     ) : MviState
 
     sealed interface Effect : MviEffect {
@@ -26,8 +25,6 @@ sealed interface CoachesContract {
         object Load : Event
         data class SelectCoach(val coach: CoachResponseDto) : Event
         object ClearDetail : Event
-        object ShowCreateDialog : Event
-        object HideCreateDialog : Event
         data class Create(
             val userId: Long,
             val specialty: String,

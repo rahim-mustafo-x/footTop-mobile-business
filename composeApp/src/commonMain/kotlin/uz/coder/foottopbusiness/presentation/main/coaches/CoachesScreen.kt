@@ -25,12 +25,16 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import uz.coder.foottopbusiness.data.network.dto.CoachResponseDto
+import uz.coder.foottopbusiness.presentation.main.coaches.create.CoachCreateScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CoachesScreen(viewModel: CoachesViewModel) {
     val state by viewModel.state.collectAsState()
+    val navigator = LocalNavigator.currentOrThrow
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
@@ -46,15 +50,6 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
             onBack = { viewModel.handleEvent(CoachesContract.Event.ClearDetail) }
         )
         return
-    }
-
-    if (state.showCreateDialog) {
-        CreateCoachDialog(
-            onDismiss = { viewModel.handleEvent(CoachesContract.Event.HideCreateDialog) },
-            onCreate = { userId, specialty, expYears, rate, availability ->
-                viewModel.handleEvent(CoachesContract.Event.Create(userId, specialty, expYears, rate, availability))
-            }
-        )
     }
 
     Scaffold(
@@ -80,7 +75,7 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
                         fontWeight = FontWeight.Bold
                     )
                     IconButton(
-                        onClick = { viewModel.handleEvent(CoachesContract.Event.ShowCreateDialog) },
+                        onClick = { navigator.push(CoachCreateScreen()) },
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f))
@@ -226,89 +221,6 @@ private fun UserListItem(coach: CoachResponseDto, onClick: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CreateCoachDialog(
-    onDismiss: () -> Unit,
-    onCreate: (userId: Long, specialty: String, experienceYears: Int, hourlyRate: Double, availability: String?) -> Unit,
-) {
-    var userId by remember { mutableStateOf("") }
-    var specialty by remember { mutableStateOf("MURABBIY") }
-    var expYears by remember { mutableStateOf("") }
-    var hourlyRate by remember { mutableStateOf("") }
-    var availability by remember { mutableStateOf("") }
-
-    val specialties = listOf("MURABBIY", "ADMIN", "EGASI")
-    var expanded by remember { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Yangi murabbiy", fontWeight = FontWeight.SemiBold) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = userId, onValueChange = { userId = it.filter { c -> c.isDigit() } },
-                    label = { Text("Foydalanuvchi ID") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    OutlinedTextField(
-                        value = specialty,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Mutaxassislik") },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
-                    )
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
-                    ) {
-                        specialties.forEach { item ->
-                            DropdownMenuItem(
-                                text = { Text(item) },
-                                onClick = {
-                                    specialty = item
-                                    expanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-
-                OutlinedTextField(value = expYears, onValueChange = { expYears = it.filter { c -> c.isDigit() } },
-                    label = { Text("Tajriba (yil)") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                OutlinedTextField(value = hourlyRate, onValueChange = { hourlyRate = it.filter { c -> c.isDigit() || c == '.' } },
-                    label = { Text("Soatlik narx (so'm)") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
-                OutlinedTextField(value = availability, onValueChange = { availability = it },
-                    label = { Text("Mavjudlik (ixtiyoriy)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (userId.isNotBlank() && specialty.isNotBlank()) {
-                        onCreate(userId.toLongOrNull() ?: 0L, specialty,
-                            expYears.toIntOrNull() ?: 0, hourlyRate.toDoubleOrNull() ?: 0.0,
-                            availability.takeIf { it.isNotBlank() })
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            ) { Text("Qo'shish") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Bekor qilish", color = MaterialTheme.colorScheme.secondary) } }
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
 private fun CoachDetailScreen(coach: CoachResponseDto, onBack: () -> Unit) {
     Scaffold(topBar = {
         TopAppBar(
@@ -321,7 +233,8 @@ private fun CoachDetailScreen(coach: CoachResponseDto, onBack: () -> Unit) {
             )
         )
     }) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.surface).padding(16.dp)) {
+        Column(modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding(), start = padding.calculateStartPadding(
+            LayoutDirection.Ltr), end = padding.calculateEndPadding(LayoutDirection.Rtl)).background(MaterialTheme.colorScheme.surface).padding(16.dp)) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),

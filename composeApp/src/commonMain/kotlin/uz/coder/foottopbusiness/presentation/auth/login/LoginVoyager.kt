@@ -13,17 +13,17 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import uz.coder.foottopbusiness.presentation.main.MainVoyager
 
-class LoginVoyager(private val phoneNumber:String): Screen {
+class LoginVoyager : Screen {
     @Composable
     override fun Content() {
         val viewModel = koinInject<LoginViewModel>()
         val snackBarHostState = remember { SnackbarHostState() }
         val scope = rememberCoroutineScope()
         val navigator = LocalNavigator.currentOrThrow
-        viewModel.handleEvent(LoginContract.Event.PhoneNumber(phoneNumber))
+        
         Scaffold(snackbarHost = { SnackbarHost(snackBarHostState) }) {
             LoginScreen(
-                navigateToMain = { navigator.push(MainVoyager) },
+                navigateToMain = { navigator.replaceAll(MainVoyager) },
                 navigateBack = { navigator.pop() },
                 showToast = { text ->
                     scope.launch { snackBarHostState.showSnackbar(text) }

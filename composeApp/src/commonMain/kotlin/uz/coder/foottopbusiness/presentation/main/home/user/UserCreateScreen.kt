@@ -34,6 +34,7 @@ import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.flow.collectLatest
+import uz.coder.foottopbusiness.core.BackHandler
 
 class UserCreateScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -43,6 +44,10 @@ class UserCreateScreen : Screen {
         val state by viewModel.state.collectAsState()
         val navigator = LocalNavigator.currentOrThrow
         val snackbarHostState = remember { SnackbarHostState() }
+
+        BackHandler {
+            navigator.pop()
+        }
 
         LaunchedEffect(Unit) {
             viewModel.effect.collectLatest { effect ->
@@ -105,8 +110,8 @@ class UserCreateScreen : Screen {
                     viewModel.onEvent(UserCreateContract.Event.FullNameChanged(it))
                 }
 
-                LabelAndField("LOGIN (EMAIL)", "", "sardor@malaeb.uz") {
-                    // TODO: Update login
+                LabelAndField("LOGIN (EMAIL)", state.login, "sardor@malaeb.uz") {
+                    viewModel.onEvent(UserCreateContract.Event.LoginChanged(it))
                 }
 
                 LabelAndField("TELEFON", state.phone, "+998 90 123 45 67", KeyboardType.Phone) {
@@ -117,8 +122,8 @@ class UserCreateScreen : Screen {
                     Text("PAROL", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     var passwordVisible by remember { mutableStateOf(false) }
                     TextField(
-                        value = "",
-                        onValueChange = { },
+                        value = state.password,
+                        onValueChange = { viewModel.onEvent(UserCreateContract.Event.PasswordChanged(it)) },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("Parol kiriting", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),

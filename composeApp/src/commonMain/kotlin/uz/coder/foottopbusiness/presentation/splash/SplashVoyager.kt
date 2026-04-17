@@ -21,7 +21,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.koin.compose.koinInject
-import uz.coder.foottopbusiness.presentation.auth.otp.SendOtpVoyager
+import uz.coder.foottopbusiness.presentation.auth.login.LoginVoyager
 import uz.coder.foottopbusiness.presentation.main.MainVoyager
 
 object SplashVoyager : Screen {
@@ -34,7 +34,7 @@ object SplashVoyager : Screen {
             viewModel.navigationEvent.collect { event ->
                 when (event) {
                     SplashNavigationEvent.NavigateToMain -> navigator.replace(MainVoyager)
-                    SplashNavigationEvent.NavigateToLogin -> navigator.replace(SendOtpVoyager)
+                    SplashNavigationEvent.NavigateToLogin -> navigator.replace(LoginVoyager())
                 }
             }
         }

@@ -46,7 +46,12 @@ import uz.coder.foottopbusiness.presentation.main.stadium.StadiumVoyager
 
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import org.koin.compose.koinInject
+import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
 
 val LocalBottomBarVisible = staticCompositionLocalOf<MutableState<Boolean>> {
@@ -59,6 +64,18 @@ fun MainScreen() {
     val bottomBarVisible = remember { mutableStateOf(true) }
     val homeViewModel = koinInject<HomeViewModel>()
     val homeState by homeViewModel.state.collectAsState()
+
+    // Persist role to avoid flickering during state updates
+    var persistedRole by rememberSaveable { mutableStateOf(UserRole.UNKNOWN.name) }
+    
+    LaunchedEffect(homeState.userRole) {
+        if (homeState.userRole != UserRole.UNKNOWN) {
+            persistedRole = homeState.userRole.name
+        }
+    }
+
+    val currentRole = UserRole.valueOf(persistedRole)
+    val isAdminOrOwner = currentRole == UserRole.ADMIN || currentRole == UserRole.OWNER
 
     CompositionLocalProvider(LocalBottomBarVisible provides bottomBarVisible) {
         TabNavigator(HomeTab) {
@@ -73,10 +90,14 @@ fun MainScreen() {
                             containerColor = MaterialTheme.colorScheme.surface,
                             tonalElevation = 8.dp
                         ) {
-                            TabNavigationItem(HomeTab, if (homeState.isOwner) "Bosh" else "Panel")
-                            TabNavigationItem(StadiumTab, if (homeState.isOwner) "Jadval" else "Stadion")
-                            TabNavigationItem(CoachesTab, if (homeState.isOwner) "Coachlar" else "Rollar")
-                            TabNavigationItem(ReportsTab, "Daromad")
+                            TabNavigationItem(HomeTab, if (currentRole == UserRole.OWNER) "Bosh" else "Panel")
+                            TabNavigationItem(StadiumTab, if (currentRole == UserRole.OWNER) "Jadval" else "Stadion")
+                            if (isAdminOrOwner) {
+                                TabNavigationItem(CoachesTab, if (currentRole == UserRole.OWNER) "Coachlar" else "Rollar")
+                            }
+                            if (isAdminOrOwner) {
+                                TabNavigationItem(ReportsTab, "Daromad")
+                            }
                         }
                     }
                 }
@@ -84,8 +105,12 @@ fun MainScreen() {
                 Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
                     CurrentTabContent(HomeTab)
                     CurrentTabContent(StadiumTab)
-                    CurrentTabContent(CoachesTab)
-                    CurrentTabContent(ReportsTab)
+                    if (isAdminOrOwner) {
+                        CurrentTabContent(CoachesTab)
+                    }
+                    if (isAdminOrOwner) {
+                        CurrentTabContent(ReportsTab)
+                    }
                 }
             }
         }

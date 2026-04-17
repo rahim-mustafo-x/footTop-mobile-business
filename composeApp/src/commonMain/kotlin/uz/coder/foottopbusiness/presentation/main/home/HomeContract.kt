@@ -8,6 +8,7 @@ import uz.coder.foottopbusiness.data.network.dto.MatchResponseDto
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.data.network.dto.UserDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
+import uz.coder.foottopbusiness.domain.model.UserRole
 
 sealed interface HomeContract {
     data class State(
@@ -18,6 +19,7 @@ sealed interface HomeContract {
         // Role info
         val isAdmin: Boolean = false,
         val isOwner: Boolean = false,
+        val userRole: UserRole = UserRole.UNKNOWN,
         
         // User info
         val user: UserDto? = null,
@@ -107,6 +109,7 @@ sealed interface HomeContract {
         object Stadium: Event
         object Match: Event
         object Tournament: Event
+        object ShowExitToast : Event
         
         data class SetShowNotificationPermissionDialog(val show: Boolean) : Event
         object RequestNotificationPermission : Event

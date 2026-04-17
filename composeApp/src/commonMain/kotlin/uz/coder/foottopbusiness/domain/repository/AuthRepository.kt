@@ -9,8 +9,7 @@ sealed interface LoginResult {
 }
 
 interface AuthRepository {
-    fun sendOtp(phoneNumber: String): Flow<Boolean>
-    fun login(phoneNumber: String, otp: String): Flow<LoginResult>
+    fun staffLogin(username: String, password: String): Flow<LoginResult>
     fun isLoginIn(): Flow<Boolean>
     suspend fun logout()
 }

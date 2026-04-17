@@ -179,6 +179,7 @@ class CoachCreateScreen : Screen {
                     value = expYears,
                     onValueChange = { expYears = it.filter { c -> c.isDigit() } },
                     label = "Tajriba (yil)",
+                    placeholder = "Masalan: 5",
                     icon = Icons.Default.History,
                     keyboardType = KeyboardType.Number
                 )
@@ -187,6 +188,7 @@ class CoachCreateScreen : Screen {
                     value = hourlyRate,
                     onValueChange = { hourlyRate = it.filter { c -> c.isDigit() || c == '.' } },
                     label = "Soatlik narx (so'm)",
+                    placeholder = "Masalan: 150000",
                     icon = Icons.Default.Money,
                     keyboardType = KeyboardType.Decimal
                 )
@@ -195,6 +197,7 @@ class CoachCreateScreen : Screen {
                     value = availability,
                     onValueChange = { availability = it },
                     label = "Mavjudlik (ixtiyoriy)",
+                    placeholder = "Masalan: Dushanba-Juma, 18:00-21:00",
                     icon = Icons.Default.Schedule
                 )
 
@@ -238,6 +241,7 @@ class CoachCreateScreen : Screen {
         value: String,
         onValueChange: (String) -> Unit,
         label: String,
+        placeholder: String = "",
         icon: ImageVector,
         keyboardType: KeyboardType = KeyboardType.Text
     ) {
@@ -247,6 +251,7 @@ class CoachCreateScreen : Screen {
                 value = value,
                 onValueChange = onValueChange,
                 modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
                 leadingIcon = { Icon(icon, null, tint = MaterialTheme.colorScheme.primary) },
                 shape = RoundedCornerShape(12.dp),
                 keyboardOptions = KeyboardOptions(keyboardType = keyboardType),

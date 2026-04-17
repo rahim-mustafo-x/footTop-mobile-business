@@ -26,10 +26,8 @@ class CoachesViewModel(
             }
             is CoachesContract.Event.SelectCoach -> updateState { copy(selectedCoach = event.coach) }
             CoachesContract.Event.ClearDetail -> updateState { copy(selectedCoach = null) }
-            CoachesContract.Event.ShowCreateDialog -> updateState { copy(showCreateDialog = true) }
-            CoachesContract.Event.HideCreateDialog -> updateState { copy(showCreateDialog = false) }
             is CoachesContract.Event.Create -> {
-                updateState { copy(isCreating = true, showCreateDialog = false) }
+                updateState { copy(isCreating = true) }
                 executeAsync(
                     block = {
                         var result: CoachResponseDto? = null

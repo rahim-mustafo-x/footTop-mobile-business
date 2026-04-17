@@ -1,5 +1,6 @@
 package uz.coder.foottopbusiness.presentation.main.home
 
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.zip
 import kotlinx.datetime.LocalDateTime
@@ -18,6 +19,7 @@ import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.home.HomeContract.Effect.*
 
 class HomeViewModel(
@@ -170,6 +172,8 @@ class HomeViewModel(
                 }
             }
 
+            HomeContract.Event.ShowExitToast -> sendEffect(ShowToast("Chiqish uchun yana bir marta bosing"))
+
             HomeContract.Event.Match -> sendEffect(Match)
             HomeContract.Event.Stadium -> sendEffect(Stadium)
             HomeContract.Event.Tournament -> sendEffect(Tournament)
@@ -184,17 +188,27 @@ class HomeViewModel(
     }
 
     private fun loadUser() {
+        updateState { copy(isLoadingUser = true) }
         executeAsync {
-            val userId = preferencesManager.userId.first()
-            if (userId == 0) return@executeAsync
+            val userId = preferencesManager.userId.filter { it != 0 }.first()
             getUserUseCase(userId.toLong()).collect { result ->
                 val isAdmin = result.roles?.any { uz.coder.foottopbusiness.core.RoleConstants.isAdmin(it.name) } ?: false
                 val isOwner = result.roles?.any { uz.coder.foottopbusiness.core.RoleConstants.isOwner(it.name) } ?: false
+                
+                val userRole = when {
+                    isAdmin -> UserRole.ADMIN
+                    isOwner -> UserRole.OWNER
+                    result.roles?.any { it.name?.contains("COACH", ignoreCase = true) == true || it.name?.contains("MURABBIY", ignoreCase = true) == true } == true -> UserRole.COACH
+                    else -> UserRole.fromString(result.roles?.firstOrNull()?.name)
+                }
+
                 updateState { 
                     copy(
                         user = result,
                         isAdmin = isAdmin,
-                        isOwner = isOwner
+                        isOwner = isOwner,
+                        userRole = userRole,
+                        isLoadingUser = false
                     ) 
                 }
             }
