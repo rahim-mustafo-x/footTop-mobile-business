@@ -20,14 +20,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.collectAsState
 import uz.coder.foottopbusiness.core.BackHandler
 import uz.coder.foottopbusiness.core.log
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.material.icons.filled.*
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsState()
     val hostState = remember { SnackbarHostState() }
 
     BackHandler { onBack() }
@@ -81,29 +87,40 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState) },
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                    .background(MaterialTheme.colorScheme.primary)
-                    .padding(top = statusBarPadding, start = 24.dp, end = 24.dp)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                            )
+                        )
+                    )
+                    .padding(top = statusBarPadding, start = 8.dp, end = 24.dp, bottom = 24.dp)
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 32.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
                         onClick = onBack,
                         modifier = Modifier
+                            .padding(horizontal = 8.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f))
+                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f))
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
                     }
-                    Spacer(Modifier.width(16.dp))
                     Text(
                         "Yangi stadion",
                         color = MaterialTheme.colorScheme.onPrimary,
@@ -119,109 +136,245 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Text(
-                "Maydon haqida",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.LocationOn,
+                            null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "Manzil ma'lumotlari",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Box(modifier = Modifier.weight(1f)) {
-                    RegionDropdown(state, viewModel)
-                }
-                Box(modifier = Modifier.weight(1f)) {
-                    DistrictDropdown(state, viewModel)
-                }
-            }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            RegionDropdown(state, viewModel)
+                        }
+                        Box(modifier = Modifier.weight(1f)) {
+                            DistrictDropdown(state, viewModel)
+                        }
+                    }
 
-            LabelAndField("ANIQ MANZIL", state.name, "Ko'cha, uy raqami") {
-                viewModel.handleEvent(AddPitchContract.Event.Name(it))
-            }
-
-            LabelAndField("TAVSIF (DESCRIPTION)", state.description, "Stadion haqida qo'shimcha ma'lumot...", singleLine = false) {
-                viewModel.handleEvent(AddPitchContract.Event.Description(it))
-            }
-
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Box(modifier = Modifier.weight(1f)) {
-                    LabelAndField("MAYDONLAR SONI", state.capacity, "3", KeyboardType.Number) {
-                        viewModel.handleEvent(AddPitchContract.Event.Capacity(it))
+                    LabelAndField(
+                        "ANIQ MANZIL",
+                        state.name,
+                        "Ko'cha, uy raqami",
+                        icon = Icons.Default.Map
+                    ) {
+                        viewModel.handleEvent(AddPitchContract.Event.Name(it))
                     }
                 }
-                Box(modifier = Modifier.weight(1f)) {
-                    SportTypeDropdown(state, viewModel)
-                }
             }
 
-            LabelAndField("SOATLIK NARX (SO'M)", state.pricePerHour, "50 000", KeyboardType.Number) {
-                viewModel.handleEvent(AddPitchContract.Event.PricePerHour(it))
-            }
-
-            Column {
-                Text("ISH VAQTI", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
-                Spacer(Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surface)
-                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
-                        .padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text(
-                        state.openTime.ifBlank { "08:00" },
-                        fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.clickable { showOpenTimePicker = true }.weight(1f)
-                    )
-                    Text("-", modifier = Modifier.padding(horizontal = 8.dp))
-                    Text(
-                        state.closeTime.ifBlank { "22:00" },
-                        fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.clickable { showCloseTimePicker = true }.weight(1f),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.End
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Info,
+                            null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "Texnik ma'lumotlar",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    LabelAndField(
+                        "TAVSIF (DESCRIPTION)",
+                        state.description,
+                        "Stadion haqida qo'shimcha ma'lumot...",
+                        singleLine = false,
+                        icon = Icons.Default.Description
+                    ) {
+                        viewModel.handleEvent(AddPitchContract.Event.Description(it))
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            LabelAndField(
+                                "MAYDONLAR",
+                                state.capacity,
+                                "3",
+                                KeyboardType.Number,
+                                icon = Icons.Default.GridView
+                            ) {
+                                viewModel.handleEvent(AddPitchContract.Event.Capacity(it))
+                            }
+                        }
+                        Box(modifier = Modifier.weight(1f)) {
+                            SportTypeDropdown(state, viewModel)
+                        }
+                    }
+
+                    LabelAndField(
+                        "SOATLIK NARX (SO'M)",
+                        state.pricePerHour,
+                        "50 000",
+                        KeyboardType.Number,
+                        icon = Icons.Default.Payments
+                    ) {
+                        viewModel.handleEvent(AddPitchContract.Event.PricePerHour(it))
+                    }
                 }
             }
 
-            Column {
-                Text("RASM YUKLASH", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                Spacer(Modifier.height(12.dp))
-                Button(
-                    onClick = { /* TODO: Image picker */ },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text("Rasm tanlang")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Schedule,
+                            null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "Ish vaqti va Rasmlar",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Column {
+                        Text(
+                            "ISH VAQTI",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                                .border(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                                    RoundedCornerShape(16.dp)
+                                )
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                state.openTime.ifBlank { "08:00" },
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.clickable { showOpenTimePicker = true }.weight(1f)
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    "-",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Text(
+                                state.closeTime.ifBlank { "22:00" },
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.clickable { showCloseTimePicker = true }.weight(1f),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.End
+                            )
+                        }
+                    }
+
+                    Button(
+                        onClick = { /* TODO: Image picker */ },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                    ) {
+                        Icon(Icons.Default.AddPhotoAlternate, null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Rasm qo'shish", fontWeight = FontWeight.SemiBold)
+                    }
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(12.dp))
 
             Button(
                 onClick = { viewModel.handleEvent(AddPitchContract.Event.Save) },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .padding(bottom = 8.dp),
                 enabled = !state.isLoading,
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(20.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
-                )
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
             ) {
                 if (state.isLoading) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(24.dp)
+                    )
                 } else {
-                    Text("Saqlash", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Icon(Icons.Default.Save, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("SAQLASH", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
                 }
             }
         }
@@ -235,26 +388,38 @@ private fun LabelAndField(
     placeholder: String,
     keyboardType: KeyboardType = KeyboardType.Text,
     singleLine: Boolean = true,
+    icon: ImageVector? = null,
     onValueChange: (String) -> Unit
 ) {
     Column {
-        Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
+        Text(
+            label,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
+            placeholder = {
+                Text(
+                    placeholder,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                )
+            },
+            leadingIcon = icon?.let { { Icon(it, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f), modifier = Modifier.size(20.dp)) } },
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             singleLine = singleLine,
             minLines = if (singleLine) 1 else 3,
             maxLines = if (singleLine) 1 else 5,
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(16.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
             )
         )
     }
@@ -267,7 +432,7 @@ private fun RegionDropdown(
     viewModel: AddPitchViewModel
 ) {
     Column {
-        Text("VILOYAT", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
+        Text("VILOYAT", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(8.dp))
         ExposedDropdownMenuBox(
             expanded = state.showRegionDropdown,
@@ -280,17 +445,18 @@ private fun RegionDropdown(
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showRegionDropdown) },
                 modifier = Modifier.menuAnchor().fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
                 )
             )
             ExposedDropdownMenu(
                 expanded = state.showRegionDropdown,
-                onDismissRequest = { viewModel.handleEvent(AddPitchContract.Event.ShowRegionDropdown(false)) }
+                onDismissRequest = { viewModel.handleEvent(AddPitchContract.Event.ShowRegionDropdown(false)) },
+                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
             ) {
                 state.regions.forEach { region ->
                     DropdownMenuItem(
@@ -312,7 +478,7 @@ private fun DistrictDropdown(
     viewModel: AddPitchViewModel
 ) {
     Column {
-        Text("TUMAN/SHAHAR", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
+        Text("TUMAN/SHAHAR", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(8.dp))
         ExposedDropdownMenuBox(
             expanded = state.showDistrictDropdown,
@@ -325,17 +491,18 @@ private fun DistrictDropdown(
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showDistrictDropdown) },
                 modifier = Modifier.menuAnchor().fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
                 )
             )
             ExposedDropdownMenu(
                 expanded = state.showDistrictDropdown,
-                onDismissRequest = { viewModel.handleEvent(AddPitchContract.Event.ShowDistrictDropdown(false)) }
+                onDismissRequest = { viewModel.handleEvent(AddPitchContract.Event.ShowDistrictDropdown(false)) },
+                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
             ) {
                 state.districts.forEach { district ->
                     DropdownMenuItem(
@@ -357,7 +524,7 @@ private fun SportTypeDropdown(
     viewModel: AddPitchViewModel
 ) {
     Column {
-        Text("SPORT TURI", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
+        Text("SPORT TURI", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(8.dp))
         ExposedDropdownMenuBox(
             expanded = state.showTypeDropdown,
@@ -370,17 +537,18 @@ private fun SportTypeDropdown(
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showTypeDropdown) },
                 modifier = Modifier.menuAnchor().fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
                 )
             )
             ExposedDropdownMenu(
                 expanded = state.showTypeDropdown,
-                onDismissRequest = { viewModel.handleEvent(AddPitchContract.Event.ShowTypeDropdown(false)) }
+                onDismissRequest = { viewModel.handleEvent(AddPitchContract.Event.ShowTypeDropdown(false)) },
+                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
             ) {
                 StadiumType.entries.forEach { type ->
                     DropdownMenuItem(

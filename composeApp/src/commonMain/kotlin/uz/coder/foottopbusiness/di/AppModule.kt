@@ -7,6 +7,7 @@ import uz.coder.foottopbusiness.data.network.*
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.data.repository.*
 import uz.coder.foottopbusiness.domain.repository.*
+import uz.coder.foottopbusiness.domain.usecase.auth.ChangePasswordUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.IsLoginInUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.LoginUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.LogoutUseCase
@@ -31,6 +32,7 @@ import uz.coder.foottopbusiness.domain.usecase.stadium.UpdateStadiumUseCase
 import uz.coder.foottopbusiness.domain.usecase.tournament.CreateTournamentUseCase
 import uz.coder.foottopbusiness.domain.usecase.tournament.GetTournamentsUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GetAllUsersUseCase
+import uz.coder.foottopbusiness.domain.usecase.user.GeneratePasswordUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.UserIdUseCase
 import uz.coder.foottopbusiness.presentation.auth.login.LoginViewModel
@@ -75,6 +77,7 @@ val appModule = module {
     factory { LoginUseCase(get()) }
     factory { IsLoginInUseCase(get()) }
     factory { LogoutUseCase(get()) }
+    factory { ChangePasswordUseCase(get()) }
     factory { CreateStadiumUseCase(get()) }
     factory { UpdateStadiumUseCase(get()) }
     factory { GetStadiumsUseCase(get()) }
@@ -94,6 +97,7 @@ val appModule = module {
     factory { GetMatchesUseCase(get()) }
     factory { GetUserUseCase(get()) }
     factory { GetAllUsersUseCase(get()) }
+    factory { GeneratePasswordUseCase(get()) }
     factory { UserIdUseCase(get()) }
     factory { SendNotificationUseCase(get()) }
     factory { SendToAllUseCase(get()) }
@@ -110,7 +114,7 @@ val appModule = module {
     factory { (stadium: StadiumResponse) -> StadiumDetailsViewModel(stadium, get()) }
     factory { CoachesViewModel(get(), get()) }
     factory { TournamentsViewModel(get(), get(), get()) }
-    factory { SettingsViewModel(get(), get()) }
+    factory { SettingsViewModel(get(), get(), get()) }
     factory { EditProfileViewModel(get(), get()) }
     factory { SendNotificationViewModel(get()) }
     factory { UserCreateViewModel(get()) }

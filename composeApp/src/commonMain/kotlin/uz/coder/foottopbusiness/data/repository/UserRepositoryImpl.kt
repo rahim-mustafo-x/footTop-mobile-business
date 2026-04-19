@@ -35,6 +35,11 @@ class UserRepositoryImpl(
         response.data?.let { emit(it) }
     }
 
+    override fun generatePassword() = flow {
+        val response = api.generatePassword()
+        response.data?.let { emit(it) }
+    }
+
     override suspend fun userId(): Long {
         val scope = CoroutineScope(Dispatchers.IO)
         val stateIn = preferencesManager.userId.stateIn(scope)

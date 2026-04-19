@@ -4,11 +4,13 @@ import kotlinx.coroutines.flow.firstOrNull
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.data.network.dto.UserDto
+import uz.coder.foottopbusiness.domain.usecase.auth.ChangePasswordUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
 
 class SettingsViewModel(
     private val preferencesManager: PreferencesManager,
     private val getUserUseCase: GetUserUseCase,
+    private val changePasswordUseCase: ChangePasswordUseCase,
 ) : BaseViewModel<SettingsContract.State, SettingsContract.Effect, SettingsContract.Event>(
     initialState = SettingsContract.State()
 ) {
@@ -37,10 +39,7 @@ class SettingsViewModel(
                 onSuccess = { sendEffect(SettingsContract.Effect.NavigateToAuth) }
             )
             SettingsContract.Event.ShowAboutApp -> {
-                updateState { copy(showAboutDialog = true) }
-            }
-            SettingsContract.Event.DismissAboutDialog -> {
-                updateState { copy(showAboutDialog = false) }
+                sendEffect(SettingsContract.Effect.NavigateToAbout)
             }
             SettingsContract.Event.ShowDeleteAccount -> {
                 updateState { copy(showDeleteAccountDialog = true, deleteConfirmText = "") }
@@ -74,6 +73,50 @@ class SettingsViewModel(
                 } else {
                     sendEffect(SettingsContract.Effect.ShowToast("Username noto'g'ri kiritildi"))
                 }
+            }
+            SettingsContract.Event.ShowChangePassword -> {
+                updateState { copy(showChangePasswordDialog = true, oldPassword = "", newPassword = "", confirmPassword = "") }
+            }
+            SettingsContract.Event.DismissChangePassword -> {
+                updateState { copy(showChangePasswordDialog = false) }
+            }
+            is SettingsContract.Event.UpdateOldPassword -> {
+                updateState { copy(oldPassword = event.text) }
+            }
+            is SettingsContract.Event.UpdateNewPassword -> {
+                updateState { copy(newPassword = event.text) }
+            }
+            is SettingsContract.Event.UpdateConfirmPassword -> {
+                updateState { copy(confirmPassword = event.text) }
+            }
+            SettingsContract.Event.ChangePassword -> {
+                val state = state.value
+                if (state.oldPassword.isEmpty() || state.newPassword.isEmpty() || state.confirmPassword.isEmpty()) {
+                    sendEffect(SettingsContract.Effect.ShowToast("Barcha maydonlarni to'ldiring"))
+                    return
+                }
+                if (state.newPassword != state.confirmPassword) {
+                    sendEffect(SettingsContract.Effect.ShowToast("Parollar mos kelmadi"))
+                    return
+                }
+                updateState { copy(isChangingPassword = true) }
+                executeAsync(
+                    block = {
+                        var success = false
+                        changePasswordUseCase(state.oldPassword.trim(), state.newPassword.trim()).collect {
+                            success = true
+                        }
+                        success
+                    },
+                    onSuccess = {
+                        updateState { copy(isChangingPassword = false, showChangePasswordDialog = false) }
+                        sendEffect(SettingsContract.Effect.ShowToast("Parol muvaffaqiyatli o'zgartirildi"))
+                    },
+                    onError = {
+                        updateState { copy(isChangingPassword = false) }
+                        sendEffect(SettingsContract.Effect.ShowToast("Xatolik yuz berdi. Balki eski parol noto'g'ridir."))
+                    }
+                )
             }
         }
     }

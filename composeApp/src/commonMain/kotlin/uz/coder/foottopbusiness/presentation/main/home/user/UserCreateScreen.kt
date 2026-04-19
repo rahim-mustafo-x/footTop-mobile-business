@@ -9,6 +9,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -36,14 +37,47 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.flow.collectLatest
 import uz.coder.foottopbusiness.core.BackHandler
 
+import org.koin.compose.koinInject
+import uz.coder.foottopbusiness.presentation.main.settings.SettingsViewModel
+
 class UserCreateScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
         val viewModel = getScreenModel<UserCreateViewModel>()
         val state by viewModel.state.collectAsState()
+        val settingsViewModel = koinInject<SettingsViewModel>()
+        val userState by settingsViewModel.state.collectAsState()
         val navigator = LocalNavigator.currentOrThrow
         val snackbarHostState = remember { SnackbarHostState() }
+
+        val currentUserRole = userState.user?.roles?.firstOrNull()?.name ?: ""
+        val isSuperAdmin = currentUserRole == "ROLE_SUPER_ADMIN"
+        val isDistrictAdmin = currentUserRole == "ROLE_DISTRICT_ADMIN"
+        val isPrivileged = isSuperAdmin || isDistrictAdmin
+
+        // Only admins can see this screen, but let's be double sure about roles they can assign
+        val availableRoles = remember(isSuperAdmin, isDistrictAdmin) {
+            val roles = mutableListOf<Triple<String, String, String>>()
+            
+            if (isSuperAdmin) {
+                roles.add(Triple("ROLE_DISTRICT_ADMIN", "Tuman Admini", "Tuman bo'yicha boshqaruv"))
+            }
+            
+            if (isPrivileged) {
+                roles.add(Triple("ROLE_OWNER", "Stadion egasi", "Maydonlarni nazorat"))
+                roles.add(Triple("ROLE_COACH", "Coach", "Murabbiy kabineti"))
+                roles.add(Triple("ROLE_PLAYER", "O'yinchi", "O'yinlar ishtirokchisi"))
+            }
+            roles
+        }
+
+        // Redirect if not admin (though button should be hidden)
+        LaunchedEffect(userState.isLoadingUser) {
+            if (!userState.isLoadingUser && !isPrivileged) {
+                navigator.pop()
+            }
+        }
 
         BackHandler {
             navigator.pop()
@@ -119,7 +153,22 @@ class UserCreateScreen : Screen {
                 }
 
                 Column {
-                    Text("PAROL", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        Text("PAROL", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        TextButton(
+                            onClick = { viewModel.onEvent(UserCreateContract.Event.GeneratePasswordClicked) },
+                            contentPadding = PaddingValues(0.dp),
+                            modifier = Modifier.height(24.dp)
+                        ) {
+                            Icon(Icons.Default.AutoFixHigh, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Tasodifiy parol", fontSize = 12.sp)
+                        }
+                    }
                     var passwordVisible by remember { mutableStateOf(false) }
                     TextField(
                         value = state.password,
@@ -144,27 +193,35 @@ class UserCreateScreen : Screen {
                 Column {
                     Text("ROL TANLANG", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        RoleItem("Admin", Icons.Default.Settings, "To'liq boshqaruv", state.role == "ADMIN", Modifier.weight(1f)) {
-                            viewModel.onEvent(UserCreateContract.Event.RoleChanged("ADMIN"))
+                    
+                    availableRoles.chunked(2).forEach { rowRoles ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            rowRoles.forEach { role ->
+                                val icon = when (role.first) {
+                                    "ROLE_DISTRICT_ADMIN" -> Icons.Default.Settings
+                                    "ROLE_OWNER" -> Icons.Outlined.Home
+                                    "ROLE_COACH" -> Icons.Outlined.Person
+                                    else -> Icons.Outlined.Visibility
+                                }
+                                RoleItem(
+                                    title = role.second,
+                                    icon = icon,
+                                    subtitle = role.third,
+                                    isSelected = state.role == role.first,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    viewModel.onEvent(UserCreateContract.Event.RoleChanged(role.first))
+                                }
+                            }
+                            if (rowRoles.size == 1) {
+                                Spacer(Modifier.weight(1f))
+                            }
                         }
-                        RoleItem("Stadion egasi", Icons.Outlined.Home, "Maydonlarni nazorat", state.role == "OWNER", Modifier.weight(1f)) {
-                            viewModel.onEvent(UserCreateContract.Event.RoleChanged("OWNER"))
-                        }
+                        Spacer(Modifier.height(12.dp))
                     }
-                    Spacer(Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        RoleItem("Coach", Icons.Outlined.Person, "Murabbiy kabineti", state.role == "COACH", Modifier.weight(1f)) {
-                            viewModel.onEvent(UserCreateContract.Event.RoleChanged("COACH"))
-                        }
-                        RoleItem("Kuzatuvchi", Icons.Outlined.Visibility, "Faqat ko'rish", state.role == "VIEWER", Modifier.weight(1f)) {
-                            viewModel.onEvent(UserCreateContract.Event.RoleChanged("VIEWER"))
-                        }
-                    }
-                }
-
-                LabelAndField("BIRIKTIRILGAN STADION", "", "Sport Arena A") {
-                    // TODO: Update assigned stadium
                 }
 
                 Box(

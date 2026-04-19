@@ -111,7 +111,7 @@ class HttpClientFactory(
                         when (code) {
                             401, 403 -> {
                                 val errorBody = response.bodyAsText()
-                                if (errorBody.contains("TOKEN", ignoreCase = true)) {
+                                if (errorBody.contains("TOKEN_EXPIRED", ignoreCase = true) || errorBody.contains("TOKEN", ignoreCase = true)) {
                                     log("Auth", "$code received with TOKEN error, attempting refresh")
                                     val refreshToken = preferencesManager.refreshToken.first()
                                     if (!refreshToken.isNullOrBlank()) {

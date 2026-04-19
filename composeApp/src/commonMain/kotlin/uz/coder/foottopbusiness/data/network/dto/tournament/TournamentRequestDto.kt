@@ -14,6 +14,8 @@ data class TournamentRequestDto(
     @SerialName("entryFee") val entryFee: Double = 0.0,
     @SerialName("status") val status: String = "UPCOMING",
     @SerialName("address") val address: String? = null,
+    @SerialName("startTime") val startTime: String? = null, // "HH:mm"
+    @SerialName("endTime") val endTime: String? = null,     // "HH:mm"
     @SerialName("prizes") val prizes: String? = null,
     @SerialName("rules") val rules: String? = null,
 )

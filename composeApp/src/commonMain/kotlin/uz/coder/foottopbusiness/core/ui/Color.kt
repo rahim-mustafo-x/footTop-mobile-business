@@ -4,11 +4,11 @@ import androidx.compose.ui.graphics.Color
 
 // Sports / Football Oriented Palette
 // Light Theme
-val Primary = Color(0xFF009688) // Teal 500 - Lighter blue-green
+val Primary = Color(0xFF1E40AF) // Deep Blue (kom-kok)
 val OnPrimary = Color(0xFFFFFFFF)
-val Secondary = Color(0xFF4DB6AC) // Teal 300
+val Secondary = Color(0xFF3B82F6) // Bright Blue
 val OnSecondary = Color(0xFFFFFFFF)
-val Tertiary = Color(0xFF00BCD4) // Cyan 500
+val Tertiary = Color(0xFF10B981) // Grass Green for accents
 val OnTertiary = Color(0xFFFFFFFF)
 val Background = Color(0xFFF8F9FA) 
 val OnBackground = Color(0xFF1B1B1B)
@@ -19,11 +19,11 @@ val OnSurfaceVariant = Color(0xFF004D40)
 val Outline = Color(0xFFB2DFDB)
 
 // Dark Theme (Night Game Vibe)
-val PrimaryDark = Color(0xFF81C784) // Bright Grass Green
-val OnPrimaryDark = Color(0xFF003300)
-val SecondaryDark = Color(0xFF4CAF50)
-val OnSecondaryDark = Color(0xFF002200)
-val TertiaryDark = Color(0xFFFFD54F) // Soft Trophy Gold
+val PrimaryDark = Color(0xFF60A5FA) // Efficient Light Blue for Dark Mode
+val OnPrimaryDark = Color(0xFF001D3D)
+val SecondaryDark = Color(0xFF93C5FD)
+val OnSecondaryDark = Color(0xFF001D3D)
+val TertiaryDark = Color(0xFF34D399) // Grass Green for accents
 val OnTertiaryDark = Color(0xFF212121)
 val BackgroundDark = Color(0xFF0A0D0A) // Pitch Night Black/Dark Green
 val OnBackgroundDark = Color(0xFFE8F5E9)

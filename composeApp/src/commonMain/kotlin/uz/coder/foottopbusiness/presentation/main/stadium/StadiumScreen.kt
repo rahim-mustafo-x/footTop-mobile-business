@@ -160,6 +160,21 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddPitch: () -> Unit 
 }
 
 @Composable
+private fun StadiumInfoChip(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+    ) {
+        Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+        Spacer(Modifier.width(4.dp))
+        Text(text, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
 private fun StadiumListItem(
     stadium: uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse,
     onClick: () -> Unit,
@@ -205,24 +220,27 @@ private fun StadiumListItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = stadium.name ?: "Noma'lum",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onSurface
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    letterSpacing = (-0.5).sp
                 )
                 Text(
                     text = "${stadium.districtName}, ${stadium.regionName}",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
-                Spacer(Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.GridView, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("${stadium.capacity ?: 0} maydon", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.width(12.dp))
-                    Icon(Icons.Default.Payments, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("${stadium.pricePerHour?.toInt() ?: 0} so'm/s", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                
+                Spacer(Modifier.height(8.dp))
+                
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    StadiumInfoChip(Icons.Default.GridView, "${stadium.capacity ?: 0} maydon")
+                    StadiumInfoChip(Icons.Default.Payments, "${stadium.pricePerHour?.toInt() ?: 0} so'm/s")
                 }
             }
 

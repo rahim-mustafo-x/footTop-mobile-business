@@ -12,4 +12,5 @@ interface AuthRepository {
     fun staffLogin(username: String, password: String): Flow<LoginResult>
     fun isLoginIn(): Flow<Boolean>
     suspend fun logout()
+    fun changePassword(oldPassword: String, newPassword: String): Flow<Unit>
 }

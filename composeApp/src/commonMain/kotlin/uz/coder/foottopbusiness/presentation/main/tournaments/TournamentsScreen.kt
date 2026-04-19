@@ -36,6 +36,7 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
     val navigator = LocalNavigator.currentOrThrow
 
     LaunchedEffect(Unit) {
+        viewModel.handleEvent(TournamentsContract.Event.Load)
         viewModel.effect.collect { effect ->
             when (effect) {
                 is TournamentsContract.Effect.ShowToast -> { /* snackbar yoki toast */ }

@@ -29,6 +29,9 @@ import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.style.TextAlign
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
@@ -58,28 +61,44 @@ fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                    .background(MaterialTheme.colorScheme.primary)
-                    .padding(top = statusBarPadding, start = 24.dp, end = 24.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                            )
+                        )
+                    )
+                    .padding(top = statusBarPadding, start = 8.dp, end = 24.dp)
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 32.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 24.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
                         onClick = { navigator.pop() },
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f))
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = Color.White.copy(alpha = 0.2f),
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier.clip(RoundedCornerShape(12.dp))
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                    Spacer(Modifier.width(16.dp))
-                    Text(
-                        "Xabarnoma yuborish",
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            "Xabarnoma",
+                            color = Color.White,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        Text(
+                            "Foydalanuvchilarni xabardor qiling",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 12.sp
+                        )
+                    }
                 }
             }
         }
@@ -89,97 +108,130 @@ fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Text(
-                "XABAR TURI",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            Row(
+            Card(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                TypeItem(
-                    title = "Booking",
-                    icon = Icons.Default.CalendarMonth,
-                    color = MaterialTheme.colorScheme.primary,
-                    isSelected = state.type == "BOOKING",
-                    modifier = Modifier.weight(1f)
-                ) {
-                    viewModel.handleEvent(SendNotificationContract.Event.UpdateType("BOOKING"))
-                }
-                TypeItem(
-                    title = "Match",
-                    icon = Icons.Default.SportsSoccer,
-                    color = MaterialTheme.colorScheme.secondary,
-                    isSelected = state.type == "MATCH",
-                    modifier = Modifier.weight(1f)
-                ) {
-                    viewModel.handleEvent(SendNotificationContract.Event.UpdateType("MATCH"))
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text(
+                        "XABAR TURI",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.primary,
+                        letterSpacing = 1.2.sp
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        TypeItem(
+                            title = "Band qilish",
+                            icon = Icons.Default.CalendarMonth,
+                            color = Color(0xFF4CAF50),
+                            isSelected = state.type == "BOOKING",
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            viewModel.handleEvent(SendNotificationContract.Event.UpdateType("BOOKING"))
+                        }
+                        TypeItem(
+                            title = "O'yin",
+                            icon = Icons.Default.SportsSoccer,
+                            color = Color(0xFF2196F3),
+                            isSelected = state.type == "MATCH",
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            viewModel.handleEvent(SendNotificationContract.Event.UpdateType("MATCH"))
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        TypeItem(
+                            title = "Turnir",
+                            icon = Icons.Default.EmojiEvents,
+                            color = Color(0xFFFF9800),
+                            isSelected = state.type == "TOURNAMENT",
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            viewModel.handleEvent(SendNotificationContract.Event.UpdateType("TOURNAMENT"))
+                        }
+                        TypeItem(
+                            title = "Tizim",
+                            icon = Icons.Default.Campaign,
+                            color = Color(0xFF9C27B0),
+                            isSelected = state.type == "SYSTEM",
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            viewModel.handleEvent(SendNotificationContract.Event.UpdateType("SYSTEM"))
+                        }
+                    }
                 }
             }
-            Row(
+
+            Card(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                TypeItem(
-                    title = "Turnir",
-                    icon = Icons.Default.EmojiEvents,
-                    color = MaterialTheme.colorScheme.tertiary,
-                    isSelected = state.type == "TOURNAMENT",
-                    modifier = Modifier.weight(1f)
-                ) {
-                    viewModel.handleEvent(SendNotificationContract.Event.UpdateType("TOURNAMENT"))
+                Column(modifier = Modifier.padding(20.dp)) {
+                    LabelAndField(
+                        label = "SARLAVHA",
+                        value = state.title,
+                        placeholder = "Masalan: Yangi turnir e'loni"
+                    ) {
+                        viewModel.handleEvent(SendNotificationContract.Event.UpdateTitle(it))
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    LabelAndField(
+                        label = "XABAR MATNI",
+                        value = state.body,
+                        placeholder = "Xabaringizni batafsil yozing...",
+                        isMultiline = true
+                    ) {
+                        viewModel.handleEvent(SendNotificationContract.Event.UpdateBody(it))
+                    }
                 }
-                TypeItem(
-                    title = "Sistema",
-                    icon = Icons.Default.Campaign,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    isSelected = state.type == "SYSTEM",
-                    modifier = Modifier.weight(1f)
-                ) {
-                    viewModel.handleEvent(SendNotificationContract.Event.UpdateType("SYSTEM"))
-                }
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LabelAndField(
-                label = "SARLAVHA",
-                value = state.title,
-                placeholder = "Xabar sarlavhasini kiriting"
-            ) {
-                viewModel.handleEvent(SendNotificationContract.Event.UpdateTitle(it))
-            }
-
-            LabelAndField(
-                label = "XABAR MATNI",
-                value = state.body,
-                placeholder = "Xabar matnini batafsil yozing",
-                isMultiline = true
-            ) {
-                viewModel.handleEvent(SendNotificationContract.Event.UpdateBody(it))
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = { viewModel.handleEvent(SendNotificationContract.Event.SendToAll) },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                enabled = !state.isLoading
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(58.dp),
+                shape = RoundedCornerShape(18.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                enabled = !state.isLoading && state.title.isNotBlank() && state.body.isNotBlank()
             ) {
                 if (state.isLoading) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
                 } else {
-                    Text("Yuborish", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Icon(Icons.Default.Notifications, null, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Text("Barchaga yuborish", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
+            
+            Text(
+                "Xabar yuborilganda barcha foydalanuvchilarga push-xabarnoma boradi.",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)
+            )
         }
     }
 }
@@ -195,32 +247,32 @@ private fun TypeItem(
 ) {
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(if (isSelected) color.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surface)
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (isSelected) color.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
             .clickable(onClick = onClick)
             .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
             modifier = Modifier
-                .size(40.dp)
+                .size(44.dp)
                 .clip(CircleShape)
-                .background(if (isSelected) color.copy(alpha = 0.2f) else MaterialTheme.colorScheme.background),
+                .background(if (isSelected) color.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surface),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 icon,
                 contentDescription = null,
                 tint = if (isSelected) color else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(22.dp)
             )
         }
         Spacer(Modifier.height(8.dp))
         Text(
             title,
-            fontSize = 12.sp,
+            fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
-            color = if (isSelected) color else MaterialTheme.colorScheme.onSurface
+            color = if (isSelected) color else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
@@ -234,18 +286,27 @@ private fun LabelAndField(
     onValueChange: (String) -> Unit
 ) {
     Column {
-        Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+        Text(
+            label,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Black,
+            color = MaterialTheme.colorScheme.primary,
+            letterSpacing = 1.2.sp
+        )
+        Spacer(Modifier.height(8.dp))
         TextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth().let { if (isMultiline) it.height(120.dp) else it },
-            placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+            modifier = Modifier.fillMaxWidth().let { if (isMultiline) it.height(140.dp) else it },
+            placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f), fontSize = 14.sp) },
+            shape = RoundedCornerShape(14.dp),
             colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent,
-                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent,
                 focusedTextColor = MaterialTheme.colorScheme.onSurface,
                 unfocusedTextColor = MaterialTheme.colorScheme.onSurface
             )

@@ -24,6 +24,7 @@ interface UserCreateContract {
         data class AssignedStadiumChanged(val stadium: String) : Event
         data class RoleChanged(val role: String) : Event
         data object CreateClicked : Event
+        data object GeneratePasswordClicked : Event
     }
 
     sealed interface Effect : MviEffect {

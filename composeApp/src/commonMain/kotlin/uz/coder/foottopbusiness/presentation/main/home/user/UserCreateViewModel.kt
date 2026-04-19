@@ -46,7 +46,21 @@ class UserCreateViewModel(
                 _state.update { it.copy(role = event.role) }
             }
             UserCreateContract.Event.CreateClicked -> createUser()
+            UserCreateContract.Event.GeneratePasswordClicked -> generatePassword()
         }
+    }
+
+    private fun generatePassword() {
+        userRepository.generatePassword()
+            .onStart { _state.update { it.copy(isLoading = true) } }
+            .onEach { password ->
+                _state.update { it.copy(isLoading = false, password = password) }
+            }
+            .catch { t ->
+                _state.update { it.copy(isLoading = false) }
+                _effect.emit(UserCreateContract.Effect.ShowError(t.message ?: "Parol yaratishda xatolik"))
+            }
+            .launchIn(screenModelScope)
     }
 
     private fun createUser() {

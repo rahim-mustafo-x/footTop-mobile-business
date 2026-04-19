@@ -26,7 +26,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.foundation.layout.offset
+import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
@@ -74,7 +79,6 @@ import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.home.history.HistoryScreen
-import uz.coder.foottopbusiness.presentation.main.home.user.UserCreateScreen
 import uz.coder.foottopbusiness.presentation.main.reports.ReportItem
 import uz.coder.foottopbusiness.presentation.main.settings.SettingsVoyager
 import uz.coder.foottopbusiness.presentation.main.settings.notification.SendNotificationVoyager
@@ -93,13 +97,21 @@ fun HomeScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var lastBackPressTime by remember { mutableStateOf(0L) }
 
-    BackHandler(enabled = state.currentTab == 0 && state.selectedTournament == null && state.selectedStadiumForTime == null) {
-        val currentTime = kotlin.time.Clock.System.now().toEpochMilliseconds()
-        if (currentTime - lastBackPressTime < 2000) {
-            exitApp()
-        } else {
-            lastBackPressTime = currentTime
-            viewModel.handleEvent(HomeContract.Event.ShowExitToast)
+    BackHandler(enabled = true) {
+        when {
+            state.selectedTournament != null -> viewModel.handleEvent(HomeContract.Event.ClearTournament)
+            state.selectedMatch != null -> viewModel.handleEvent(HomeContract.Event.ClearMatch)
+            state.selectedStadiumForTime != null -> viewModel.handleEvent(HomeContract.Event.ClearStadiumForSlots)
+            state.currentTab != 0 -> viewModel.handleEvent(HomeContract.Event.ChangeTab(0))
+            else -> {
+                val currentTime = kotlin.time.Clock.System.now().toEpochMilliseconds()
+                if (currentTime - lastBackPressTime < 2000) {
+                    exitApp()
+                } else {
+                    lastBackPressTime = currentTime
+                    viewModel.handleEvent(HomeContract.Event.ShowExitToast)
+                }
+            }
         }
     }
 
@@ -170,15 +182,14 @@ fun HomeScreen(
                 when (state.currentTab) {
                     0 -> {
                         when (state.userRole) {
-                            UserRole.ADMIN -> {
+                            UserRole.DISTRICT_ADMIN, UserRole.SUPER_ADMIN -> {
                                 HomeTab(
                                     state = state,
                                     viewModel = viewModel,
                                     onAddStadium = { navigator.push(AddPitchVoyager) },
-                                    onAddUser = { navigator.push(UserCreateScreen()) },
+                                    onAddUser = { navigator.push(uz.coder.foottopbusiness.presentation.main.home.user.UserCreateTypeScreen()) },
                                     onAddTournament = { navigator.push(TournamentsVoyager) },
                                     onAddCoach = { navigator.push(uz.coder.foottopbusiness.presentation.main.coaches.create.CoachCreateScreen()) },
-                                    navigateToStadiums = navigateToStadiums,
                                     onProfileClick = { navigator.push(SettingsVoyager) },
                                     onNotificationClick = { navigator.push(SendNotificationVoyager) }
                                 )
@@ -188,6 +199,9 @@ fun HomeScreen(
                                 OwnerHomeTab(
                                     state = state,
                                     viewModel = viewModel,
+                                    onAddStadium = { navigator.push(AddPitchVoyager) },
+                                    onAddTournament = { navigator.push(TournamentsVoyager) },
+                                    onAddCoach = { navigator.push(uz.coder.foottopbusiness.presentation.main.coaches.create.CoachCreateScreen()) },
                                     onProfileClick = { navigator.push(SettingsVoyager) },
                                     onNotificationClick = { navigator.push(SendNotificationVoyager) }
                                 )
@@ -219,7 +233,6 @@ private fun HomeTab(
     onAddUser: () -> Unit,
     onAddTournament: () -> Unit,
     onAddCoach: () -> Unit,
-    navigateToStadiums: () -> Unit,
     onProfileClick: () -> Unit,
     onNotificationClick: () -> Unit
 ) {
@@ -235,27 +248,25 @@ private fun HomeTab(
             Column(modifier = Modifier.padding(16.dp)) {
                 MalaebDashboard(state, viewModel)
                 
-                if (!state.isAdmin) {
-                    Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(24.dp))
 
-                    Text(
-                        "Tezkor amallar",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
+                Text(
+                    "Boshqaruv",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
 
-                    Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(16.dp))
 
-                    QuickActionsGrid(
-                        onAddStadium = onAddStadium,
-                        onAddUser = onAddUser,
-                        onAddTournament = onAddTournament,
-                        onAddCoach = onAddCoach
-                    )
+                QuickActionsGrid(
+                    onAddStadium = onAddStadium,
+                    onAddUser = onAddUser,
+                    onAddTournament = onAddTournament,
+                    onAddCoach = onAddCoach
+                )
 
-                    Spacer(Modifier.height(40.dp))
-                }
+                Spacer(Modifier.height(40.dp))
             }
         }
     }
@@ -272,80 +283,57 @@ private fun MalaebHeader(state: HomeContract.State, onProfileClick: () -> Unit, 
                 Brush.verticalGradient(
                     colors = listOf(
                         MaterialTheme.colorScheme.primary,
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.9f)
                     )
                 )
             )
-            .padding(top = statusBarPadding, start = 24.dp, end = 24.dp)
+            .padding(top = statusBarPadding, start = 24.dp, end = 24.dp, bottom = 32.dp)
     ) {
-        Column(modifier = Modifier.padding(top = 16.dp, bottom = 32.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        if (state.isAdmin) "SUPER ADMIN" else "STADION EGASI",
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 1.sp
-                    )
-                    Text(
-                        if (state.isAdmin) "Bosh panel" else state.stadiums.firstOrNull()?.name ?: "Mening stadionim",
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    if (!state.isAdmin) {
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f)
-                        ) {
-                            Text(
-                                "${state.stadiums.size} maydon",
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                    IconButton(
-                        onClick = onNotificationClick,
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f))
-                    ) {
-                        Icon(
-                            Icons.Default.Notifications,
-                            null,
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    IconButton(
-                        onClick = onProfileClick,
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f))
-                    ) {
-                        Icon(
-                            Icons.Default.Person,
-                            null,
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    if (state.isAdmin) "Tizim Boshqaruvi" else "Mening Stadionim",
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp
+                )
+                Text(
+                    if (state.isAdmin) "Xush kelibsiz!" else state.stadiums.firstOrNull()?.name ?: "FootTop",
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                HeaderIconButton(icon = Icons.Default.Notifications, onClick = onNotificationClick)
+                HeaderIconButton(icon = Icons.Default.Person, onClick = onProfileClick)
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeaderIconButton(icon: ImageVector, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f),
+        modifier = Modifier.size(46.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                icon,
+                null,
+                tint = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(24.dp)
+            )
         }
     }
 }
@@ -354,6 +342,9 @@ private fun MalaebHeader(state: HomeContract.State, onProfileClick: () -> Unit, 
 private fun OwnerHomeTab(
     state: HomeContract.State,
     viewModel: HomeViewModel,
+    onAddStadium: () -> Unit,
+    onAddTournament: () -> Unit,
+    onAddCoach: () -> Unit,
     onProfileClick: () -> Unit,
     onNotificationClick: () -> Unit
 ) {
@@ -369,6 +360,24 @@ private fun OwnerHomeTab(
             Column(modifier = Modifier.padding(16.dp)) {
                 OwnerDashboard(state)
                 
+                Spacer(Modifier.height(24.dp))
+
+                Text(
+                    "Tezkor amallar",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                QuickActionsGrid(
+                    onAddStadium = onAddStadium,
+                    onAddUser = null,
+                    onAddTournament = onAddTournament,
+                    onAddCoach = onAddCoach
+                )
+
                 Spacer(Modifier.height(24.dp))
                 
                 Text(
@@ -420,15 +429,19 @@ private fun OwnerHomeTab(
 private fun OwnerDashboard(state: HomeContract.State) {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         StatCard(
-            title = "BUGUN",
-            value = "485K",
-            subValue = "↑ 12%",
+            title = "STADIONLAR",
+            value = "${state.stadiums.size}",
+            subValue = "Mening maydonlarim",
+            icon = Icons.Default.Business,
+            color = Color(0xFF4CAF50),
             modifier = Modifier.weight(1f)
         )
         StatCard(
-            title = "BANDLAR",
-            value = "7/10",
-            subValue = "3 bo'sh",
+            title = "TURNIRLAR",
+            value = "${state.tournaments.size}",
+            subValue = "Mening tadbirlarim",
+            icon = Icons.Default.EmojiEvents,
+            color = Color(0xFFFF9800),
             modifier = Modifier.weight(1f)
         )
     }
@@ -512,61 +525,106 @@ private fun CoachList(state: HomeContract.State) {
 private fun CoachItem(initials: String, name: String, type: String, status: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+        )
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.05f)
+                            )
+                        )
+                    ),
                 contentAlignment = Alignment.Center
             ) {
-                Text(initials, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                Text(
+                    initials,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
             }
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(name, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                Text(type, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                Text(
+                    name,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    type,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium
+                )
             }
-            Text(status, color = Color(0xFF26A69A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = Color(0xFF26A69A).copy(alpha = 0.1f)
+            ) {
+                Text(
+                    status,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    color = Color(0xFF26A69A),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
 
 @Composable
 private fun MalaebDashboard(state: HomeContract.State, viewModel: HomeViewModel) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatCard(
                 title = "STADIONLAR",
                 value = "${state.activeStadiums}",
-                subValue = "3 yangi",
+                subValue = "Aktiv maydonlar",
+                icon = Icons.Default.SportsSoccer,
+                color = Color(0xFF4CAF50),
                 modifier = Modifier.weight(1f)
             )
             StatCard(
-                title = "FOYDALANUVCHI",
-                value = "${state.totalUsers.takeIf { it > 0 } ?: 47}",
-                subValue = "8 yangi",
+                title = "FOYDALANUVCHILAR",
+                value = "${state.totalUsers}",
+                subValue = "Jami a'zolar",
+                icon = Icons.Default.Groups,
+                color = Color(0xFF2196F3),
                 modifier = Modifier.weight(1f)
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatCard(
                 title = "TURNIRLAR",
-                value = "${state.totalTournaments.takeIf { it > 0 } ?: 5}",
-                subValue = "2 aktiv",
+                value = "${state.totalTournaments}",
+                subValue = "Jami tadbirlar",
+                icon = Icons.Default.EmojiEvents,
+                color = Color(0xFFFF9800),
                 modifier = Modifier.weight(1f)
             )
             StatCard(
                 title = "DAROMAD",
-                value = if (state.totalEarnings > 1000000) "${(state.totalEarnings / 1000000).toInt()}M" else "42M",
-                subValue = "+ 23%",
+                value = if (state.totalEarnings > 1000000) "${(state.totalEarnings / 1000000).toInt()}M" else "${state.totalEarnings.toInt()}",
+                subValue = "Umumiy tushum",
+                icon = Icons.Default.AttachMoney,
+                color = Color(0xFFE91E63),
                 modifier = Modifier.weight(1f)
             )
         }
@@ -574,44 +632,72 @@ private fun MalaebDashboard(state: HomeContract.State, viewModel: HomeViewModel)
 }
 
 @Composable
-private fun StatCard(title: String, value: String, subValue: String, modifier: Modifier) {
+private fun StatCard(
+    title: String,
+    value: String,
+    subValue: String,
+    icon: ImageVector,
+    color: Color,
+    modifier: Modifier
+) {
     Card(
-        modifier = modifier.height(115.dp),
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-        )
+        modifier = modifier.height(130.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp).fillMaxSize(),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                title,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 0.5.sp
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Background Decorative Circle
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 20.dp, y = (-20).dp)
+                    .size(80.dp)
+                    .clip(CircleShape)
+                    .background(color.copy(alpha = 0.1f))
             )
-            Column {
-                Text(
-                    value,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.ExtraBold
-                )
-                Text(
-                    subValue,
-                    color = if (subValue.contains("↑") || subValue.contains("+")) 
-                        Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium
-                )
+
+            Column(
+                modifier = Modifier.padding(16.dp).fillMaxSize(),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = color.copy(alpha = 0.15f),
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(icon, null, tint = color, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                    Text(
+                        title,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    )
+                }
+
+                Column {
+                    Text(
+                        value,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Black
+                    )
+                    Text(
+                        subValue,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
     }
@@ -620,7 +706,7 @@ private fun StatCard(title: String, value: String, subValue: String, modifier: M
 @Composable
 private fun QuickActionsGrid(
     onAddStadium: () -> Unit,
-    onAddUser: () -> Unit,
+    onAddUser: (() -> Unit)?,
     onAddTournament: () -> Unit,
     onAddCoach: () -> Unit
 ) {
@@ -628,11 +714,19 @@ private fun QuickActionsGrid(
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             QuickActionItem("Stadion qo'sh", Icons.Default.Home, primary, Modifier.weight(1f), onAddStadium)
-            QuickActionItem("Xodim qo'shish", Icons.Default.AddCircle, primary, Modifier.weight(1f), onAddUser)
+            if (onAddUser != null) {
+                QuickActionItem("Xodim qo'shish", Icons.Default.AddCircle, primary, Modifier.weight(1f), onAddUser)
+            } else {
+                QuickActionItem("Coach qo'sh", Icons.Default.Person, primary, Modifier.weight(1f), onAddCoach)
+            }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             QuickActionItem("Turnir yarat", Icons.Default.Add, primary, Modifier.weight(1f), onAddTournament)
-            QuickActionItem("Coach qo'sh", Icons.Default.Person, primary, Modifier.weight(1f), onAddCoach)
+            if (onAddUser != null) {
+                QuickActionItem("Coach qo'sh", Icons.Default.Person, primary, Modifier.weight(1f), onAddCoach)
+            } else {
+                Spacer(Modifier.weight(1f))
+            }
         }
     }
 }
@@ -641,39 +735,38 @@ private fun QuickActionsGrid(
 private fun QuickActionItem(title: String, icon: ImageVector, color: Color, modifier: Modifier, onClick: () -> Unit) {
     Card(
         modifier = modifier
-            .height(110.dp)
+            .height(120.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            containerColor = MaterialTheme.colorScheme.surface
         ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         border = androidx.compose.foundation.BorderStroke(
             1.dp, 
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
         )
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(color.copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = color.copy(alpha = 0.12f),
+                modifier = Modifier.size(40.dp)
             ) {
-                Icon(icon, null, tint = color, modifier = Modifier.size(24.dp))
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, null, tint = color, modifier = Modifier.size(20.dp))
+                }
             }
-            Spacer(Modifier.height(12.dp))
             Text(
                 title,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                lineHeight = 16.sp
+                lineHeight = 18.sp
             )
         }
     }

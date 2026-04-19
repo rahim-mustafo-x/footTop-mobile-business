@@ -14,6 +14,7 @@ actual class PreferencesManager {
         private const val REFRESH_TOKEN = "refresh_token"
         private const val AUTHORISED = "authorised"
         private const val USER_ID = "user_id"
+        private const val ROLE = "role"
         private const val REGION_ID = "region_id"
         private const val DISTRICT_ID = "district_id"
         private const val ACCESS_TOKEN_EXPIRATION = "access_token_expiration"
@@ -23,6 +24,7 @@ actual class PreferencesManager {
     private val _refreshToken = MutableStateFlow(normalizeBearerToken(userDefaults.stringForKey(REFRESH_TOKEN)))
     private val _authorised = MutableStateFlow(userDefaults.boolForKey(AUTHORISED))
     private val _userId = MutableStateFlow(userDefaults.integerForKey(USER_ID).toInt())
+    private val _role = MutableStateFlow(userDefaults.stringForKey(ROLE))
     private val _regionId = MutableStateFlow(userDefaults.integerForKey(REGION_ID).toInt())
     private val _districtId = MutableStateFlow(userDefaults.integerForKey(DISTRICT_ID).toInt())
     private val _accessTokenExpiration = MutableStateFlow(userDefaults.objectForKey(ACCESS_TOKEN_EXPIRATION) as? Long ?: 0L)
@@ -32,6 +34,7 @@ actual class PreferencesManager {
     actual val refreshToken: Flow<String?> get() = _refreshToken
     actual val authorised: Flow<Boolean> get() = _authorised
     actual val userId: Flow<Int> get() = _userId
+    actual val role: Flow<String?> get() = _role
     actual val regionId: Flow<Int> get() = _regionId
     actual val districtId: Flow<Int> get() = _districtId
     actual val accessTokenExpiration: Flow<Long> get() = _accessTokenExpiration
@@ -71,6 +74,12 @@ actual class PreferencesManager {
         _userId.emit(id)
     }
 
+    actual suspend fun setRole(role: String) {
+        userDefaults.setObject(role, ROLE)
+        userDefaults.synchronize()
+        _role.emit(role)
+    }
+
     actual suspend fun setRegionId(id: Int) {
         userDefaults.setInteger(id.toLong(), REGION_ID)
         userDefaults.synchronize()
@@ -100,6 +109,7 @@ actual class PreferencesManager {
         userDefaults.removeObjectForKey(REFRESH_TOKEN)
         userDefaults.setBool(false, AUTHORISED)
         userDefaults.setInteger(0, USER_ID)
+        userDefaults.removeObjectForKey(ROLE)
         userDefaults.setInteger(0, REGION_ID)
         userDefaults.setInteger(0, DISTRICT_ID)
         userDefaults.removeObjectForKey(ACCESS_TOKEN_EXPIRATION)
@@ -110,6 +120,7 @@ actual class PreferencesManager {
         _refreshToken.emit(null)
         _authorised.emit(false)
         _userId.emit(0)
+        _role.emit(null)
         _regionId.emit(0)
         _districtId.emit(0)
         _accessTokenExpiration.emit(0L)

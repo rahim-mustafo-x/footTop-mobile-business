@@ -192,11 +192,13 @@ class HomeViewModel(
         executeAsync {
             val userId = preferencesManager.userId.filter { it != 0 }.first()
             getUserUseCase(userId.toLong()).collect { result ->
-                val isAdmin = result.roles?.any { uz.coder.foottopbusiness.core.RoleConstants.isAdmin(it.name) } ?: false
-                val isOwner = result.roles?.any { uz.coder.foottopbusiness.core.RoleConstants.isOwner(it.name) } ?: false
+                val isSuperAdmin = result.roles?.any { it.name == "ROLE_SUPER_ADMIN" || it.name == "SUPER_ADMIN" } ?: false
+                val isDistrictAdmin = result.roles?.any { it.name == "ROLE_DISTRICT_ADMIN" } ?: false
+                val isOwner = result.roles?.any { it.name == "ROLE_OWNER" } ?: false
                 
                 val userRole = when {
-                    isAdmin -> UserRole.ADMIN
+                    isSuperAdmin -> UserRole.SUPER_ADMIN
+                    isDistrictAdmin -> UserRole.DISTRICT_ADMIN
                     isOwner -> UserRole.OWNER
                     result.roles?.any { it.name?.contains("COACH", ignoreCase = true) == true || it.name?.contains("MURABBIY", ignoreCase = true) == true } == true -> UserRole.COACH
                     else -> UserRole.fromString(result.roles?.firstOrNull()?.name)
@@ -205,7 +207,7 @@ class HomeViewModel(
                 updateState { 
                     copy(
                         user = result,
-                        isAdmin = isAdmin,
+                        isAdmin = isSuperAdmin || isDistrictAdmin,
                         isOwner = isOwner,
                         userRole = userRole,
                         isLoadingUser = false

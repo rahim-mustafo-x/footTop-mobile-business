@@ -9,5 +9,6 @@ interface UserRepository {
     fun createUser(dto: UserRequestDto): Flow<UserDto>
     fun updateUser(id: Long, dto: UserRequestDto): Flow<UserDto>
     fun getAllUsers(): Flow<List<UserDto>>
+    fun generatePassword(): Flow<String>
     suspend fun userId(): Long
 }

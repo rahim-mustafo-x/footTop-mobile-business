@@ -32,6 +32,8 @@ sealed interface TournamentsContract {
             val maxTeams: Int,
             val entryFee: Double,
             val address: String?,
+            val startTime: String?,
+            val endTime: String?,
         ) : Event
     }
 }

@@ -75,7 +75,7 @@ fun MainScreen() {
     }
 
     val currentRole = UserRole.valueOf(persistedRole)
-    val isAdminOrOwner = currentRole == UserRole.ADMIN || currentRole == UserRole.OWNER
+    val isAdminOrOwner = currentRole == UserRole.SUPER_ADMIN || currentRole == UserRole.DISTRICT_ADMIN || currentRole == UserRole.OWNER
 
     CompositionLocalProvider(LocalBottomBarVisible provides bottomBarVisible) {
         TabNavigator(HomeTab) {

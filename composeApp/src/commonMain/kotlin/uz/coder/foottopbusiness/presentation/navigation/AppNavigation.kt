@@ -54,12 +54,14 @@ fun AppNavigation() {
                     }
                 }
 
-                LaunchedEffect(isTokenValid) {
-                    if (!isTokenValid) {
-                        sessionManager.startObservingToken(scope)
-                        navigator.replaceAll(LoginVoyager())
-                    }
-                }
+    LaunchedEffect(isTokenValid) {
+        if (!isTokenValid) {
+            sessionManager.startObservingToken(scope)
+            if (navigator.lastItem !is LoginVoyager) {
+                navigator.replaceAll(LoginVoyager())
+            }
+        }
+    }
                 navigator.lastItem.Content()
             }
         }

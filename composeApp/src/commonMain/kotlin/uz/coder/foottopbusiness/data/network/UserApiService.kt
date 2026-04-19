@@ -24,6 +24,12 @@ class UserApiService(private val client: HttpClient) {
     companion object {
         private const val USERS = "/v1/users/"
         private const val CREATE_USER = "/v1/users/create"
+        private const val GENERATE_PASSWORD = "/v1/admin/users/generate-password"
+    }
+
+    suspend fun generatePassword(): BaseResponse<String> {
+        val response = client.get(GENERATE_PASSWORD)
+        return json.decodeFromString(response.bodyAsText())
     }
 
     suspend fun getUserById(id: Long): BaseResponse<UserDto> {

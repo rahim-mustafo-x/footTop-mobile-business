@@ -17,7 +17,13 @@ class AuthApiService(private val client: HttpClient) {
         private const val STAFF_LOGIN_END_POINT = "/api/auth/staff/login"
         private const val REFRESH_END_POINT = "/api/auth/refresh"
         private const val LOGOUT_END_POINT = "/api/auth/logout"
+        private const val CHANGE_PASSWORD_END_POINT = "/api/auth/change-password"
     }
+
+    suspend fun changePassword(request: uz.coder.foottopbusiness.data.network.dto.auth.ChangePasswordRequest) = client.post(CHANGE_PASSWORD_END_POINT) {
+        setBody(request)
+        contentType(ContentType.Application.Json)
+    }.body<BaseResponse<uz.coder.foottopbusiness.data.network.dto.EmptyData>>()
 
     suspend fun staffLogin(request: StaffLoginRequest) = client.post(STAFF_LOGIN_END_POINT) {
         setBody(request)

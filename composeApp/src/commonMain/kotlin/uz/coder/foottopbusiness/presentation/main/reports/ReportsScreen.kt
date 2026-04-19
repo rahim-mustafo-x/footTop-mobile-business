@@ -2,13 +2,6 @@ package uz.coder.foottopbusiness.presentation.main.reports
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,8 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -43,16 +35,18 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.koin.compose.koinInject
@@ -71,12 +65,12 @@ fun ReportsScreen() {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
+                    .clip(RoundedCornerShape(bottomStart = 36.dp, bottomEnd = 36.dp))
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
                                 MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
                             )
                         )
                     )
@@ -89,27 +83,27 @@ fun ReportsScreen() {
                 ) {
                     Column {
                         Text(
-                            if (homeState.isOwner) "Daromad" else "Hisobotlar",
+                            if (homeState.isOwner) "Moliyaviy Hisobot" else "Hisobotlar",
                             color = Color.White,
-                            fontSize = 26.sp,
-                            fontWeight = FontWeight.ExtraBold
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Black
                         )
                         Text(
-                            "Tizim faoliyati tahlili",
+                            "Daromad va tahlillar monitoringi",
                             color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 13.sp
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
                         )
                     }
-                    //todo continue it if asked
-                    /*IconButton(
-                        onClick = { *//* Download report *//* },
+                    IconButton(
+                        onClick = { /* TODO */ },
                         modifier = Modifier
-                            .size(44.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(14.dp))
                             .background(Color.White.copy(alpha = 0.15f))
                     ) {
-                        Icon(Icons.Default.Download, contentDescription = "Download", tint = Color.White, modifier = Modifier.size(22.dp))
-                    }*/
+                        Icon(Icons.Default.Download, contentDescription = "Download", tint = Color.White, modifier = Modifier.size(24.dp))
+                    }
                 }
             }
         }
@@ -117,11 +111,10 @@ fun ReportsScreen() {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = padding.calculateTopPadding(), start = padding.calculateStartPadding(
-                    LayoutDirection.Ltr), end = padding.calculateEndPadding(LayoutDirection.Rtl))
+                .padding(padding)
                 .background(MaterialTheme.colorScheme.background),
-            contentPadding = PaddingValues(20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            contentPadding = PaddingValues(bottom = 32.dp, start = 20.dp, end = 20.dp, top = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             if (homeState.isOwner) {
                 item {
@@ -143,34 +136,38 @@ fun ReportsScreen() {
             
             item {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        if (homeState.isOwner) "So'nggi harakatlar" else "Barcha hisobotlar",
-                        fontWeight = FontWeight.ExtraBold,
+                        if (homeState.isOwner) "Kunlik tafsilotlar" else "Barcha hisobotlar",
+                        fontWeight = FontWeight.Black,
                         fontSize = 20.sp,
                         color = MaterialTheme.colorScheme.onBackground
                     )
-                    Text(
-                        "Hammasi",
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    TextButton(onClick = { /* TODO */ }) {
+                        Text(
+                            "Filtrlash",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
             
             if (homeState.isOwner) {
+                val days = listOf("Dushanba", "Yakshanba", "Shanba", "Juma", "Payshanba")
+                val amounts = listOf("850,000", "1,200,000", "980,000", "750,000", "600,000")
+                val colors = listOf(Color(0xFF4CAF50), Color(0xFF2196F3), Color(0xFFFF9800), Color(0xFFE91E63), Color(0xFF9C27B0))
+                
                 items(5) { index ->
-                    val days = listOf("Dushanba", "Yakshanba", "Shanba", "Juma", "Payshanba")
-                    val amounts = listOf("850,000", "1,200,000", "980,000", "750,000", "600,000")
                     ReportItem(
                         "${days[index % 5]}, ${22 - index} Yanvar",
-                        "${amounts[index % 5]} so'm • ${10 - index} bandlar",
+                        "${amounts[index % 5]} so'm • ${10 - index} ta bandlar",
                         Icons.Default.BarChart,
-                        Color(0xFF26A69A)
+                        colors[index % 5]
                     )
                 }
             } else {
@@ -207,7 +204,6 @@ fun ReportsScreen() {
                     )
                 }
             }
-            item { Spacer(Modifier.height(40.dp)) }
         }
     }
 }
@@ -216,30 +212,50 @@ fun ReportsScreen() {
 private fun IncomeOverviewCard(totalEarnings: Double) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF26A69A)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
+        elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
     ) {
-        Column(modifier = Modifier.padding(28.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier.size(8.dp).clip(CircleShape).background(Color.White)
+        Box(modifier = Modifier.fillMaxWidth()) {
+            // Pattern or Gradient overlay
+            Canvas(modifier = Modifier.matchParentSize()) {
+                drawCircle(
+                    color = Color.White.copy(alpha = 0.05f),
+                    radius = size.width / 2,
+                    center = Offset(size.width * 0.9f, 0f)
                 )
-                Spacer(Modifier.width(8.dp))
-                Text("UMUMIY DAROMAD", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
             }
-            Spacer(Modifier.height(12.dp))
-            val formattedEarnings = if (totalEarnings > 1000000) {
-                "${(totalEarnings / 1000000).toInt()}M UZS"
-            } else {
-                "${totalEarnings.toInt()} UZS"
-            }
-            Text(formattedEarnings, color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold)
-            Spacer(Modifier.height(24.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                SummaryStatSmall("BU HAFTA", "2.1M", Color.White)
-                SummaryStatSmall("O'SISH", "+15.4%", Color(0xFFE0F2F1))
-                SummaryStatSmall("BANDLIK", "84%", Color.White)
+            
+            Column(modifier = Modifier.padding(24.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.PieChart, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("UMUMIY HISOB", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
+                }
+                Spacer(Modifier.height(8.dp))
+                val formattedEarnings = if (totalEarnings > 1000000) {
+                    "${(totalEarnings / 1000000).toInt()}M UZS"
+                } else {
+                    "${totalEarnings.toInt()} UZS"
+                }
+                Text(formattedEarnings, color = Color.White, fontSize = 34.sp, fontWeight = FontWeight.Black)
+                
+                Spacer(Modifier.height(24.dp))
+                
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.Black.copy(alpha = 0.1f))
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    SummaryStatSmall("BU HAFTA", "2.4M", Color.White)
+                    Box(modifier = Modifier.width(1.dp).height(30.dp).background(Color.White.copy(alpha = 0.2f)))
+                    SummaryStatSmall("O'SISH", "+18%", Color(0xFFB9F6CA))
+                    Box(modifier = Modifier.width(1.dp).height(30.dp).background(Color.White.copy(alpha = 0.2f)))
+                    SummaryStatSmall("MIJOZLAR", "124", Color.White)
+                }
             }
         }
     }
@@ -281,7 +297,7 @@ private fun WeeklyRevenueChart() {
                                 .fillMaxHeight(value)
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(
-                                    if (index == 3) Color(0xFF26A69A) 
+                                    if (index == 3) MaterialTheme.colorScheme.primary
                                     else MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                                 )
                         )

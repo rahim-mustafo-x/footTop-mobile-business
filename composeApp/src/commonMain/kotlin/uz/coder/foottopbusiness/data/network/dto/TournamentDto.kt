@@ -17,5 +17,7 @@ data class TournamentResponseDto(
     @SerialName("rules") val rules: String? = null,
     @SerialName("status") val status: String? = null,
     @SerialName("address") val address: String? = null,
+    @SerialName("startTime") val startTime: String? = null,
+    @SerialName("endTime") val endTime: String? = null,
     @SerialName("prizes") val prizes: String? = null,
 )

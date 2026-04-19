@@ -19,6 +19,7 @@ actual class PreferencesManager(private val context: Context) {
         private val REFRESH_TOKEN = stringPreferencesKey("refresh_token")
         private val AUTHORISED = booleanPreferencesKey("authorised")
         private val USER_ID = intPreferencesKey("user_id")
+        private val ROLE = stringPreferencesKey("role")
         private val REGION_ID = intPreferencesKey("region_id")
         private val DISTRICT_ID = intPreferencesKey("district_id")
         private val ACCESS_TOKEN_EXPIRATION = longPreferencesKey("access_token_expiration")
@@ -39,6 +40,10 @@ actual class PreferencesManager(private val context: Context) {
 
     actual val userId: Flow<Int> = context.dataStore.data.map { preferences ->
         preferences[USER_ID] ?: 0
+    }
+
+    actual val role: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[ROLE]
     }
 
     actual val regionId: Flow<Int> = context.dataStore.data.map { preferences ->
@@ -91,6 +96,12 @@ actual class PreferencesManager(private val context: Context) {
         }
     }
 
+    actual suspend fun setRole(role: String) {
+        context.dataStore.edit { preferences ->
+            preferences[ROLE] = role
+        }
+    }
+
     actual suspend fun setRegionId(id: Int) {
         context.dataStore.edit { preferences ->
             preferences[REGION_ID] = id
@@ -121,9 +132,17 @@ actual class PreferencesManager(private val context: Context) {
         }
         // Clear application cache
         try {
-            context.cacheDir.deleteRecursively()
-            context.externalCacheDir?.deleteRecursively()
-        } catch (e: Exception) {
+            context.cacheDir.let {
+                if (it.exists() && it.isDirectory) {
+                    it.deleteRecursively()
+                }
+            }
+            context.externalCacheDir?.let {
+                if (it.exists() && it.isDirectory) {
+                    it.deleteRecursively()
+                }
+            }
+        } catch (e: Throwable) {
             e.printStackTrace()
         }
     }

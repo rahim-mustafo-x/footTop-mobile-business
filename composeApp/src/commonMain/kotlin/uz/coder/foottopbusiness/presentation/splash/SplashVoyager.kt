@@ -10,11 +10,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
@@ -46,63 +46,101 @@ object SplashVoyager : Screen {
 @Composable
 fun SplashScreenContent() {
     val infiniteTransition = rememberInfiniteTransition()
-    
-    // Aylanish animatsiyasi (koptok dumalayotgandek)
+
+    // Pulsating animation for the whole content
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 0.95f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+
+    // Ball rotation
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = LinearEasing),
+            animation = tween(3000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
-        )
-    )
-
-    // Sakrash animatsiyasi
-    val bounce by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = -30f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(500, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
         )
     )
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .background(
+                brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+                        MaterialTheme.colorScheme.background
+                    )
+                )
+            ),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                imageVector = Icons.Default.SportsSoccer,
-                contentDescription = "App Icon",
-                modifier = Modifier
-                    .size(120.dp)
-                    .offset(y = bounce.dp)
-                    .rotate(rotation),
-                tint = MaterialTheme.colorScheme.primary
-            )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+        ) {
+            Surface(
+                shape = androidx.compose.foundation.shape.CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                modifier = Modifier.size(140.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.SportsSoccer,
+                        contentDescription = "App Icon",
+                        modifier = Modifier
+                            .size(100.dp)
+                            .rotate(rotation),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             val title = buildAnnotatedString {
-                withStyle(SpanStyle(fontSize = 32.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)) { append("Foot") }
-                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, fontSize = 32.sp, fontWeight = FontWeight.Bold)) { append("Top") }
+                withStyle(
+                    SpanStyle(
+                        fontSize = 38.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                ) { append("Foot") }
+                withStyle(
+                    SpanStyle(
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 38.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                ) { append("Top") }
             }
-            Text(title, modifier = Modifier.padding(top = 16.dp))
+            Text(title)
+            
             Text(
-                "Business",
-                fontSize = 18.sp,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                fontWeight = FontWeight.Medium
+                "Business Management",
+                fontSize = 16.sp,
+                letterSpacing = 2.sp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 4.dp)
             )
-            
-            Spacer(modifier = Modifier.height(64.dp))
-            
+
+            Spacer(modifier = Modifier.height(80.dp))
+
             CircularProgressIndicator(
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(32.dp),
                 color = MaterialTheme.colorScheme.primary,
-                strokeWidth = 2.dp
+                strokeWidth = 3.dp
             )
         }
     }
 }
+

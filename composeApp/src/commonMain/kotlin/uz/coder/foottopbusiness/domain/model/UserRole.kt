@@ -1,10 +1,11 @@
 package uz.coder.foottopbusiness.domain.model
 
 enum class UserRole(val roleName: String) {
-    ADMIN("ROLE_ADMIN"),
-    OWNER("ROLE_STADIUM_OWNER"),
+    SUPER_ADMIN("ROLE_SUPER_ADMIN"),
+    DISTRICT_ADMIN("ROLE_DISTRICT_ADMIN"),
+    OWNER("ROLE_OWNER"),
     COACH("ROLE_COACH"),
-    USER("ROLE_USER"),
+    PLAYER("ROLE_PLAYER"),
     UNKNOWN("");
 
     companion object {

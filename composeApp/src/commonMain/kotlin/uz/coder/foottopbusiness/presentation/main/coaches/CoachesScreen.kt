@@ -53,7 +53,7 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
             Box(
@@ -91,7 +91,6 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
                 .fillMaxSize()
                 .padding(top = paddingValues.calculateTopPadding(), start = paddingValues.calculateStartPadding(
                     LayoutDirection.Ltr), end = paddingValues.calculateEndPadding(LayoutDirection.Rtl))
-                .background(MaterialTheme.colorScheme.surface)
         ) {
             // Search and Filters
             Column(modifier = Modifier.padding(16.dp)) {
@@ -181,8 +180,10 @@ private fun UserListItem(coach: CoachResponseDto, onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),

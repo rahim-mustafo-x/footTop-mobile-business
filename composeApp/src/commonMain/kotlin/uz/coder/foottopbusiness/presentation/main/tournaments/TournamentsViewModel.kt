@@ -46,6 +46,8 @@ class TournamentsViewModel(
                                 maxTeams = event.maxTeams,
                                 entryFee = event.entryFee,
                                 address = event.address,
+                                startTime = event.startTime,
+                                endTime = event.endTime,
                             )
                         ).collect { result = it }
                         result!!

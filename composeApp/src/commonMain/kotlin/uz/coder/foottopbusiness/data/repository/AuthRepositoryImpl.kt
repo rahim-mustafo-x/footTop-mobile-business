@@ -26,7 +26,8 @@ class AuthRepositoryImpl(
                 refreshToken = refresh,
                 accessExpiresIn = response.accessTokenExpiresIn,
                 refreshExpiresIn = response.refreshTokenExpiresIn,
-                userId = response.id
+                userId = response.id,
+                role = response.roles?.firstOrNull()
             )
             emit(LoginResult.Success)
         } else {
@@ -39,7 +40,8 @@ class AuthRepositoryImpl(
         refreshToken: String,
         accessExpiresIn: Long?,
         refreshExpiresIn: Long?,
-        userId: Long?
+        userId: Long?,
+        role: String?
     ) {
         val currentTime = Clock.System.now().toEpochMilliseconds()
         preferencesManager.setToken(accessToken)
@@ -57,6 +59,9 @@ class AuthRepositoryImpl(
         userId?.let {
             preferencesManager.setUserId(it.toInt())
         }
+        role?.let {
+            preferencesManager.setRole(it)
+        }
     }
 
     override fun isLoginIn(): Flow<Boolean> = preferencesManager.authorised
@@ -64,5 +69,15 @@ class AuthRepositoryImpl(
     override suspend fun logout() {
         preferencesManager.logout()
         sessionManager.onUnauthorized()
+    }
+
+    override fun changePassword(oldPassword: String, newPassword: String) = flow {
+        authApiService.changePassword(
+            uz.coder.foottopbusiness.data.network.dto.auth.ChangePasswordRequest(
+                oldPassword = oldPassword,
+                newPassword = newPassword
+            )
+        )
+        emit(Unit)
     }
 }
