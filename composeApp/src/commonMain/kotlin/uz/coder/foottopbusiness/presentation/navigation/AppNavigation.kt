@@ -38,19 +38,30 @@ fun AppNavigation() {
         Box(modifier = Modifier.fillMaxSize()) {
             Navigator(SplashVoyager) { navigator ->
                 LaunchedEffect(Unit) {
-                    sessionManager.networkError.collect { code ->
-                        val message = when (code) {
+                    sessionManager.networkError.collect { error ->
+                        val baseMessage = when (error.code) {
                             401 -> "Sessiya muddati tugadi. Iltimos, qayta kiring."
                             403, 500 -> {
                                 scope.launch {
                                     sessionManager.logout()
                                     navigator.replaceAll(LoginVoyager())
                                 }
-                                if (code == 403) "Kirish taqiqlangan (403)." else "Serverda xatolik yuz berdi (500)."
+                                if (error.code == 403) "Kirish taqiqlangan." else "Serverda xatolik yuz berdi."
                             }
-                            else -> "Tarmoq xatosi: $code"
+                            else -> "Tarmoq xatosi"
                         }
-                        snackbarHostState.showSnackbar(message)
+                        val displayMessage = when {
+                            !error.details.isNullOrEmpty() -> {
+                                error.details.joinToString("\n") { detail ->
+                                    if (detail.contains(":")) detail.substringAfter(":").trim() else detail
+                                }
+                            }
+                            !error.message.isNullOrBlank() -> {
+                                if (error.message.contains(":")) error.message.substringAfter(":").trim() else error.message
+                            }
+                            else -> baseMessage
+                        }
+                        snackbarHostState.showSnackbar(displayMessage)
                     }
                 }
 

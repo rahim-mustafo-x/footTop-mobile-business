@@ -43,7 +43,7 @@ class SessionManager(private val preferencesManager: PreferencesManager) {
     private val _token = MutableStateFlow<String?>(null)
     val token = _token.asStateFlow()
 
-    private val _networkError = MutableSharedFlow<Int>(
+    private val _networkError = MutableSharedFlow<NetworkError>(
         extraBufferCapacity = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
@@ -60,9 +60,15 @@ class SessionManager(private val preferencesManager: PreferencesManager) {
         _token.value = newToken
     }
 
-    fun emitNetworkError(code: Int) {
-        _networkError.tryEmit(code)
+    fun emitNetworkError(code: Int, message: String? = null, details: List<String>? = null) {
+        _networkError.tryEmit(NetworkError(code, message, details))
     }
+
+    data class NetworkError(
+        val code: Int,
+        val message: String? = null,
+        val details: List<String>? = null
+    )
 
     fun emitEvent(event: SessionEvent) {
         _sessionEvent.tryEmit(event)

@@ -39,7 +39,7 @@ class StadiumDetailsViewModel(
         val currentStadium = state.value.stadium ?: return
         val now = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
         val dateStr = "${now.year}-${now.month.
-        number.toString().padStart(2, '0')}-${now.dayOfMonth.toString().padStart(2, '0')}"
+        number.toString().padStart(2, '0')}-${now.day.toString().padStart(2, '0')}"
         
         executeAsync(
             onLoading = { updateState { copy(isLoading = true) } },
@@ -104,12 +104,12 @@ class StadiumDetailsViewModel(
                 updateState { copy(showSlotActionDialog = false, selectedSlot = null) }
             }
             is StadiumDetailsContract.Event.BookSlot -> {
-                bookSlot(event.slot)
+                bookSlot()
             }
         }
     }
 
-    private fun bookSlot(slot: uz.coder.foottopbusiness.data.network.dto.stadium.SlotDto) {
+    private fun bookSlot() {
         updateState { copy(isBooking = true) }
         executeAsync(
             block = {
