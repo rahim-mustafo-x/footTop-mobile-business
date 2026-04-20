@@ -27,7 +27,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.foundation.layout.offset
-import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.EmojiEvents
@@ -78,6 +77,7 @@ import uz.coder.foottopbusiness.core.platform.exitApp
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.domain.model.UserRole
+import uz.coder.foottopbusiness.presentation.main.components.UserCardItem
 import uz.coder.foottopbusiness.presentation.main.home.history.HistoryScreen
 import uz.coder.foottopbusiness.presentation.main.reports.ReportItem
 import uz.coder.foottopbusiness.presentation.main.settings.SettingsVoyager
@@ -89,8 +89,7 @@ import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsVoyager
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
-    navigateToSlotsControl: (StadiumResponse) -> Unit,
-    navigateToStadiums: () -> Unit
+    navigateToSlotsControl: (StadiumResponse) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val navigator = LocalNavigator.currentOrThrow
@@ -185,20 +184,17 @@ fun HomeScreen(
                             UserRole.DISTRICT_ADMIN, UserRole.SUPER_ADMIN -> {
                                 HomeTab(
                                     state = state,
-                                    viewModel = viewModel,
                                     onAddStadium = { navigator.push(AddPitchVoyager) },
                                     onAddUser = { navigator.push(uz.coder.foottopbusiness.presentation.main.home.user.UserCreateTypeScreen()) },
                                     onAddTournament = { navigator.push(TournamentsVoyager) },
-                                    onAddCoach = { navigator.push(uz.coder.foottopbusiness.presentation.main.coaches.create.CoachCreateScreen()) },
                                     onProfileClick = { navigator.push(SettingsVoyager) },
                                     onNotificationClick = { navigator.push(SendNotificationVoyager) }
                                 )
                             }
 
-                            UserRole.OWNER -> {
+                            UserRole.OWNER, UserRole.COACH -> {
                                 OwnerHomeTab(
                                     state = state,
-                                    viewModel = viewModel,
                                     onAddStadium = { navigator.push(AddPitchVoyager) },
                                     onAddTournament = { navigator.push(TournamentsVoyager) },
                                     onAddCoach = { navigator.push(uz.coder.foottopbusiness.presentation.main.coaches.create.CoachCreateScreen()) },
@@ -228,11 +224,9 @@ fun HomeScreen(
 @Composable
 private fun HomeTab(
     state: HomeContract.State,
-    viewModel: HomeViewModel,
     onAddStadium: () -> Unit,
     onAddUser: () -> Unit,
     onAddTournament: () -> Unit,
-    onAddCoach: () -> Unit,
     onProfileClick: () -> Unit,
     onNotificationClick: () -> Unit
 ) {
@@ -246,7 +240,7 @@ private fun HomeTab(
 
         item {
             Column(modifier = Modifier.padding(16.dp)) {
-                MalaebDashboard(state, viewModel)
+                MalaebDashboard(state)
                 
                 Spacer(Modifier.height(24.dp))
 
@@ -263,7 +257,7 @@ private fun HomeTab(
                     onAddStadium = onAddStadium,
                     onAddUser = onAddUser,
                     onAddTournament = onAddTournament,
-                    onAddCoach = onAddCoach
+                    onAddCoach = null
                 )
 
                 Spacer(Modifier.height(40.dp))
@@ -341,7 +335,6 @@ private fun HeaderIconButton(icon: ImageVector, onClick: () -> Unit) {
 @Composable
 private fun OwnerHomeTab(
     state: HomeContract.State,
-    viewModel: HomeViewModel,
     onAddStadium: () -> Unit,
     onAddTournament: () -> Unit,
     onAddCoach: () -> Unit,
@@ -393,15 +386,6 @@ private fun OwnerHomeTab(
                 
                 Spacer(Modifier.height(24.dp))
 
-                Text(
-                    "Coachlar",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-
-                Spacer(Modifier.height(16.dp))
-
                 if (state.isLoadingCoaches) {
                     Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
@@ -411,11 +395,11 @@ private fun OwnerHomeTab(
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         state.coaches.take(5).forEach { coach ->
-                            CoachItem(
-                                initials = coach.coachName?.take(2)?.uppercase() ?: "CH",
+                            UserCardItem(
                                 name = coach.coachName ?: "Noma'lum",
-                                type = coach.specialty ?: "Sport",
-                                status = coach.availability ?: "Aktiv"
+                                role = coach.specialty ?: "Sport",
+                                status = coach.availability ?: "Aktiv",
+                                onClick = {}
                             )
                         }
                     }
@@ -427,170 +411,6 @@ private fun OwnerHomeTab(
 
 @Composable
 private fun OwnerDashboard(state: HomeContract.State) {
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        StatCard(
-            title = "STADIONLAR",
-            value = "${state.stadiums.size}",
-            subValue = "Mening maydonlarim",
-            icon = Icons.Default.Business,
-            color = Color(0xFF4CAF50),
-            modifier = Modifier.weight(1f)
-        )
-        StatCard(
-            title = "TURNIRLAR",
-            value = "${state.tournaments.size}",
-            subValue = "Mening tadbirlarim",
-            icon = Icons.Default.EmojiEvents,
-            color = Color(0xFFFF9800),
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-@Composable
-private fun ScheduleList(state: HomeContract.State) {
-    val bookedMatches = state.matches.sortedBy { it.dateTime }
-
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        if (state.isLoadingMatches) {
-            Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-            }
-        } else if (bookedMatches.isEmpty()) {
-            Text("Bugun uchun bandlar yo'q", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
-        } else {
-            bookedMatches.take(5).forEach { match ->
-                val time = match.dateTime?.split("T")?.lastOrNull()?.take(5) ?: "00:00"
-                ReportItem(
-                    "$time - ${match.title ?: "Jamoa"}",
-                    "Maydon #${match.stadiumId ?: 1} • ${match.pricePerPlayer ?: 0.0} UZS",
-                    Icons.Default.SportsSoccer,
-                    Color(0xFF26A69A)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ScheduleItem(time: String, title: String, subtitle: String, price: String, isBooked: Boolean, statusColor: Color = Color(0xFF26A69A)) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-        Text(time, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.width(50.dp))
-        
-        Card(
-            modifier = Modifier.weight(1f),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = if (isBooked) statusColor else MaterialTheme.colorScheme.surface
-            ),
-            border = if (!isBooked) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)) else null
-        ) {
-            Row(
-                modifier = Modifier.padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        if (isBooked) title else "+ $title",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        color = if (isBooked) Color.White else MaterialTheme.colorScheme.primary
-                    )
-                    if (subtitle.isNotEmpty()) {
-                        Text(
-                            subtitle,
-                            fontSize = 11.sp,
-                            color = if (isBooked) Color.White.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                if (price.isNotEmpty()) {
-                    Text(price, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CoachList(state: HomeContract.State) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        CoachItem("JU", "Jasur Umarov", "Futbol", "Aktiv")
-        CoachItem("NO", "Nodira Olimova", "Fitnes", "Aktiv")
-    }
-}
-
-@Composable
-private fun CoachItem(initials: String, name: String, type: String, status: String) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
-        )
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.05f)
-                            )
-                        )
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    initials,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-            }
-            Spacer(Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    name,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    type,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = Color(0xFF26A69A).copy(alpha = 0.1f)
-            ) {
-                Text(
-                    status,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    color = Color(0xFF26A69A),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun MalaebDashboard(state: HomeContract.State, viewModel: HomeViewModel) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatCard(
@@ -627,6 +447,77 @@ private fun MalaebDashboard(state: HomeContract.State, viewModel: HomeViewModel)
                 color = Color(0xFFE91E63),
                 modifier = Modifier.weight(1f)
             )
+        }
+    }
+}
+
+@Composable
+private fun MalaebDashboard(state: HomeContract.State) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            StatCard(
+                title = "STADIONLAR",
+                value = "${state.activeStadiums}",
+                subValue = "Aktiv maydonlar",
+                icon = Icons.Default.SportsSoccer,
+                color = Color(0xFF4CAF50),
+                modifier = Modifier.weight(1f)
+            )
+            StatCard(
+                title = "FOYDALANUVCHILAR",
+                value = "${state.totalUsers}",
+                subValue = "Jami a'zolar",
+                icon = Icons.Default.Groups,
+                color = Color(0xFF2196F3),
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            StatCard(
+                title = "TURNIRLAR",
+                value = "${state.totalTournaments}",
+                subValue = "Jami tadbirlar",
+                icon = Icons.Default.EmojiEvents,
+                color = Color(0xFFFF9800),
+                modifier = Modifier.weight(1f)
+            )
+            StatCard(
+                title = "DAROMAD",
+                value = if (state.totalEarnings > 1000000) "${(state.totalEarnings / 1000000).toInt()}M" else "${state.totalEarnings.toInt()}",
+                subValue = "Umumiy tushum",
+                icon = Icons.Default.AttachMoney,
+                color = Color(0xFFE91E63),
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun ScheduleList(state: HomeContract.State) {
+    val bookedMatches = state.matches
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (state.isLoadingMatches) {
+            Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+            }
+        } else if (bookedMatches.isEmpty()) {
+            Text(
+                "Bugun uchun bandlar yo'q",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 14.sp
+            )
+        } else {
+            bookedMatches.take(5).forEach { match ->
+                val time = match.dateTime?.split("T")?.lastOrNull()?.take(5) ?: "00:00"
+                ReportItem(
+                    title = "$time - ${match.title ?: "Jamoa"}",
+                    subtitle = "Maydon #${match.stadiumId ?: 1} • ${match.pricePerPlayer ?: 0.0} UZS",
+                    icon = Icons.Default.SportsSoccer,
+                    iconBgColor = Color(0xFF26A69A)
+                )
+            }
         }
     }
 }
@@ -708,7 +599,7 @@ private fun QuickActionsGrid(
     onAddStadium: () -> Unit,
     onAddUser: (() -> Unit)?,
     onAddTournament: () -> Unit,
-    onAddCoach: () -> Unit
+    onAddCoach: (() -> Unit)?
 ) {
     val primary = MaterialTheme.colorScheme.primary
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -716,13 +607,15 @@ private fun QuickActionsGrid(
             QuickActionItem("Stadion qo'sh", Icons.Default.Home, primary, Modifier.weight(1f), onAddStadium)
             if (onAddUser != null) {
                 QuickActionItem("Xodim qo'shish", Icons.Default.AddCircle, primary, Modifier.weight(1f), onAddUser)
-            } else {
+            } else if (onAddCoach != null) {
                 QuickActionItem("Coach qo'sh", Icons.Default.Person, primary, Modifier.weight(1f), onAddCoach)
+            } else {
+                Spacer(Modifier.weight(1f))
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             QuickActionItem("Turnir yarat", Icons.Default.Add, primary, Modifier.weight(1f), onAddTournament)
-            if (onAddUser != null) {
+            if (onAddUser != null && onAddCoach != null) {
                 QuickActionItem("Coach qo'sh", Icons.Default.Person, primary, Modifier.weight(1f), onAddCoach)
             } else {
                 Spacer(Modifier.weight(1f))
@@ -735,13 +628,13 @@ private fun QuickActionsGrid(
 private fun QuickActionItem(title: String, icon: ImageVector, color: Color, modifier: Modifier, onClick: () -> Unit) {
     Card(
         modifier = modifier
-            .height(120.dp)
+            .height(110.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = androidx.compose.foundation.BorderStroke(
             1.dp, 
             MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
@@ -768,87 +661,6 @@ private fun QuickActionItem(title: String, icon: ImageVector, color: Color, modi
                 color = MaterialTheme.colorScheme.onSurface,
                 lineHeight = 18.sp
             )
-        }
-    }
-}
-
-@Composable
-private fun RecentActivityList() {
-    val primary = MaterialTheme.colorScheme.primary
-    val secondary = MaterialTheme.colorScheme.secondary
-    val tertiary = MaterialTheme.colorScheme.tertiary
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        ActivityItem("Yangi stadion qo'shildi: Green Field", "10 daqiqa oldin", primary)
-        ActivityItem("Sardor Rahimov - hisob yaratildi", "1 soat oldin", secondary)
-        ActivityItem("Turnir: Toshkent kubogi boshlandi", "3 soat oldin", tertiary)
-        ActivityItem("Jasur Umarov - coach tasdiqlandi", "Kecha", primary)
-    }
-}
-
-@Composable
-private fun ActivityItem(title: String, time: String, dotColor: Color) {
-    Row(verticalAlignment = Alignment.Top) {
-        Box(
-            modifier = Modifier
-                .padding(top = 6.dp)
-                .size(8.dp)
-                .clip(CircleShape)
-                .background(dotColor)
-        )
-        Spacer(Modifier.width(12.dp))
-        Column {
-            Text(title, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
-            Text(time, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
-
-@Composable
-private fun ActionCard(title: String, icon: ImageVector, color: Color, modifier: Modifier, onClick: () -> Unit) {
-    Card(
-        modifier = modifier
-            .height(90.dp)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Column(
-            Modifier.fillMaxSize().padding(4.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(icon, null, tint = color, modifier = Modifier.size(24.dp))
-            Spacer(Modifier.height(8.dp))
-            Text(title, color = color, fontWeight = FontWeight.Bold, fontSize = 12.sp, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        }
-    }
-}
-
-@Composable
-private fun MalaebStadiumCard(stadium: StadiumResponse, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Card(
-        modifier = modifier
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(50.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Default.SportsSoccer, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(stadium.name ?: "Noma'lum stadion", fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("${stadium.districtName}, ${stadium.regionName}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
         }
     }
 }

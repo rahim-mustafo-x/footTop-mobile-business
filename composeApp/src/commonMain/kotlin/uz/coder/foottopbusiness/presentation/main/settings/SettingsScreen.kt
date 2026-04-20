@@ -336,7 +336,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                             }
                         } else {
                             Column(
-                                modifier = Modifier.padding(24.dp),
+                                modifier = Modifier.fillMaxWidth().padding(24.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 // Profil Rasmi / Icon

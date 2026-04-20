@@ -1,32 +1,32 @@
 package uz.coder.foottopbusiness.presentation.main.coaches
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import uz.coder.foottopbusiness.presentation.main.components.UserCardItem
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import uz.coder.foottopbusiness.core.BackHandler
 import uz.coder.foottopbusiness.data.network.dto.CoachResponseDto
 import uz.coder.foottopbusiness.presentation.main.coaches.create.CoachCreateScreen
 
@@ -162,58 +162,17 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(state.filteredCoaches, key = { it.id ?: 0L }) { coach ->
-                        UserListItem(coach = coach, onClick = { viewModel.handleEvent(CoachesContract.Event.SelectCoach(coach)) })
+                        UserCardItem(
+                            name = coach.coachName ?: "—",
+                            role = "Coach",
+                            subtitle = coach.specialty,
+                            status = coach.availability ?: "Aktiv",
+                            onClick = { viewModel.handleEvent(CoachesContract.Event.SelectCoach(coach)) }
+                        )
                     }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun UserListItem(coach: CoachResponseDto, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Avatar
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                val initial = coach.coachName?.firstOrNull()?.toString() ?: "U"
-                Text(initial, color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.Bold)
-            }
-
-            Spacer(Modifier.width(12.dp))
-
-            // Info
-            Column(modifier = Modifier.weight(1f)) {
-                Text(coach.coachName ?: "—", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
-                Text(coach.specialty ?: "user@malaeb.uz", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-
-            // Role and Action
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Coach", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                IconButton(onClick = {}) {
-                    Icon(Icons.Default.MoreVert, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                 }
             }
         }
@@ -223,59 +182,193 @@ private fun UserListItem(coach: CoachResponseDto, onClick: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CoachDetailScreen(coach: CoachResponseDto, onBack: () -> Unit) {
-    Scaffold(topBar = {
-        TopAppBar(
-            title = { Text(coach.coachName ?: "Murabbiy") },
-            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
-            )
-        )
-    }) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding(), start = padding.calculateStartPadding(
-            LayoutDirection.Ltr), end = padding.calculateEndPadding(LayoutDirection.Rtl)).background(MaterialTheme.colorScheme.surface).padding(16.dp)) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Person,
-                            null,
-                            modifier = Modifier.size(56.dp),
-                            tint = MaterialTheme.colorScheme.primary
+    BackHandler(enabled = true) {
+        onBack()
+    }
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.9f)
+                            )
                         )
-                        Spacer(Modifier.width(16.dp))
-                        Column {
-                            Text(coach.coachName ?: "—", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
-                            Text(coach.specialty ?: "—", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    )
+                    .padding(top = statusBarPadding, start = 24.dp, end = 24.dp, bottom = 32.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        onClick = onBack,
+                        shape = androidx.compose.foundation.shape.CircleShape,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f),
+                        modifier = Modifier.size(46.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                null,
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
                         }
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            "Murabbiy ma'lumotlari",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Black
+                        )
                     }
                 }
             }
-            Spacer(Modifier.height(16.dp))
-            DetailRow("Tajriba", "${coach.experienceYears ?: 0} yil")
-            DetailRow("Narx", "${coach.hourlyRate?.toInt() ?: 0} so'm/soat")
-            DetailRow("Mavjudlik", coach.availability ?: "—")
-            if (!coach.reviews.isNullOrBlank()) {
-                Spacer(Modifier.height(12.dp))
-                Text("Sharhlar", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                Spacer(Modifier.height(4.dp))
-                Text(coach.reviews, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = padding.calculateTopPadding())
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            // Profile Card
+            Card(
+                shape = RoundedCornerShape(28.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(24.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        modifier = Modifier.size(72.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Default.Person,
+                                null,
+                                modifier = Modifier.size(40.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    Spacer(Modifier.width(20.dp))
+                    Column {
+                        Text(
+                            coach.coachName ?: "—",
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 22.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            coach.specialty ?: "Sport mutaxassisi",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
             }
+
+            // Stats Section
+            Card(
+                shape = RoundedCornerShape(28.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    DetailRow(
+                        label = "Tajriba",
+                        value = "${coach.experienceYears ?: 0} yil",
+                        icon = Icons.Default.Star
+                    )
+                    DetailRow(
+                        label = "Soatbay narx",
+                        value = "${coach.hourlyRate?.toInt() ?: 0} so'm",
+                        icon = Icons.Default.ShoppingCart
+                    )
+                    DetailRow(
+                        label = "Mavjudlik",
+                        value = coach.availability ?: "Noma'lum",
+                        icon = Icons.Default.Info
+                    )
+                }
+            }
+
+            // Reviews Section
+            if (!coach.reviews.isNullOrBlank()) {
+                Card(
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(24.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Star,
+                                null,
+                                tint = Color(0xFFFFB300),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                "Sharhlar",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            coach.reviews,
+                            fontSize = 14.sp,
+                            lineHeight = 22.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(32.dp))
         }
     }
 }
 
 @Composable
-private fun DetailRow(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
-        Text(value, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+private fun DetailRow(label: String, value: String, icon: ImageVector) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                modifier = Modifier.size(36.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                }
+            }
+            Spacer(Modifier.width(12.dp))
+            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+        }
+        Text(value, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
     }
-    HorizontalDivider()
 }

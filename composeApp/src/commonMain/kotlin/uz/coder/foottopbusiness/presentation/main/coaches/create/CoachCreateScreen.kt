@@ -155,7 +155,7 @@ class CoachCreateScreen : Screen {
                             onValueChange = { userId = it.filter { c -> c.isDigit() } },
                             label = "Foydalanuvchi ID",
                             placeholder = "Masalan: 9",
-                            icon = Icons.Default.Fingerprint,
+                            icon = Icons.Default.Person,
                             keyboardType = KeyboardType.Number
                         )
 

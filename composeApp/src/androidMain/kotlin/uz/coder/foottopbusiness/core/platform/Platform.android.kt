@@ -9,7 +9,13 @@ import kotlin.system.exitProcess
 
 class AndroidPlatform : Platform {
     override val name: String = "Android ${Build.VERSION.SDK_INT}"
-    override val version: String = "1.0.4"
+    override val version: String = try {
+        val context = ContextProvider.getContext()
+        val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+        packageInfo.versionName ?: "unknown"
+    } catch (_: Exception) {
+        "unknown"
+    }
 }
 
 actual fun getPlatform(): Platform = AndroidPlatform()
@@ -38,7 +44,7 @@ actual fun rateApp() {
     }
     try {
         context.startActivity(intent)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$packageName")).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }

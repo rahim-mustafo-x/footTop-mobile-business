@@ -7,15 +7,32 @@ import uz.coder.foottopbusiness.domain.repository.StadiumRepository
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.coroutines.flow.firstOrNull
+import uz.coder.foottopbusiness.data.local.PreferencesManager
+import uz.coder.foottopbusiness.domain.model.UserRole
 
 class StadiumDetailsViewModel(
     stadium: StadiumResponse,
-    private val stadiumRepository: StadiumRepository
+    private val stadiumRepository: StadiumRepository,
+    private val preferencesManager: PreferencesManager
 ) : BaseViewModel<StadiumDetailsContract.State, StadiumDetailsContract.Effect, StadiumDetailsContract.Event>(
     initialState = StadiumDetailsContract.State(stadium = stadium)
 ) {
     init {
+        loadUserRole()
         refreshStadium()
+    }
+
+    private fun loadUserRole() {
+        executeAsync(
+            block = {
+                val roleStr = preferencesManager.role.firstOrNull()
+                UserRole.fromString(roleStr)
+            },
+            onSuccess = { role ->
+                updateState { copy(userRole = role) }
+            }
+        )
     }
 
     private fun refreshStadium() {
@@ -86,7 +103,31 @@ class StadiumDetailsViewModel(
             StadiumDetailsContract.Event.DismissSlotDialog -> {
                 updateState { copy(showSlotActionDialog = false, selectedSlot = null) }
             }
+            is StadiumDetailsContract.Event.BookSlot -> {
+                bookSlot(event.slot)
+            }
         }
+    }
+
+    private fun bookSlot(slot: uz.coder.foottopbusiness.data.network.dto.stadium.SlotDto) {
+        updateState { copy(isBooking = true) }
+        executeAsync(
+            block = {
+                // In a real app, this would call a repository to create a booking or match
+                // For now, we simulate success after a delay
+                kotlinx.coroutines.delay(1000)
+                true
+            },
+            onSuccess = {
+                updateState { copy(isBooking = false, showSlotActionDialog = false, selectedSlot = null) }
+                sendEffect(StadiumDetailsContract.Effect.ShowToast("Vaqt muvaffaqiyatli band qilindi"))
+                refreshStadium()
+            },
+            onError = {
+                updateState { copy(isBooking = false) }
+                sendEffect(StadiumDetailsContract.Effect.ShowToast("Band qilishda xatolik yuz berdi"))
+            }
+        )
     }
 
     private fun updateStatus(isActive: Boolean) {

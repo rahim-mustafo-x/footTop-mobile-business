@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
@@ -45,11 +45,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.koin.compose.koinInject
+import uz.coder.foottopbusiness.presentation.main.home.HomeContract
 import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,6 +61,16 @@ import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
 fun ReportsScreen() {
     val homeViewModel = koinInject<HomeViewModel>()
     val homeState by homeViewModel.state.collectAsState()
+
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        homeViewModel.effect.collect { effect ->
+            if (effect is HomeContract.Effect.DownloadFile) {
+                // In a real app, this would use a platform-specific file saver
+                // For this demo/KMP context, we show a toast or call a native bridge
+                homeViewModel.handleEvent(HomeContract.Event.Load) // Refresh or similar
+            }
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -83,7 +97,7 @@ fun ReportsScreen() {
                 ) {
                     Column {
                         Text(
-                            if (homeState.isOwner) "Moliyaviy Hisobot" else "Hisobotlar",
+                            if (homeState.isOwner || homeState.isAdmin) "Moliyaviy Hisobot" else "Hisobotlar",
                             color = Color.White,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Black
@@ -96,7 +110,7 @@ fun ReportsScreen() {
                         )
                     }
                     IconButton(
-                        onClick = { /* TODO */ },
+                        onClick = { homeViewModel.handleEvent(HomeContract.Event.DownloadReport) },
                         modifier = Modifier
                             .size(48.dp)
                             .clip(RoundedCornerShape(14.dp))
@@ -116,12 +130,17 @@ fun ReportsScreen() {
             contentPadding = PaddingValues(bottom = 32.dp, start = 20.dp, end = 20.dp, top = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            if (homeState.isOwner) {
+            if (homeState.isOwner || homeState.isAdmin) {
                 item {
-                    IncomeOverviewCard(homeState.totalEarnings)
+                    val weeklyTotal = homeState.weeklyEarnings.sum()
+                    IncomeOverviewCard(
+                        totalEarnings = homeState.totalEarnings,
+                        weeklyTotal = weeklyTotal,
+                        totalUsers = homeState.totalUsers
+                    )
                 }
                 item {
-                    WeeklyRevenueChart()
+                    WeeklyRevenueChart(homeState.weeklyEarnings, homeState.weeklyLabels)
                 }
             } else {
                 item {
@@ -141,7 +160,7 @@ fun ReportsScreen() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        if (homeState.isOwner) "Kunlik tafsilotlar" else "Barcha hisobotlar",
+                        if (homeState.isOwner || homeState.isAdmin) "Kunlik tafsilotlar" else "Barcha hisobotlar",
                         fontWeight = FontWeight.Black,
                         fontSize = 20.sp,
                         color = MaterialTheme.colorScheme.onBackground
@@ -157,18 +176,32 @@ fun ReportsScreen() {
                 }
             }
             
-            if (homeState.isOwner) {
-                val days = listOf("Dushanba", "Yakshanba", "Shanba", "Juma", "Payshanba")
-                val amounts = listOf("850,000", "1,200,000", "980,000", "750,000", "600,000")
-                val colors = listOf(Color(0xFF4CAF50), Color(0xFF2196F3), Color(0xFFFF9800), Color(0xFFE91E63), Color(0xFF9C27B0))
-                
-                items(5) { index ->
+            if (homeState.isOwner || homeState.isAdmin) {
+                val recentMatches = homeState.matches
+                    .filter { it.dateTime != null }
+                    .sortedByDescending { it.dateTime }
+                    .take(7)
+
+                items(recentMatches) { match ->
+                    val datePart = match.dateTime?.split("T")?.firstOrNull() ?: ""
+                    val total = (match.currentPlayers ?: 0) * (match.pricePerPlayer ?: 0.0)
+                    
                     ReportItem(
-                        "${days[index % 5]}, ${22 - index} Yanvar",
-                        "${amounts[index % 5]} so'm • ${10 - index} ta bandlar",
-                        Icons.Default.BarChart,
-                        colors[index % 5]
+                        title = match.title ?: "O'yin",
+                        subtitle = "$datePart • ${match.currentPlayers} ta bandlar • ${total.toInt()} so'm",
+                        icon = Icons.Default.BarChart,
+                        iconBgColor = MaterialTheme.colorScheme.primary
                     )
+                }
+                
+                if (recentMatches.isEmpty()) {
+                    item {
+                        Text(
+                            "Hozircha ma'lumotlar yo'q",
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             } else {
                 item {
@@ -209,7 +242,7 @@ fun ReportsScreen() {
 }
 
 @Composable
-private fun IncomeOverviewCard(totalEarnings: Double) {
+private fun IncomeOverviewCard(totalEarnings: Double, weeklyTotal: Double, totalUsers: Int) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
@@ -236,7 +269,7 @@ private fun IncomeOverviewCard(totalEarnings: Double) {
                 val formattedEarnings = if (totalEarnings > 1000000) {
                     "${(totalEarnings / 1000000).toInt()}M UZS"
                 } else {
-                    "${totalEarnings.toInt()} UZS"
+                    "${totalEarnings.toInt() / 1000}K UZS"
                 }
                 Text(formattedEarnings, color = Color.White, fontSize = 34.sp, fontWeight = FontWeight.Black)
                 
@@ -250,11 +283,12 @@ private fun IncomeOverviewCard(totalEarnings: Double) {
                         .padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    SummaryStatSmall("BU HAFTA", "2.4M", Color.White)
+                    val weeklyFormatted = if (weeklyTotal > 1000000) "${(weeklyTotal / 1000000).toInt()}M" else "${(weeklyTotal / 1000).toInt()}K"
+                    SummaryStatSmall("BU HAFTA", weeklyFormatted, Color.White)
                     Box(modifier = Modifier.width(1.dp).height(30.dp).background(Color.White.copy(alpha = 0.2f)))
                     SummaryStatSmall("O'SISH", "+18%", Color(0xFFB9F6CA))
                     Box(modifier = Modifier.width(1.dp).height(30.dp).background(Color.White.copy(alpha = 0.2f)))
-                    SummaryStatSmall("MIJOZLAR", "124", Color.White)
+                    SummaryStatSmall("MIJOZLAR", totalUsers.toString(), Color.White)
                 }
             }
         }
@@ -270,40 +304,161 @@ private fun SummaryStatSmall(label: String, value: String, color: Color) {
 }
 
 @Composable
-private fun WeeklyRevenueChart() {
+private fun WeeklyRevenueChart(
+    weeklyEarnings: List<Double>,
+    weeklyLabels: List<String>
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+        )
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text("Haftalik tahlil", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
-            Spacer(Modifier.height(28.dp))
-            
             Row(
-                modifier = Modifier.fillMaxWidth().height(160.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                val data = listOf(0.4f, 0.7f, 0.5f, 0.9f, 0.6f, 0.8f, 0.4f)
-                val days = listOf("Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya")
-                
-                data.forEachIndexed { index, value ->
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(
-                            modifier = Modifier
-                                .width(34.dp)
-                                .fillMaxHeight(value)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(
-                                    if (index == 3) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                                )
-                        )
-                        Spacer(Modifier.height(10.dp))
-                        Text(days[index], fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Column {
+                    Text("Haftalik tahlil", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+                    Text(
+                        "Daromad dinamikasi",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.TrendingUp,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(32.dp))
+
+            val data = if (weeklyEarnings.isNotEmpty()) {
+                val max = weeklyEarnings.maxOrNull() ?: 1.0
+                weeklyEarnings.map { (it / max).toFloat().coerceIn(0.1f, 1f) }
+            } else {
+                listOf(0.3f, 0.5f, 0.4f, 0.8f, 0.6f, 0.9f, 0.7f)
+            }
+            
+            val days = weeklyLabels.ifEmpty { listOf("Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya") }
+            val primaryColor = MaterialTheme.colorScheme.primary
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .padding(horizontal = 4.dp)
+            ) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val width = size.width
+                    val height = size.height
+                    val spacing = width / (data.size - 1)
+
+                    val path = Path()
+                    val fillPath = Path()
+
+                    data.forEachIndexed { index, value ->
+                        val x = index * spacing
+                        val y = height - (value * height)
+
+                        if (index == 0) {
+                            path.moveTo(x, y)
+                            fillPath.moveTo(x, height)
+                            fillPath.lineTo(x, y)
+                        } else {
+                            val prevX = (index - 1) * spacing
+                            val prevY = height - (data[index - 1] * height)
+
+                            // Smooth curve using cubic bezier
+                            val controlX1 = prevX + spacing / 2
+                            val controlX2 = x - spacing / 2
+
+                            path.cubicTo(controlX1, prevY, controlX2, y, x, y)
+                            fillPath.cubicTo(controlX1, prevY, controlX2, y, x, y)
+                        }
                     }
+
+                    fillPath.lineTo(width, height)
+                    fillPath.close()
+
+                    // Draw gradient fill
+                    drawPath(
+                        path = fillPath,
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                primaryColor.copy(alpha = 0.3f),
+                                primaryColor.copy(alpha = 0.05f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+
+                    // Draw the line
+                    drawPath(
+                        path = path,
+                        color = primaryColor,
+                        style = Stroke(
+                            width = 3.dp.toPx(),
+                            cap = StrokeCap.Round
+                        )
+                    )
+
+                    // Draw points
+                    data.forEachIndexed { index, value ->
+                        val x = index * spacing
+                        val y = height - (value * height)
+
+                        // Outer circle (glow)
+                        drawCircle(
+                            color = primaryColor.copy(alpha = 0.2f),
+                            radius = 8.dp.toPx(),
+                            center = Offset(x, y)
+                        )
+                        // Middle circle
+                        drawCircle(
+                            color = Color.White,
+                            radius = 5.dp.toPx(),
+                            center = Offset(x, y)
+                        )
+                        // Inner circle (center)
+                        drawCircle(
+                            color = primaryColor,
+                            radius = 3.dp.toPx(),
+                            center = Offset(x, y)
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                days.forEachIndexed { index, day ->
+                    Text(
+                        day,
+                        fontSize = 12.sp,
+                        fontWeight = if (index == 5 || index == 6) FontWeight.Bold else FontWeight.Medium,
+                        color = if (index == 5 || index == 6) primaryColor else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }

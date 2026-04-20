@@ -17,7 +17,10 @@ import uz.coder.foottopbusiness.domain.usecase.tournament.GetTournamentsUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GetAllUsersUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
 import uz.coder.foottopbusiness.data.local.PreferencesManager
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.home.HomeContract.Effect.*
@@ -166,6 +169,19 @@ class HomeViewModel(
                 }
             }
 
+            HomeContract.Event.DownloadReport -> {
+                executeAsync {
+                    val matches = state.value.matches
+                    val csv = StringBuilder()
+                    csv.append("ID,Sana,Nomi,Stadion ID,O'yinchilar,Narx,Jami\n")
+                    matches.forEach { match ->
+                        val total = (match.currentPlayers ?: 0) * (match.pricePerPlayer ?: 0.0)
+                        csv.append("${match.id},${match.dateTime},${match.title},${match.stadiumId},${match.currentPlayers},${match.pricePerPlayer},$total\n")
+                    }
+                    sendEffect(HomeContract.Effect.DownloadFile("hisobot_${state.value.selectedDate}.csv", csv.toString()))
+                }
+            }
+
             HomeContract.Event.Logout -> {
                 executeAsync {
                     logoutUseCase()
@@ -236,19 +252,51 @@ class HomeViewModel(
 
     private fun loadDashboardStats() {
         executeAsync {
-            getStadiumsUseCase(isActive = null).zip(getTournamentsUseCase()) { stadiumsPage, tournaments ->
-                updateState {
-                    copy(
-                        totalEarnings = (stadiumsPage.content?.sumOf { it.pricePerHour ?: 0.0 } ?: 0.0) * 0.8,
-                        activeStadiums = stadiumsPage.content?.count { it.isActive == true } ?: 0,
-                        totalTournaments = tournaments.size
-                    )
-                }
-            }.zip(getMatchesUseCase()) { _, matches ->
-                updateState { copy(totalMatches = matches.size) }
-            }.zip(getAllUsersUseCase()) { _, users ->
-                updateState { copy(totalUsers = users.size) }
-            }.collect {}
+            val stadiumsFlow = getStadiumsUseCase(isActive = null)
+            val tournamentsFlow = getTournamentsUseCase()
+            val matchesFlow = getMatchesUseCase()
+            val usersFlow = getAllUsersUseCase()
+
+            stadiumsFlow.zip(tournamentsFlow) { s, t -> s to t }
+                .zip(matchesFlow) { (s, t), m -> Triple(s, t, m) }
+                .zip(usersFlow) { (s, t, m), u ->
+                    val totalEarnings = m.sumOf { (it.currentPlayers ?: 0) * (it.pricePerPlayer ?: 0.0) }
+
+                    val weeklyLabels = mutableListOf<String>()
+                    val weeklyEarnings = mutableListOf<Double>()
+
+                    for (i in 6 downTo 0) {
+                        val day = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.minus(i, DateTimeUnit.DAY)
+                        val dayStr = day.toString() // YYYY-MM-DD
+                        val dayEarnings = m.filter { it.dateTime?.startsWith(dayStr) == true }
+                            .sumOf { (it.currentPlayers?.toDouble() ?: 0.0) * (it.pricePerPlayer ?: 0.0) }
+
+                        weeklyEarnings.add(dayEarnings)
+                        weeklyLabels.add(
+                            when (day.dayOfWeek) {
+                                DayOfWeek.MONDAY -> "Du"
+                                DayOfWeek.TUESDAY -> "Se"
+                                DayOfWeek.WEDNESDAY -> "Ch"
+                                DayOfWeek.THURSDAY -> "Pa"
+                                DayOfWeek.FRIDAY -> "Ju"
+                                DayOfWeek.SATURDAY -> "Sh"
+                                DayOfWeek.SUNDAY -> "Ya"
+                            }
+                        )
+                    }
+
+                    updateState {
+                        copy(
+                            activeStadiums = s.content?.count { it.isActive == true } ?: 0,
+                            totalTournaments = t.size,
+                            totalMatches = m.size,
+                            totalEarnings = totalEarnings,
+                            totalUsers = u.size,
+                            weeklyEarnings = weeklyEarnings,
+                            weeklyLabels = weeklyLabels
+                        )
+                    }
+                }.collect {}
         }
     }
 

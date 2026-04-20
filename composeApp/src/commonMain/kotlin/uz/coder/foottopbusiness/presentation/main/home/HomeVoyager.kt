@@ -3,7 +3,6 @@ package uz.coder.foottopbusiness.presentation.main.home
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.koin.compose.koinInject
@@ -22,9 +21,6 @@ object HomeVoyager : Screen {
             navigateToSlotsControl = { stadium ->
                 navigator.push(SlotsControlVoyager(stadium))
                 viewModel.handleEvent(HomeContract.Event.ClearStadiumForSlots)
-            },
-            navigateToStadiums = {
-                navigator.push(StadiumVoyager)
             }
         )
 

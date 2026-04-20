@@ -1,33 +1,82 @@
 package uz.coder.foottopbusiness.presentation.main.tournaments
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.automirrored.filled.Rule
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.SportsSoccer
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import uz.coder.foottopbusiness.presentation.main.tournaments.create.TournamentCreateScreen
-import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
+import uz.coder.foottopbusiness.presentation.main.tournaments.create.TournamentCreateScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -182,77 +231,25 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
 }
 
 @Composable
-private fun CreateTournamentDialog(
-    onDismiss: () -> Unit,
-    onCreate: (name: String, startDate: String, endDate: String, maxTeams: Int, entryFee: Double, address: String?) -> Unit,
-) {
-    var name by remember { mutableStateOf("") }
-    var startDate by remember { mutableStateOf("") }
-    var endDate by remember { mutableStateOf("") }
-    var maxTeams by remember { mutableStateOf("") }
-    var entryFee by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Yangi turnir", fontWeight = FontWeight.SemiBold) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = name, onValueChange = { name = it },
-                    label = { Text("Nomi") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = startDate, onValueChange = { startDate = it },
-                    label = { Text("Boshlanish sanasi (yyyy-MM-dd)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = endDate, onValueChange = { endDate = it },
-                    label = { Text("Tugash sanasi (yyyy-MM-dd)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = maxTeams, onValueChange = { maxTeams = it.filter { c -> c.isDigit() } },
-                    label = { Text("Maksimal jamoalar") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                OutlinedTextField(value = entryFee, onValueChange = { entryFee = it.filter { c -> c.isDigit() || c == '.' } },
-                    label = { Text("Ishtirok to'lovi (so'm)") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
-                OutlinedTextField(value = address, onValueChange = { address = it },
-                    label = { Text("Manzil (ixtiyoriy)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (name.isNotBlank() && startDate.isNotBlank() && endDate.isNotBlank()) {
-                        onCreate(name, startDate, endDate, maxTeams.toIntOrNull() ?: 0,
-                            entryFee.toDoubleOrNull() ?: 0.0, address.takeIf { it.isNotBlank() })
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            ) { Text("Yaratish") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Bekor qilish") }
-        }
-    )
-}
-
-@Composable
 private fun TournamentCard(t: TournamentResponseDto, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Icon
             Box(
                 modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
@@ -260,18 +257,18 @@ private fun TournamentCard(t: TournamentResponseDto, onClick: () -> Unit) {
                     Icons.Default.EmojiEvents,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
 
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(16.dp))
 
             // Info
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     t.name ?: "—",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
@@ -289,7 +286,7 @@ private fun TournamentCard(t: TournamentResponseDto, onClick: () -> Unit) {
                     "${t.teamApplied ?: 0}/${t.maxTeams ?: 0} jamoa",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
@@ -299,37 +296,218 @@ private fun TournamentCard(t: TournamentResponseDto, onClick: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TournamentDetailScreen(tournament: TournamentResponseDto, onBack: () -> Unit) {
-    Scaffold(topBar = {
-        TopAppBar(title = { Text(tournament.name ?: "Turnir") },
-            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } })
-    }) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding(), start = padding.calculateStartPadding(
-            LayoutDirection.Ltr), end = padding.calculateEndPadding(LayoutDirection.Rtl)).padding(16.dp)) {
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text(tournament.name ?: "—", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onPrimary)
-                    Spacer(Modifier.height(4.dp))
-                    Text("${tournament.startDate ?: "—"} – ${tournament.endDate ?: "—"}", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f))
+    val scrollState = rememberScrollState()
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Turnir Tafsilotlari", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(scrollState)
+                .background(MaterialTheme.colorScheme.surface)
+        ) {
+            // Header Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            ) {
+                Column(modifier = Modifier.padding(24.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Default.EmojiEvents,
+                                    null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                        Spacer(Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                tournament.name ?: "—",
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 22.sp,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            StatusChip(tournament.status)
+                        }
+                    }
+
+                    Spacer(Modifier.height(24.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        QuickInfoItem(
+                            icon = Icons.Default.CalendarMonth,
+                            label = "Sana",
+                            value = tournament.startDate?.substringAfter("-") ?: "—",
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        QuickInfoItem(
+                            icon = Icons.Default.Groups,
+                            label = "Jamoalar",
+                            value = "${tournament.teamApplied ?: 0}/${tournament.maxTeams ?: 0}",
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        QuickInfoItem(
+                            icon = Icons.Default.Payments,
+                            label = "To'lov",
+                            value = "${tournament.entryFee?.toInt() ?: 0}",
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
                 }
             }
-            Spacer(Modifier.height(16.dp))
-            DetailRow("Holat", tournament.status ?: "—")
-            DetailRow("Sport turi", tournament.sportType ?: "—")
-            DetailRow("Jamoalar", "${tournament.teamApplied ?: 0} / ${tournament.maxTeams ?: 0}")
-            DetailRow("Ishtirok to'lovi", "${tournament.entryFee?.toInt() ?: 0} so'm")
-            if (!tournament.address.isNullOrBlank()) DetailRow("Manzil", tournament.address)
-            if (!tournament.prizes.isNullOrBlank()) {
-                Spacer(Modifier.height(12.dp))
-                Text("Mukofotlar", fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(4.dp))
-                Text(tournament.prizes, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+            // Details Section
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    "Ma'lumotlar",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    modifier = Modifier.padding(start = 4.dp, top = 8.dp)
+                )
+
+                DetailInfoCard {
+                    DetailRowItem(Icons.Default.SportsSoccer, "Sport turi", tournament.sportType ?: "Futbol")
+                    DetailRowItem(Icons.Default.CalendarMonth, "Davomiyligi", "${tournament.startDate} — ${tournament.endDate}")
+                    if (!tournament.address.isNullOrBlank()) {
+                        DetailRowItem(Icons.Default.LocationOn, "Manzil", tournament.address)
+                    }
+                }
+                if (!tournament.prizes.isNullOrBlank()) {
+                    ExpandableInfoCard(
+                        title = "Mukofotlar",
+                        icon = Icons.Default.EmojiEvents,
+                        content = tournament.prizes,
+                        iconColor = Color(0xFFFFD700)
+                    )
+                }
+
+                if (!tournament.rules.isNullOrBlank()) {
+                    ExpandableInfoCard(
+                        title = "Turnir qoidalari",
+                        icon = Icons.AutoMirrored.Filled.Rule,
+                        content = tournament.rules,
+                        iconColor = MaterialTheme.colorScheme.secondary
+                    )
+                }
             }
-            if (!tournament.rules.isNullOrBlank()) {
+            
+            Spacer(Modifier.height(32.dp))
+        }
+    }
+}
+
+@Composable
+private fun QuickInfoItem(icon: ImageVector, label: String, value: String, color: Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(icon, null, tint = color.copy(alpha = 0.6f), modifier = Modifier.size(18.dp))
+        Spacer(Modifier.height(4.dp))
+        Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = color)
+        Text(label, fontSize = 11.sp, color = color.copy(alpha = 0.6f))
+    }
+}
+
+@Composable
+private fun DetailInfoCard(content: @Composable ColumnScope.() -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp), content = content)
+    }
+}
+
+@Composable
+private fun DetailRowItem(icon: ImageVector, label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            icon,
+            null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(Modifier.width(16.dp))
+        Column {
+            Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+        }
+    }
+}
+
+@Composable
+private fun ExpandableInfoCard(title: String, icon: ImageVector, content: String, iconColor: Color) {
+    var expanded by remember { mutableStateOf(true) }
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(icon, null, tint = iconColor, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Text(title, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                }
+                Icon(
+                    if (expanded) Icons.AutoMirrored.Filled.ArrowBack else Icons.AutoMirrored.Filled.ArrowForwardIos,
+                    null,
+                    modifier = Modifier.size(16.dp).rotate(if (expanded) 90f else 0f),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (expanded) {
                 Spacer(Modifier.height(12.dp))
-                Text("Qoidalar", fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(4.dp))
-                Text(tournament.rules, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    content,
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
@@ -349,20 +527,4 @@ private fun StatusChip(status: String?) {
     Box(modifier = Modifier.background(bg, RoundedCornerShape(6.dp)).padding(horizontal = 8.dp, vertical = 4.dp)) {
         Text(label, fontSize = 11.sp, color = fg, fontWeight = FontWeight.Medium)
     }
-}
-
-@Composable
-private fun InfoChip(text: String) {
-    Box(modifier = Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp, vertical = 3.dp)) {
-        Text(text, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
-    }
-}
-
-@Composable
-private fun DetailRow(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
-        Text(value, fontWeight = FontWeight.Medium, fontSize = 14.sp)
-    }
-    HorizontalDivider()
 }

@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import uz.coder.foottopbusiness.presentation.main.components.StadiumCardItem
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 
@@ -136,13 +137,17 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddPitch: () -> Unit 
                     state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     itemsIndexed(state.stadiums) { index, item ->
-                        StadiumListItem(
-                            stadium = item,
-                            onClick = { viewModel.handleEvent(StadiumContract.Event.StadiumClick(item)) },
-                            onDelete = { viewModel.handleEvent(StadiumContract.Event.RequestDelete(item)) }
+                        StadiumCardItem(
+                            name = item.name ?: "Noma'lum",
+                            address = "${item.districtName}, ${item.regionName}",
+                            pitchCount = item.capacity ?: 0,
+                            price = item.pricePerHour ?: 0.0,
+                            isActive = item.isActive ?: true,
+                            description = item.description,
+                            onClick = { viewModel.handleEvent(StadiumContract.Event.StadiumClick(item)) }
                         )
                     }
 

@@ -32,6 +32,10 @@ sealed interface HomeContract {
         val totalMatches: Int = 0,
         val totalUsers: Int = 0,
         
+        // charts
+        val weeklyEarnings: List<Double> = emptyList(),
+        val weeklyLabels: List<String> = emptyList(),
+        
         // stadiums & slots
         val stadiums: List<StadiumResponse> = emptyList(),
         val isLoadingStadiums: Boolean = false,
@@ -73,6 +77,7 @@ sealed interface HomeContract {
 
     sealed interface Effect : MviEffect {
         data class ShowToast(val message: String) : Effect
+        data class DownloadFile(val fileName: String, val content: String) : Effect
         object Stadium: Effect
         object Match: Effect
         object Tournament: Effect
@@ -105,6 +110,7 @@ sealed interface HomeContract {
         data class SelectMatch(val m: MatchResponseDto) : Event
         object ClearMatch : Event
         
+        object DownloadReport : Event
         object Logout : Event
         object Stadium: Event
         object Match: Event

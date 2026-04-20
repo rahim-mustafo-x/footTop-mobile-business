@@ -415,7 +415,19 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                 }
             },
             confirmButton = {
-                if (slot.status == "AVAILABLE") {
+                if (slot.status == "AVAILABLE" && state.userRole == uz.coder.foottopbusiness.domain.model.UserRole.OWNER) {
+                    Button(
+                        onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.BookSlot(slot)) },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        enabled = !state.isBooking
+                    ) {
+                        if (state.isBooking) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
+                        } else {
+                            Text("Bron qilish", color = MaterialTheme.colorScheme.onPrimary)
+                        }
+                    }
+                } else if (slot.status == "AVAILABLE") {
                     Button(
                         onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissSlotDialog) },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)

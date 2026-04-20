@@ -5,6 +5,7 @@ import uz.coder.foottopbusiness.core.mvi.MviEvent
 import uz.coder.foottopbusiness.core.mvi.MviState
 import uz.coder.foottopbusiness.data.network.dto.stadium.SlotDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
+import uz.coder.foottopbusiness.domain.model.UserRole
 
 // TODO: Pitch - name, start_time, end_time
 data class PitchDto(
@@ -16,8 +17,10 @@ data class PitchDto(
 sealed interface StadiumDetailsContract {
     data class State(
         val stadium: StadiumResponse? = null,
+        val userRole: UserRole = UserRole.UNKNOWN,
         val isLoading: Boolean = false,
         val isUpdatingStatus: Boolean = false,
+        val isBooking: Boolean = false,
         val showAddPitchDialog: Boolean = false,
         val pitchName: String = "",
         val pitchStartTime: String = "",
@@ -45,5 +48,6 @@ sealed interface StadiumDetailsContract {
         object SavePitch : Event
         data class SlotClick(val slot: SlotDto) : Event
         object DismissSlotDialog : Event
+        data class BookSlot(val slot: SlotDto) : Event
     }
 }
