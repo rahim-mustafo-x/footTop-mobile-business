@@ -34,11 +34,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,19 +64,33 @@ import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
 fun ReportsScreen() {
     val homeViewModel = koinInject<HomeViewModel>()
     val homeState by homeViewModel.state.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     androidx.compose.runtime.LaunchedEffect(Unit) {
         homeViewModel.effect.collect { effect ->
-            if (effect is HomeContract.Effect.DownloadFile) {
-                // In a real app, this would use a platform-specific file saver
-                // For this demo/KMP context, we show a toast or call a native bridge
-                homeViewModel.handleEvent(HomeContract.Event.Load) // Refresh or similar
+            when (effect) {
+                is HomeContract.Effect.DownloadFile -> {
+                    uz.coder.foottopbusiness.core.saveFile(effect.fileName, effect.content)
+                    snackbarHostState.showSnackbar(
+                        message = "Hisobot '${effect.fileName}' nomi bilan saqlandi",
+                        withDismissAction = true
+                    )
+                    homeViewModel.handleEvent(HomeContract.Event.Load)
+                }
+                is HomeContract.Effect.ShowToast -> {
+                    snackbarHostState.showSnackbar(
+                        message = effect.message,
+                        withDismissAction = true
+                    )
+                }
+                else -> {}
             }
         }
     }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
             Box(
