@@ -6,6 +6,7 @@ import android.os.Build
 import uz.coder.foottopbusiness.core.context.ContextProvider
 
 import kotlin.system.exitProcess
+import androidx.core.net.toUri
 
 class AndroidPlatform : Platform {
     override val name: String = "Android ${Build.VERSION.SDK_INT}"
@@ -39,13 +40,13 @@ actual fun shareApp(text: String) {
 actual fun rateApp() {
     val context = ContextProvider.getContext()
     val packageName = context.packageName
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$packageName")).apply {
+    val intent = Intent(Intent.ACTION_VIEW, "market://details?id=$packageName".toUri()).apply {
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
     try {
         context.startActivity(intent)
     } catch (_: Exception) {
-        val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$packageName")).apply {
+        val webIntent = Intent(Intent.ACTION_VIEW, "https://play.google.com/store/apps/details?id=$packageName".toUri()).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         context.startActivity(webIntent)
