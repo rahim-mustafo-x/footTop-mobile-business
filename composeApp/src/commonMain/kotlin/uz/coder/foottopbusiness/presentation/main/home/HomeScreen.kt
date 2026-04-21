@@ -442,7 +442,7 @@ private fun OwnerDashboard(state: HomeContract.State) {
             StatCard(
                 title = "DAROMAD",
                 value = if (state.totalEarnings > 1000000) "${(state.totalEarnings / 1000000).toInt()}M" else "${state.totalEarnings.toInt()}",
-                subValue = "Umumiy tushum",
+                subValue = "Daromad",
                 icon = Icons.Default.AttachMoney,
                 color = Color(0xFFE91E63),
                 modifier = Modifier.weight(1f)
@@ -484,7 +484,7 @@ private fun MalaebDashboard(state: HomeContract.State) {
             StatCard(
                 title = "DAROMAD",
                 value = if (state.totalEarnings > 1000000) "${(state.totalEarnings / 1000000).toInt()}M" else "${state.totalEarnings.toInt()}",
-                subValue = "Umumiy tushum",
+                subValue = "Daromad",
                 icon = Icons.Default.AttachMoney,
                 color = Color(0xFFE91E63),
                 modifier = Modifier.weight(1f)

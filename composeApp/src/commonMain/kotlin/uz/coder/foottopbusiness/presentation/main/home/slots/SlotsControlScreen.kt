@@ -26,16 +26,23 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -168,6 +175,14 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                     }
                 }
             } else {
+                val slotsToSelect = when (state.selectedDuration) {
+                    "SIXTY" -> 3
+                    "NINETY" -> 4
+                    "HUNDRED_TWENTY" -> 5
+                    else -> 1
+                }
+                val selectedIndex = if (state.selectedSlot != null) state.stadiumSlots.indexOf(state.selectedSlot) else -1
+
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
                     contentPadding = PaddingValues(16.dp),
@@ -175,21 +190,26 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    items(state.stadiumSlots) { slot ->
+                    items(state.stadiumSlots.size) { index ->
+                        val slot = state.stadiumSlots[index]
                         val (start, _, available) = slot
-                        val isSelected = state.selectedSlot == slot
+                        val isPartiallySelected = selectedIndex != -1 && index >= selectedIndex && index < selectedIndex + slotsToSelect
+                        
                         val successColor = MaterialTheme.colorScheme.primary
                         val errorColor = MaterialTheme.colorScheme.error
                         
-                        val baseColor = if (!available) errorColor else if (isSelected) MaterialTheme.colorScheme.onPrimary else successColor
-                        val bgColor = if (!available) errorColor.copy(alpha = 0.1f) else if (isSelected) successColor else successColor.copy(alpha = 0.1f)
-                        val borderColor = if (isSelected) successColor else baseColor.copy(alpha = 0.3f)
+                        val baseColor = if (!available) errorColor else if (isPartiallySelected) MaterialTheme.colorScheme.onPrimary else successColor
+                        val bgColor = if (!available) errorColor.copy(alpha = 0.1f) else if (isPartiallySelected) successColor else successColor.copy(alpha = 0.1f)
+                        val borderColor = if (isPartiallySelected) successColor else baseColor.copy(alpha = 0.3f)
 
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(bgColor)
                                 .border(width = 1.dp, color = borderColor, shape = RoundedCornerShape(12.dp))
+                                .clickable(enabled = available) {
+                                    viewModel.handleEvent(HomeContract.Event.SelectSlot(slot))
+                                }
                                 .padding(vertical = 12.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -216,6 +236,59 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                     LegendItem("O'tib ketgan", MaterialTheme.colorScheme.outline)
                 }
             }
+        }
+
+        if (state.isBookingSlot && state.selectedSlot != null) {
+            var fullName by remember { mutableStateOf("") }
+            var phone by remember { mutableStateOf("+998") }
+            val durationText = when(state.selectedDuration) {
+                "SIXTY" -> "60 min"
+                "NINETY" -> "90 min"
+                "HUNDRED_TWENTY" -> "120 min"
+                else -> ""
+            }
+
+            AlertDialog(
+                onDismissRequest = { viewModel.handleEvent(HomeContract.Event.DismissBookingDialog) },
+                title = { Text("Bron qilish: ${state.selectedSlot.first.formatAsTime()}") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "Davomiyligi: $durationText",
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        OutlinedTextField(
+                            value = fullName,
+                            onValueChange = { fullName = it },
+                            label = { Text("F.I.SH") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = phone,
+                            onValueChange = { phone = it },
+                            label = { Text("Telefon raqami") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { viewModel.handleEvent(HomeContract.Event.CreateBooking(fullName, phone)) },
+                        enabled = fullName.isNotBlank() && phone.length >= 12
+                    ) {
+                        Text("Saqlash")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.handleEvent(HomeContract.Event.DismissBookingDialog) }) {
+                        Text("Bekor qilish")
+                    }
+                }
+            )
         }
     }
 }

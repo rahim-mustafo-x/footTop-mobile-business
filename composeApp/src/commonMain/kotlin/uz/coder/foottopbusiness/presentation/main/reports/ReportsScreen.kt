@@ -70,11 +70,12 @@ fun ReportsScreen() {
         homeViewModel.effect.collect { effect ->
             when (effect) {
                 is HomeContract.Effect.DownloadFile -> {
-                    uz.coder.foottopbusiness.core.saveFile(effect.fileName, effect.content)
-                    snackbarHostState.showSnackbar(
-                        message = "Hisobot '${effect.fileName}' nomi bilan saqlandi",
-                        withDismissAction = true
-                    )
+                    val filePath = uz.coder.foottopbusiness.core.saveFile(effect.fileName, effect.content)
+                    if (filePath != null) {
+                        uz.coder.foottopbusiness.core.platform.openFile(filePath)
+                    } else {
+                        snackbarHostState.showSnackbar("Faylni saqlashda xatolik")
+                    }
                     homeViewModel.handleEvent(HomeContract.Event.Load)
                 }
                 is HomeContract.Effect.ShowToast -> {
@@ -114,7 +115,7 @@ fun ReportsScreen() {
                 ) {
                     Column {
                         Text(
-                            if (homeState.isOwner || homeState.isAdmin) "Moliyaviy Hisobot" else "Hisobotlar",
+                            "Moliyaviy Hisobot",
                             color = Color.White,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Black
@@ -147,29 +148,10 @@ fun ReportsScreen() {
             contentPadding = PaddingValues(bottom = 32.dp, start = 20.dp, end = 20.dp, top = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            if (homeState.isOwner || homeState.isAdmin) {
-                item {
-                    val weeklyTotal = homeState.weeklyEarnings.sum()
-                    IncomeOverviewCard(
-                        totalEarnings = homeState.totalEarnings,
-                        weeklyTotal = weeklyTotal,
-                        totalUsers = homeState.totalUsers
-                    )
-                }
-                item {
-                    WeeklyRevenueChart(homeState.weeklyEarnings, homeState.weeklyLabels)
-                }
-            } else {
-                item {
-                    ReportSummaryCard(
-                        totalEarnings = homeState.totalEarnings,
-                        activeStadiums = homeState.activeStadiums,
-                        totalTournaments = homeState.totalTournaments,
-                        totalMatches = homeState.totalMatches
-                    )
-                }
+            item {
+                WeeklyRevenueChart(homeState.weeklyEarnings, homeState.weeklyLabels)
             }
-            
+
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
@@ -177,7 +159,7 @@ fun ReportsScreen() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        if (homeState.isOwner || homeState.isAdmin) "Kunlik tafsilotlar" else "Barcha hisobotlar",
+                        "Kunlik tafsilotlar",
                         fontWeight = FontWeight.Black,
                         fontSize = 20.sp,
                         color = MaterialTheme.colorScheme.onBackground
@@ -192,65 +174,30 @@ fun ReportsScreen() {
                     }
                 }
             }
-            
-            if (homeState.isOwner || homeState.isAdmin) {
-                val recentMatches = homeState.matches
-                    .filter { it.dateTime != null }
-                    .sortedByDescending { it.dateTime }
-                    .take(7)
 
-                items(recentMatches) { match ->
-                    val datePart = match.dateTime?.split("T")?.firstOrNull() ?: ""
-                    val total = (match.currentPlayers ?: 0) * (match.pricePerPlayer ?: 0.0)
-                    
-                    ReportItem(
-                        title = match.title ?: "O'yin",
-                        subtitle = "$datePart • ${match.currentPlayers} ta bandlar • ${total.toInt()} so'm",
-                        icon = Icons.Default.BarChart,
-                        iconBgColor = MaterialTheme.colorScheme.primary
-                    )
-                }
-                
-                if (recentMatches.isEmpty()) {
-                    item {
-                        Text(
-                            "Hozircha ma'lumotlar yo'q",
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            } else {
+            val recentMatches = homeState.matches
+                .filter { it.dateTime != null }
+                .sortedByDescending { it.dateTime }
+                .take(7)
+
+            items(recentMatches) { match ->
+                val datePart = match.dateTime?.split("T")?.firstOrNull() ?: ""
+                val total = (match.currentPlayers ?: 0) * (match.pricePerPlayer ?: 0.0)
+
+                ReportItem(
+                    title = match.title ?: "O'yin",
+                    subtitle = "$datePart • ${match.currentPlayers} ta bandlar • ${total.toInt()} so'm",
+                    icon = Icons.Default.BarChart,
+                    iconBgColor = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            if (recentMatches.isEmpty()) {
                 item {
-                    ReportItem(
-                        "Oylik daromad",
-                        if (homeState.totalEarnings > 0) "${(homeState.totalEarnings / 1000).toInt()}K so'm kutilmoqda" else "Yanvar 2024",
-                        Icons.Default.BarChart,
-                        Color(0xFF4CAF50)
-                    )
-                }
-                item {
-                    ReportItem(
-                        "Stadionlar bandligi",
-                        if (homeState.activeStadiums > 0) "${homeState.activeStadiums} aktiv stadion bandligi" else "Haftalik tahlil",
-                        Icons.Default.PieChart,
-                        Color(0xFF2196F3)
-                    )
-                }
-                item {
-                    ReportItem(
-                        "Foydalanuvchilar o'sishi",
-                        "${homeState.totalUsers.takeIf { it > 0 } ?: 47} jami foydalanuvchi (+8 yangi)",
-                        Icons.AutoMirrored.Filled.TrendingUp,
-                        Color(0xFFFF9800)
-                    )
-                }
-                item {
-                    ReportItem(
-                        "Turnirlar statistikasi",
-                        "${homeState.totalTournaments.takeIf { it > 0 } ?: 5} jami turnirlar (2 aktiv)",
-                        Icons.Default.CalendarToday,
-                        Color(0xFF9C27B0)
+                    Text(
+                        "Hozircha ma'lumotlar yo'q",
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

@@ -51,3 +51,19 @@ actual fun rateApp() {
         context.startActivity(webIntent)
     }
 }
+
+actual fun openFile(path: String) {
+    val context = ContextProvider.getContext()
+    val file = java.io.File(path)
+    val uri = androidx.core.content.FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        file
+    )
+    val intent = Intent(Intent.ACTION_VIEW).apply {
+        setDataAndType(uri, "text/csv")
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    context.startActivity(intent)
+}

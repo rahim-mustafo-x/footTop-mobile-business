@@ -142,10 +142,39 @@ class HomeViewModel(
             }
 
             is HomeContract.Event.SelectSlot -> {
-                updateState { copy(selectedSlot = event.slot) }
+                val duration = state.value.selectedDuration
+                val slotIndex = state.value.stadiumSlots.indexOf(event.slot)
+                if (slotIndex == -1) return
+
+                val slotsToSelect = when (duration) {
+                    "SIXTY" -> 3
+                    "NINETY" -> 4
+                    "HUNDRED_TWENTY" -> 5
+                    else -> 1
+                }
+
+                val availableSlots = state.value.stadiumSlots
+                val canBook = if (slotIndex + slotsToSelect <= availableSlots.size) {
+                    (slotIndex until slotIndex + slotsToSelect).all { availableSlots[it].third }
+                } else {
+                    false
+                }
+
+                if (canBook) {
+                    updateState { copy(selectedSlot = event.slot, isBookingSlot = true) }
+                } else {
+                    sendEffect(HomeContract.Effect.ShowToast("Tanlangan vaqt oralig'ida bo'sh joy yetarli emas"))
+                }
             }
 
-            HomeContract.Event.ClearStadiumForSlots -> updateState { copy(selectedStadiumForTime = null, stadiumSlots = emptyList(), selectedSlot = null) }
+            is HomeContract.Event.CreateBooking -> {
+                updateState { copy(isBookingSlot = false, selectedSlot = null) }
+                sendEffect(ShowToast("Muvaffaqiyatli band qilindi: ${event.name}"))
+            }
+
+            HomeContract.Event.DismissBookingDialog -> updateState { copy(isBookingSlot = false) }
+
+            HomeContract.Event.ClearStadiumForSlots -> updateState { copy(selectedStadiumForTime = null, stadiumSlots = emptyList(), selectedSlot = null, isBookingSlot = false) }
 
             is HomeContract.Event.UpdateTime -> {
                 val stadiumId = state.value.selectedStadiumForTime?.id ?: return

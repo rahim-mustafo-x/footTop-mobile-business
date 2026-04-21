@@ -36,3 +36,8 @@ actual fun rateApp() {
     SKStoreReviewController.requestReview()
 }
 
+actual fun openFile(path: String) {
+    // Basic implementation for iOS to open a file
+    // In a real app, you might use UIDocumentInteractionController
+}
+

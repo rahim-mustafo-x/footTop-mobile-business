@@ -12,3 +12,5 @@ expect fun exitApp()
 expect fun shareApp(text: String)
 
 expect fun rateApp()
+
+expect fun openFile(path: String)

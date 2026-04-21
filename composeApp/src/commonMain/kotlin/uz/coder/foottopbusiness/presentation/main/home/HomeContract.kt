@@ -56,6 +56,7 @@ sealed interface HomeContract {
         val newOpenTime: String = "",
         val newCloseTime: String = "",
         val selectedSlot: Triple<LocalDateTime, LocalDateTime, Boolean>? = null,
+        val isBookingSlot: Boolean = false,
         
         // tournaments
         val tournaments: List<TournamentResponseDto> = emptyList(),
@@ -102,6 +103,8 @@ sealed interface HomeContract {
         data class ChangeDate(val date: String) : Event
         data class ChangeDuration(val duration: String) : Event
         data class SelectSlot(val slot: Triple<LocalDateTime, LocalDateTime, Boolean>) : Event
+        data class CreateBooking(val name: String, val phone: String) : Event
+        object DismissBookingDialog : Event
         object ClearStadiumForSlots : Event
         data class UpdateTime(val open: String, val close: String) : Event
         
