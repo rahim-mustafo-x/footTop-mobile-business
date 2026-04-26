@@ -47,20 +47,10 @@ class CoachCreateScreen : Screen {
         val isAdmin = userState.user?.roles?.any { it.name == "ROLE_ADMIN" || it.name == "ROLE_SUPER_ADMIN" } ?: false
 
         var userId by remember { mutableStateOf("") }
-        val roleOptions = remember(isAdmin) {
-            if (isAdmin) listOf(
-                "SUPER_ADMIN" to "Super Admin",
-                "DISTRICT_ADMIN" to "Tuman Admini",
-                "OWNER" to "Stadion Egasi",
-                "COACH" to "Murabbiy"
-            ) else listOf("COACH" to "Murabbiy")
-        }
-        var specialty by remember { mutableStateOf(if (isAdmin) "" else "COACH") }
+        var specialty by remember { mutableStateOf("") }
         var expYears by remember { mutableStateOf("") }
         var hourlyRate by remember { mutableStateOf("") }
         var availability by remember { mutableStateOf("") }
-
-        var expanded by remember { mutableStateOf(false) }
 
         val snackbarHostState = remember { SnackbarHostState() }
 
@@ -159,67 +149,13 @@ class CoachCreateScreen : Screen {
                             keyboardType = KeyboardType.Number
                         )
 
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("Rol tanlash", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            if (isAdmin) {
-                                ExposedDropdownMenuBox(
-                                    expanded = expanded,
-                                    onExpandedChange = { expanded = !expanded },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    OutlinedTextField(
-                                        value = roleOptions.find { it.first == specialty }?.second ?: "Mutaxassislikni tanlang",
-                                        onValueChange = {},
-                                        readOnly = true,
-                                        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
-                                        leadingIcon = { Icon(Icons.Default.Badge, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f), modifier = Modifier.size(20.dp)) },
-                                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                                        shape = RoundedCornerShape(16.dp),
-                                        colors = OutlinedTextFieldDefaults.colors(
-                                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-                                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
-                                        )
-                                    )
-                                    ExposedDropdownMenu(
-                                        expanded = expanded,
-                                        onDismissRequest = { expanded = false },
-                                        modifier = Modifier.background(MaterialTheme.colorScheme.surface)
-                                    ) {
-                                        roleOptions.forEach { item ->
-                                            DropdownMenuItem(
-                                                text = { 
-                                                    Column {
-                                                        Text(item.second, fontWeight = FontWeight.Bold)
-                                                        Text(item.first, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                    }
-                                                },
-                                                onClick = {
-                                                    specialty = item.first
-                                                    expanded = false
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                            } else {
-                                OutlinedTextField(
-                                    value = roleOptions.find { it.first == specialty }?.second ?: "",
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    leadingIcon = { Icon(Icons.Default.Badge, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f), modifier = Modifier.size(20.dp)) },
-                                    shape = RoundedCornerShape(16.dp),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        disabledBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
-                                        disabledTextColor = MaterialTheme.colorScheme.onSurface
-                                    ),
-                                    enabled = false
-                                )
-                            }
-                        }
+                        CoachInputField(
+                            value = specialty,
+                            onValueChange = { specialty = it },
+                            label = "Mutaxassislik (Coach)",
+                            placeholder = "Masalan: Futbol",
+                            icon = Icons.Default.Badge
+                        )
                     }
                 }
 

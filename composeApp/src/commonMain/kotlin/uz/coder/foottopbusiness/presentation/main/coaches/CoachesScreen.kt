@@ -75,7 +75,7 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
                         fontWeight = FontWeight.Bold
                     )
                     IconButton(
-                        onClick = { navigator.push(CoachCreateScreen()) },
+                        onClick = { navigator.push(uz.coder.foottopbusiness.presentation.main.home.user.UserCreateTypeScreen()) },
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f))

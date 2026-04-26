@@ -151,8 +151,8 @@ fun ReportsScreen() {
             item {
                 homeState.weeklyReport?.let { report ->
                     IncomeOverviewCard(
-                        totalEarnings = report.weeklyRevenue.toDouble(),
-                        weeklyTotal = report.weeklyRevenue.toDouble(),
+                        totalEarnings = report.weeklyRevenue,
+                        weeklyTotal = report.weeklyRevenue,
                         totalUsers = homeState.dashboard?.usersCount ?: 0,
                         growth = report.bookingsGrowthPercent
                     )
@@ -218,7 +218,7 @@ fun ReportsScreen() {
 }
 
 @Composable
-private fun IncomeOverviewCard(totalEarnings: Double, weeklyTotal: Double, totalUsers: Int, growth: Int) {
+private fun IncomeOverviewCard(totalEarnings: Double, weeklyTotal: Double, totalUsers: Int, growth: Double) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),

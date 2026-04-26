@@ -22,7 +22,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -60,7 +59,7 @@ class UserCreateScreen : Screen {
         val isPrivileged = isSuperAdmin || isDistrictAdmin
 
         // Only admins can see this screen, but let's be double sure about roles they can assign
-        val availableRoles = remember(isSuperAdmin, isDistrictAdmin) {
+        val availableRoles = remember(isSuperAdmin, isDistrictAdmin, currentUserRole) {
             val roles = mutableListOf<Triple<String, String, String>>()
             
             if (isSuperAdmin) {
@@ -69,7 +68,13 @@ class UserCreateScreen : Screen {
             
             if (isPrivileged) {
                 roles.add(Triple("ROLE_OWNER", "Stadion egasi", "Maydonlarni nazorat"))
+            }
+
+            if (isPrivileged || currentUserRole == "ROLE_OWNER") {
                 roles.add(Triple("ROLE_COACH", "Coach", "Murabbiy kabineti"))
+            }
+
+            if (isPrivileged) {
                 roles.add(Triple("ROLE_PLAYER", "O'yinchi", "O'yinlar ishtirokchisi"))
             }
             roles
@@ -173,22 +178,22 @@ class UserCreateScreen : Screen {
                         }
                     }
                     var passwordVisible by remember { mutableStateOf(false) }
-                    TextField(
+                    OutlinedTextField(
                         value = state.password,
                         onValueChange = { viewModel.onEvent(UserCreateContract.Event.PasswordChanged(it)) },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("Parol kiriting", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        shape = RoundedCornerShape(16.dp),
+                        singleLine = true,
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Icon(if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         },
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedIndicatorColor = MaterialTheme.colorScheme.outline,
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                         )
                     )
                 }
@@ -225,6 +230,85 @@ class UserCreateScreen : Screen {
                             }
                         }
                         Spacer(Modifier.height(12.dp))
+                    }
+                }
+
+                if (state.role == "ROLE_DISTRICT_ADMIN") {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Text("MUDDATHI BILAN HUDUDNI TANLANG", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        
+                        var regionExpanded by remember { mutableStateOf(false) }
+                        Box {
+                            OutlinedTextField(
+                                value = state.selectedRegion?.name ?: "Viloyatni tanlang",
+                                onValueChange = {},
+                                readOnly = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text("Viloyat") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = regionExpanded) },
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                                )
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .clickable { regionExpanded = true }
+                            )
+                            DropdownMenu(
+                                expanded = regionExpanded,
+                                onDismissRequest = { regionExpanded = false },
+                                modifier = Modifier.fillMaxWidth(0.8f)
+                            ) {
+                                state.regions.forEach { region ->
+                                    DropdownMenuItem(
+                                        text = { Text(region.name ?: "") },
+                                        onClick = {
+                                            viewModel.onEvent(UserCreateContract.Event.RegionSelected(region))
+                                            regionExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        var districtExpanded by remember { mutableStateOf(false) }
+                        Box {
+                            OutlinedTextField(
+                                value = state.selectedDistrict?.name ?: "Tumanni tanlang",
+                                onValueChange = {},
+                                readOnly = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text("Tuman") },
+                                enabled = state.selectedRegion != null,
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = districtExpanded) },
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                                )
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .clickable(enabled = state.selectedRegion != null) { districtExpanded = true }
+                            )
+                            DropdownMenu(
+                                expanded = districtExpanded,
+                                onDismissRequest = { districtExpanded = false },
+                                modifier = Modifier.fillMaxWidth(0.8f)
+                            ) {
+                                state.districts.forEach { district ->
+                                    DropdownMenuItem(
+                                        text = { Text(district.name ?: "") },
+                                        onClick = {
+                                            viewModel.onEvent(UserCreateContract.Event.DistrictSelected(district))
+                                            districtExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -269,18 +353,17 @@ private fun LabelAndField(
 ) {
     Column {
         Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-        TextField(
+        OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant) },
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent,
-                focusedIndicatorColor = MaterialTheme.colorScheme.outline,
-                unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant
+            shape = RoundedCornerShape(16.dp),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
             )
         )
     }

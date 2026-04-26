@@ -7,6 +7,7 @@ import uz.coder.foottopbusiness.data.network.*
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.data.repository.*
 import uz.coder.foottopbusiness.domain.repository.*
+import uz.coder.foottopbusiness.domain.usecase.admin.CreateStaffUseCase
 import uz.coder.foottopbusiness.domain.usecase.admin.DashboardUseCase
 import uz.coder.foottopbusiness.domain.usecase.admin.WeeklyReportUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.ChangePasswordUseCase
@@ -108,6 +109,7 @@ val appModule = module {
     factory { RegisterDeviceTokenUseCase(get()) }
     factory { DashboardUseCase(get()) }
     factory { WeeklyReportUseCase(get()) }
+    factory { CreateStaffUseCase(get()) }
 
 
     // viewModels
@@ -123,7 +125,7 @@ val appModule = module {
     factory { SettingsViewModel(get(), get(), get()) }
     factory { EditProfileViewModel(get(), get()) }
     factory { SendNotificationViewModel(get()) }
-    factory { UserCreateViewModel(get()) }
+    factory { UserCreateViewModel(get(), get(), get(), get()) }
 }
 
 expect fun platformModule(): Module

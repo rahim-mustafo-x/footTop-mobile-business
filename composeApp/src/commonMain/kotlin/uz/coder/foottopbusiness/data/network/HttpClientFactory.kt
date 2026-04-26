@@ -124,8 +124,9 @@ class HttpClientFactory(
                                 }
 
                                 if (code == 401) {
-                                    if (errorBody.contains("REFRESH_TOKEN_NOT_FOUND", ignoreCase = true)) {
-                                        log("Auth", "401 received with REFRESH_TOKEN_NOT_FOUND, logging out")
+                                    if (errorBody.contains("REFRESH_TOKEN_NOT_FOUND", ignoreCase = true) || 
+                                        errorBody.contains("TOKEN_INVALID", ignoreCase = true)) {
+                                        log("Auth", "401 received with ${if(errorBody.contains("TOKEN_INVALID")) "TOKEN_INVALID" else "REFRESH_TOKEN_NOT_FOUND"}, logging out")
                                         ioScope.launch { sessionManager.logout() }
                                     } else if (errorBody.contains("TOKEN_EXPIRED", ignoreCase = true) || errorBody.contains("TOKEN", ignoreCase = true)) {
                                         log("Auth", "401 received with TOKEN error, attempting refresh")

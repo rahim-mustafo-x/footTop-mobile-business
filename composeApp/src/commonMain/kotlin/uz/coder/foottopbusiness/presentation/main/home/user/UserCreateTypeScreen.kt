@@ -67,7 +67,7 @@ class UserCreateTypeScreen : Screen {
 
                 TypeCard(
                     title = "Yangi xodim",
-                    subtitle = "Admin, Owner yoki Coach uchun tizimga kirish hisobini yaratish",
+                    subtitle = "Admin yoki Owner uchun tizimga kirish hisobini yaratish",
                     icon = Icons.Default.Person,
                     gradient = Brush.horizontalGradient(listOf(Color(0xFF6200EE), Color(0xFF3700B3))),
                     onClick = { navigator.push(UserCreateScreen()) }

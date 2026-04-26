@@ -71,8 +71,7 @@ class AuthRepositoryImpl(
     override fun isLoginIn(): Flow<Boolean> = preferencesManager.authorised
 
     override suspend fun logout() {
-        preferencesManager.logout()
-        sessionManager.onUnauthorized()
+        sessionManager.logout()
     }
 
     override fun changePassword(oldPassword: String, newPassword: String) = flow {

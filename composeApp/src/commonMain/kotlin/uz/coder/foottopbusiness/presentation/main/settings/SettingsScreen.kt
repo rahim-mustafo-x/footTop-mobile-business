@@ -32,6 +32,8 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -69,6 +71,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -107,6 +110,10 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     }
 
     if (state.showChangePasswordDialog) {
+        var oldPasswordVisible by remember { mutableStateOf(false) }
+        var newPasswordVisible by remember { mutableStateOf(false) }
+        var confirmPasswordVisible by remember { mutableStateOf(false) }
+
         AlertDialog(
             onDismissRequest = { viewModel.handleEvent(SettingsContract.Event.DismissChangePassword) },
             title = { Text("Parolni o'zgartirish") },
@@ -117,7 +124,15 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                         onValueChange = { viewModel.handleEvent(SettingsContract.Event.UpdateOldPassword(it)) },
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("Eski parol") },
-                        visualTransformation = PasswordVisualTransformation(),
+                        visualTransformation = if (oldPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { oldPasswordVisible = !oldPasswordVisible }) {
+                                Icon(
+                                    imageVector = if (oldPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = null
+                                )
+                            }
+                        },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp)
                     )
@@ -126,7 +141,15 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                         onValueChange = { viewModel.handleEvent(SettingsContract.Event.UpdateNewPassword(it)) },
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("Yangi parol") },
-                        visualTransformation = PasswordVisualTransformation(),
+                        visualTransformation = if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
+                                Icon(
+                                    imageVector = if (newPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = null
+                                )
+                            }
+                        },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp)
                     )
@@ -135,7 +158,15 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                         onValueChange = { viewModel.handleEvent(SettingsContract.Event.UpdateConfirmPassword(it)) },
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("Parolni tasdiqlang") },
-                        visualTransformation = PasswordVisualTransformation(),
+                        visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                                Icon(
+                                    imageVector = if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = null
+                                )
+                            }
+                        },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp)
                     )

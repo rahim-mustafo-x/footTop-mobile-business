@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class WeeklyReportDto(
     @SerialName("bookingsGrowthPercent")
-    val bookingsGrowthPercent: Int? = null,
+    val bookingsGrowthPercent: Double? = null,
     @SerialName("dailyRevenue")
     val dailyRevenue: List<DailyRevenue?>? = null,
     @SerialName("previousWeekBookings")
@@ -19,5 +19,5 @@ data class WeeklyReportDto(
     @SerialName("weekStart")
     val weekStart: String? = null,
     @SerialName("weeklyRevenue")
-    val weeklyRevenue: Int? = null
+    val weeklyRevenue: Double? = null
 )

@@ -196,12 +196,10 @@ class SessionManager(private val preferencesManager: PreferencesManager) {
                     if (errorBody.contains("REFRESH_TOKEN_NOT_FOUND", ignoreCase = true)) {
                         log("Auth", "Refresh token not found on server, logging out")
                         emitNetworkError(401, "Sessiya muddati tugadi. Iltimos, qayta kiring (REFRESH_TOKEN_NOT_FOUND)")
-                        emitEvent(SessionEvent.Logout)
-                        preferencesManager.logout()
+                        logout()
                     } else {
                         log("Auth", "Refresh token is invalid/expired (401), logging out")
-                        emitEvent(SessionEvent.Logout)
-                        preferencesManager.logout()
+                        logout()
                     }
                 } else {
                     log("Auth", "Refresh failed with $code, not logging out")

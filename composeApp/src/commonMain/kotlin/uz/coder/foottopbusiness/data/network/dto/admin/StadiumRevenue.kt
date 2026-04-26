@@ -9,5 +9,5 @@ data class StadiumRevenue(
     @SerialName("stadiumId")
     val stadiumId: Int? = null,
     @SerialName("totalRevenue")
-    val totalRevenue: Int? = null
+    val totalRevenue: Double? = null
 )

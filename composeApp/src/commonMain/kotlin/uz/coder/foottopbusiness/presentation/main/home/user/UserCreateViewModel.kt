@@ -13,10 +13,17 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import uz.coder.foottopbusiness.data.network.dto.UserRequestDto
+import uz.coder.foottopbusiness.data.network.dto.admin.CreateStaffUserDto
 import uz.coder.foottopbusiness.domain.repository.UserRepository
+import uz.coder.foottopbusiness.domain.usecase.admin.CreateStaffUseCase
+import uz.coder.foottopbusiness.domain.usecase.stadium.GetDistrictsUseCase
+import uz.coder.foottopbusiness.domain.usecase.stadium.GetRegionsUseCase
 
 class UserCreateViewModel(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val getRegionsUseCase: GetRegionsUseCase,
+    private val getDistrictsUseCase: GetDistrictsUseCase,
+    private val createStaffUseCase: CreateStaffUseCase
 ) : ScreenModel, UserCreateContract {
 
     private val _state = MutableStateFlow(UserCreateContract.State())
@@ -24,6 +31,36 @@ class UserCreateViewModel(
 
     private val _effect = MutableSharedFlow<UserCreateContract.Effect>()
     val effect = _effect.asSharedFlow()
+
+    init {
+        loadRegions()
+    }
+
+    private fun loadRegions() {
+        getRegionsUseCase()
+            .onStart { _state.update { it.copy(isLoadingRegions = true) } }
+            .onEach { regions ->
+                _state.update { it.copy(regions = regions, isLoadingRegions = false) }
+            }
+            .catch { t ->
+                _state.update { it.copy(isLoadingRegions = false) }
+                _effect.emit(UserCreateContract.Effect.ShowError(t.message ?: "Regionlarni yuklashda xatolik"))
+            }
+            .launchIn(screenModelScope)
+    }
+
+    private fun loadDistricts(regionId: Int) {
+        getDistrictsUseCase(regionId)
+            .onStart { _state.update { it.copy(isLoadingDistricts = true, districts = emptyList(), selectedDistrict = null) } }
+            .onEach { districts ->
+                _state.update { it.copy(districts = districts, isLoadingDistricts = false) }
+            }
+            .catch { t ->
+                _state.update { it.copy(isLoadingDistricts = false) }
+                _effect.emit(UserCreateContract.Effect.ShowError(t.message ?: "Tumanlarni yuklashda xatolik"))
+            }
+            .launchIn(screenModelScope)
+    }
 
     fun onEvent(event: UserCreateContract.Event) {
         when (event) {
@@ -47,6 +84,14 @@ class UserCreateViewModel(
             }
             UserCreateContract.Event.CreateClicked -> createUser()
             UserCreateContract.Event.GeneratePasswordClicked -> generatePassword()
+            UserCreateContract.Event.LoadRegions -> loadRegions()
+            is UserCreateContract.Event.RegionSelected -> {
+                _state.update { it.copy(selectedRegion = event.region) }
+                loadDistricts(event.region.id ?: return)
+            }
+            is UserCreateContract.Event.DistrictSelected -> {
+                _state.update { it.copy(selectedDistrict = event.district) }
+            }
         }
     }
 
@@ -72,15 +117,25 @@ class UserCreateViewModel(
             return
         }
 
-        val request = UserRequestDto(
+        if (currentState.role == "ROLE_DISTRICT_ADMIN" && currentState.selectedDistrict == null) {
+            screenModelScope.launch {
+                _effect.emit(UserCreateContract.Effect.ShowError("Iltimos, tumanni tanlang"))
+            }
+            return
+        }
+
+        val mappedRole = currentState.role.removePrefix("ROLE_")
+
+        val staffDto = CreateStaffUserDto(
             fullName = currentState.fullName,
             phone = currentState.phone,
             username = currentState.login,
             password = currentState.password.ifBlank { "password123" },
-            roles = listOf(currentState.role)
+            role = mappedRole,
+            districtId = currentState.selectedDistrict?.id?.toLong()
         )
 
-        userRepository.createUser(request)
+        createStaffUseCase(staffDto)
             .onStart { _state.update { it.copy(isLoading = true) } }
             .onEach {
                 _state.update { it.copy(isLoading = false, isSuccess = true) }
