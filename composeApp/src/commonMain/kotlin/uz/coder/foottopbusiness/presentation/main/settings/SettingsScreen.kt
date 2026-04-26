@@ -124,6 +124,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                         onValueChange = { viewModel.handleEvent(SettingsContract.Event.UpdateOldPassword(it)) },
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("Eski parol") },
+                        placeholder = { Text("Eski parolni kiriting", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
                         visualTransformation = if (oldPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { oldPasswordVisible = !oldPasswordVisible }) {
@@ -141,6 +142,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                         onValueChange = { viewModel.handleEvent(SettingsContract.Event.UpdateNewPassword(it)) },
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("Yangi parol") },
+                        placeholder = { Text("Yangi parolni kiriting", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
                         visualTransformation = if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
@@ -158,6 +160,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                         onValueChange = { viewModel.handleEvent(SettingsContract.Event.UpdateConfirmPassword(it)) },
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("Parolni tasdiqlang") },
+                        placeholder = { Text("Yangi parolni qayta kiriting", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
                         visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {

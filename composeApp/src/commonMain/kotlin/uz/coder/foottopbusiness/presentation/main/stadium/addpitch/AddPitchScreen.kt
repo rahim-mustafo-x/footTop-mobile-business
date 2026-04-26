@@ -451,7 +451,7 @@ private fun LabelAndField(
             placeholder = {
                 Text(
                     placeholder,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
             },
             leadingIcon = icon?.let { { Icon(it, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f), modifier = Modifier.size(20.dp)) } },
@@ -488,6 +488,8 @@ private fun RegionDropdown(
                 value = state.selectedRegion?.name ?: "Tanlang",
                 onValueChange = {},
                 readOnly = true,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+                singleLine = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showRegionDropdown) },
                 modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -534,6 +536,8 @@ private fun DistrictDropdown(
                 value = state.selectedDistrict?.name ?: "Tanlang",
                 onValueChange = {},
                 readOnly = true,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+                singleLine = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showDistrictDropdown) },
                 modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -580,6 +584,8 @@ private fun SportTypeDropdown(
                 value = state.type.label,
                 onValueChange = {},
                 readOnly = true,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+                singleLine = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showTypeDropdown) },
                 modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),

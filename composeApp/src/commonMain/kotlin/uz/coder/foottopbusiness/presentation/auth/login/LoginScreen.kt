@@ -117,7 +117,7 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = state.username,
                     onValueChange = { viewModel.handleEvent(LoginContract.Event.UsernameChanged(it)) },
-                    placeholder = { Text("username") },
+                    placeholder = { Text("username", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     singleLine = true,
@@ -138,7 +138,7 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = state.password,
                     onValueChange = { viewModel.handleEvent(LoginContract.Event.PasswordChanged(it)) },
-                    placeholder = { Text("••••••••") },
+                    placeholder = { Text("••••••••", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     singleLine = true,
