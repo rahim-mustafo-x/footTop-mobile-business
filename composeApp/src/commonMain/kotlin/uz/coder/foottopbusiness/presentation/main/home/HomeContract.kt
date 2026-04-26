@@ -8,7 +8,9 @@ import uz.coder.foottopbusiness.data.network.dto.MatchResponseDto
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.data.network.dto.UserDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
+import uz.coder.foottopbusiness.domain.model.Dashboard
 import uz.coder.foottopbusiness.domain.model.UserRole
+import uz.coder.foottopbusiness.domain.model.WeeklyReport
 
 sealed interface HomeContract {
     data class State(
@@ -25,7 +27,13 @@ sealed interface HomeContract {
         val user: UserDto? = null,
         val isLoadingUser: Boolean = false,
         
-        // dashboard stats
+        // dashboard stats (Domain Models)
+        val dashboard: Dashboard? = null,
+        val weeklyReport: WeeklyReport? = null,
+        val isLoadingDashboard: Boolean = false,
+        val isLoadingWeeklyReport: Boolean = false,
+        
+        // dashboard stats (legacy/calculated)
         val totalEarnings: Double = 0.0,
         val activeStadiums: Int = 0,
         val totalTournaments: Int = 0,

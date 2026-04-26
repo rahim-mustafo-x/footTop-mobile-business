@@ -149,6 +149,18 @@ fun ReportsScreen() {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
+                homeState.weeklyReport?.let { report ->
+                    IncomeOverviewCard(
+                        totalEarnings = report.weeklyRevenue.toDouble(),
+                        weeklyTotal = report.weeklyRevenue.toDouble(),
+                        totalUsers = homeState.dashboard?.usersCount ?: 0,
+                        growth = report.bookingsGrowthPercent
+                    )
+                    Spacer(Modifier.height(16.dp))
+                }
+            }
+
+            item {
                 WeeklyRevenueChart(homeState.weeklyEarnings, homeState.weeklyLabels)
             }
 
@@ -206,7 +218,7 @@ fun ReportsScreen() {
 }
 
 @Composable
-private fun IncomeOverviewCard(totalEarnings: Double, weeklyTotal: Double, totalUsers: Int) {
+private fun IncomeOverviewCard(totalEarnings: Double, weeklyTotal: Double, totalUsers: Int, growth: Int) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
@@ -250,7 +262,7 @@ private fun IncomeOverviewCard(totalEarnings: Double, weeklyTotal: Double, total
                     val weeklyFormatted = if (weeklyTotal > 1000000) "${(weeklyTotal / 1000000).toInt()}M" else "${(weeklyTotal / 1000).toInt()}K"
                     SummaryStatSmall("BU HAFTA", weeklyFormatted, Color.White)
                     Box(modifier = Modifier.width(1.dp).height(30.dp).background(Color.White.copy(alpha = 0.2f)))
-                    SummaryStatSmall("O'SISH", "+18%", Color(0xFFB9F6CA))
+                    SummaryStatSmall("O'SISH", "${if(growth >= 0) "+" else ""}$growth%", Color(0xFFB9F6CA))
                     Box(modifier = Modifier.width(1.dp).height(30.dp).background(Color.White.copy(alpha = 0.2f)))
                     SummaryStatSmall("MIJOZLAR", totalUsers.toString(), Color.White)
                 }

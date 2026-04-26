@@ -10,6 +10,18 @@ import kotlinx.datetime.toLocalDateTime
 import kotlinx.coroutines.flow.firstOrNull
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.domain.model.UserRole
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.toInstant
+
+fun durationMinutesKey(key: String): Int = when(key) {
+    "SIXTY" -> 60
+    "NINETY" -> 90
+    "ONE_HUNDRED_TWENTY" -> 120
+    else -> 60
+}
+
+fun slotsNeededForDuration(mins: Int): Int = mins / 30
 
 class StadiumDetailsViewModel(
     stadium: StadiumResponse,
@@ -38,29 +50,43 @@ class StadiumDetailsViewModel(
     private fun refreshStadium() {
         val currentStadium = state.value.stadium ?: return
         val now = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-        val dateStr = "${now.year}-${now.month.
-        number.toString().padStart(2, '0')}-${now.day.toString().padStart(2, '0')}"
+        val dateStr = state.value.selectedDate ?: "${now.year}-${now.month.number.toString().padStart(2, '0')}-${now.day.toString().padStart(2, '0')}"
+        val duration = when(state.value.selectedDurationKey) {
+            "SIXTY" -> "01:00"
+            "NINETY" -> "01:30"
+            "ONE_HUNDRED_TWENTY" -> "02:00"
+            else -> "01:00"
+        }
         
         executeAsync(
-            onLoading = { updateState { copy(isLoading = true) } },
+            onLoading = { updateState { copy(isLoading = true, isSlotsLoading = true) } },
             block = {
                 var result: List<StadiumResponse>? = null
                 stadiumRepository.getStadiumById(
                     id = currentStadium.id ?: return@executeAsync emptyList(),
                     date = dateStr,
-                    duration = currentStadium.duration ?: "01:00"
+                    duration = duration
                 ).collect { result = it }
                 result
             },
             onSuccess = { list ->
-                updateState { copy(stadium = list?.firstOrNull() ?: currentStadium, isLoading = false) }
+                updateState { 
+                    copy(
+                        stadium = list?.firstOrNull() ?: currentStadium,
+                        stadiums = list ?: emptyList(),
+                        isLoading = false,
+                        isSlotsLoading = false,
+                        selectedDate = dateStr
+                    ) 
+                }
             },
             onError = {
-                updateState { copy(isLoading = false) }
+                updateState { copy(isLoading = false, isSlotsLoading = false) }
                 sendEffect(StadiumDetailsContract.Effect.ShowToast("Ma'lumotlarni yangilashda xatolik: ${it.message}"))
             }
         )
     }
+
     override fun handleEvent(event: StadiumDetailsContract.Event) {
         when (event) {
             StadiumDetailsContract.Event.BackClick -> sendEffect(StadiumDetailsContract.Effect.NavigateBack)
@@ -106,7 +132,85 @@ class StadiumDetailsViewModel(
             is StadiumDetailsContract.Event.BookSlot -> {
                 bookSlot()
             }
+            is StadiumDetailsContract.Event.SelectDate -> {
+                updateState { copy(selectedDate = event.date) }
+                refreshStadium()
+            }
+            is StadiumDetailsContract.Event.SelectDuration -> {
+                updateState { copy(selectedDurationKey = event.durationKey) }
+                refreshStadium()
+            }
+            is StadiumDetailsContract.Event.SelectSlotSelection -> {
+                updateState { copy(selectedPitchIndex = event.pitchIndex, selectedStartIndex = event.startIndex) }
+            }
+            StadiumDetailsContract.Event.ClearSelection -> {
+                updateState { copy(selectedPitchIndex = null, selectedStartIndex = null) }
+            }
+            StadiumDetailsContract.Event.Refresh -> {
+                refreshStadium()
+            }
+            is StadiumDetailsContract.Event.CreateBooking -> {
+                bookSelectedSlots(event)
+            }
+            StadiumDetailsContract.Event.DismissBookingResultDialog -> {
+                updateState { copy(showBookingResultDialog = false) }
+            }
+            is StadiumDetailsContract.Event.SubmitRating -> {
+                submitRating(event.rating, event.comment)
+            }
         }
+    }
+
+    private fun bookSelectedSlots(event: StadiumDetailsContract.Event.CreateBooking) {
+        updateState { copy(isBooking = true) }
+        executeAsync(
+            block = {
+                // In a real app, this would call a repository to create a booking
+                kotlinx.coroutines.delay(1000)
+                true
+            },
+            onSuccess = {
+                updateState { 
+                    copy(
+                        isBooking = false, 
+                        showBookingResultDialog = true, 
+                        bookingResultMessage = "Stadion muvaffaqiyatli band qilindi!",
+                        isBookingSuccess = true,
+                        selectedPitchIndex = null,
+                        selectedStartIndex = null
+                    ) 
+                }
+                refreshStadium()
+            },
+            onError = {
+                updateState { 
+                    copy(
+                        isBooking = false, 
+                        showBookingResultDialog = true, 
+                        bookingResultMessage = "Band qilishda xatolik: ${it.message}",
+                        isBookingSuccess = false
+                    ) 
+                }
+            }
+        )
+    }
+
+    private fun submitRating(rating: Int, comment: String) {
+        updateState { copy(isSubmittingRating = true) }
+        executeAsync(
+            block = {
+                kotlinx.coroutines.delay(1000)
+                true
+            },
+            onSuccess = {
+                updateState { copy(isSubmittingRating = false) }
+                sendEffect(StadiumDetailsContract.Effect.ShowToast("Sharhingiz uchun rahmat!"))
+            },
+            onError = {
+                updateState { copy(isSubmittingRating = false) }
+                sendEffect(StadiumDetailsContract.Effect.ShowToast("Sharh qoldirishda xatolik"))
+            }
+        )
     }
 
     private fun bookSlot() {

@@ -10,6 +10,7 @@ import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
@@ -101,7 +102,11 @@ class SessionManager(private val preferencesManager: PreferencesManager) {
         isObservingToken = true
         scope.launch {
             preferencesManager.token.collect { token ->
-                setToken(token)
+                // Only update from preferences if we don't have a newer manual token
+                // or if they are significantly different (e.g. logging out)
+                if (_token.value == null || token != _token.value) {
+                    setToken(token)
+                }
             }
         }
     }
@@ -144,8 +149,9 @@ class SessionManager(private val preferencesManager: PreferencesManager) {
             expectSuccess = true
             HttpResponseValidator {
                 validateResponse {
-                    if (it.status.value==500){
-                        emitEvent(SessionEvent.Logout)
+                    val code = it.status.value
+                    if (code == 500 || code == 403) {
+                        emitNetworkError(code, "Serverda xatolik yuz berdi (Refresh)")
                     }
                 }
             }
@@ -183,10 +189,22 @@ class SessionManager(private val preferencesManager: PreferencesManager) {
         } catch (e: Exception) {
             log("Auth", "Refresh failed with exception: ${e.message}")
             if (e is io.ktor.client.plugins.ResponseException) {
-                if (e.response.status.value == 401 || e.response.status.value == 403 || e.response.status.value == 500) {
-                    log("Auth", "Refresh token is likely invalid/expired (${e.response.status.value}), logging out")
-                    emitEvent(SessionEvent.Logout)
-                    preferencesManager.logout()
+                val code = e.response.status.value
+                val errorBody = try { e.response.bodyAsText() } catch (_: Exception) { "" }
+                
+                if (code == 401) {
+                    if (errorBody.contains("REFRESH_TOKEN_NOT_FOUND", ignoreCase = true)) {
+                        log("Auth", "Refresh token not found on server, logging out")
+                        emitNetworkError(401, "Sessiya muddati tugadi. Iltimos, qayta kiring (REFRESH_TOKEN_NOT_FOUND)")
+                        emitEvent(SessionEvent.Logout)
+                        preferencesManager.logout()
+                    } else {
+                        log("Auth", "Refresh token is invalid/expired (401), logging out")
+                        emitEvent(SessionEvent.Logout)
+                        preferencesManager.logout()
+                    }
+                } else {
+                    log("Auth", "Refresh failed with $code, not logging out")
                 }
             }
             null

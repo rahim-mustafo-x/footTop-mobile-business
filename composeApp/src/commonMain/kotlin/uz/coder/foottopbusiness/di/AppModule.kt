@@ -7,6 +7,8 @@ import uz.coder.foottopbusiness.data.network.*
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.data.repository.*
 import uz.coder.foottopbusiness.domain.repository.*
+import uz.coder.foottopbusiness.domain.usecase.admin.DashboardUseCase
+import uz.coder.foottopbusiness.domain.usecase.admin.WeeklyReportUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.ChangePasswordUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.IsLoginInUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.LoginUseCase
@@ -63,6 +65,7 @@ val appModule = module {
     single { MatchApiService(get()) }
     single { UserApiService(get()) }
     single { NotificationApiService(get()) }
+    single { AdminApiService(get()) }
 
     // repositories
     single<AuthRepository> { AuthRepositoryImpl(get(), get(), get()) }
@@ -72,6 +75,7 @@ val appModule = module {
     single<MatchRepository> { MatchRepositoryImpl(get()) }
     single<UserRepository> { UserRepositoryImpl(get(), get()) }
     single<NotificationRepository> { NotificationRepositoryImpl(get()) }
+    single<AdminRepository> { AdminRepositoryImpl(get()) }
 
     // use-cases
     factory { LoginUseCase(get()) }
@@ -102,12 +106,14 @@ val appModule = module {
     factory { SendNotificationUseCase(get()) }
     factory { SendToAllUseCase(get()) }
     factory { RegisterDeviceTokenUseCase(get()) }
+    factory { DashboardUseCase(get()) }
+    factory { WeeklyReportUseCase(get()) }
 
 
     // viewModels
     factory { SplashViewModel(get()) }
     factory { LoginViewModel(get(), get(), get(), get()) }
-    factory { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    factory { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { StadiumViewModel(get(), get(), get(), get()) }
     factory { AddPitchViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { (stadium: StadiumResponse) -> EditStadiumViewModel(stadium, get(), get(), get()) }

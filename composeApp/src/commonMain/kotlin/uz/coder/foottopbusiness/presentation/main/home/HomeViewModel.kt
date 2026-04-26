@@ -2,11 +2,10 @@ package uz.coder.foottopbusiness.presentation.main.home
 
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.zip
 import kotlinx.datetime.LocalDateTime
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
-import uz.coder.foottopbusiness.data.network.dto.MatchResponseDto
-import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
+import uz.coder.foottopbusiness.domain.usecase.admin.DashboardUseCase
+import uz.coder.foottopbusiness.domain.usecase.admin.WeeklyReportUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.LogoutUseCase
 import uz.coder.foottopbusiness.domain.usecase.match.GetMatchesUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.DeleteStadiumUseCase
@@ -17,10 +16,7 @@ import uz.coder.foottopbusiness.domain.usecase.tournament.GetTournamentsUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GetAllUsersUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
 import uz.coder.foottopbusiness.data.local.PreferencesManager
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.home.HomeContract.Effect.*
@@ -28,15 +24,17 @@ import uz.coder.foottopbusiness.presentation.main.home.HomeContract.Effect.*
 class HomeViewModel(
     private val getStadiumsUseCase: GetStadiumsUseCase,
     private val deleteStadiumUseCase: DeleteStadiumUseCase,
-    private val getTournamentsUseCase: GetTournamentsUseCase,
-    private val getMatchesUseCase: GetMatchesUseCase,
     private val updateOpenCloseTimeUseCase: UpdateOpenCloseTimeUseCase,
     private val logoutUseCase: LogoutUseCase,
     private val getStadiumByIdUseCase: GetStadiumByIdUseCase,
     private val getUserUseCase: GetUserUseCase,
-    private val getAllUsersUseCase: GetAllUsersUseCase,
     private val preferencesManager: PreferencesManager,
     private val getCoachesUseCase: uz.coder.foottopbusiness.domain.usecase.coach.GetCoachesUseCase,
+    private val dashboardUseCase: DashboardUseCase,
+    private val weeklyReportUseCase: WeeklyReportUseCase,
+    private val getMatchesUseCase: GetMatchesUseCase,
+    private val getTournamentsUseCase: GetTournamentsUseCase,
+    private val getAllUsersUseCase: GetAllUsersUseCase,
 ) : BaseViewModel<HomeContract.State, HomeContract.Effect, HomeContract.Event>(
     initialState = HomeContract.State(
         selectedDate = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
@@ -67,10 +65,9 @@ class HomeViewModel(
                 updateState { copy(currentPage = 0, stadiums = emptyList(), isLastPage = false) }
                 loadUser()
                 loadStadiums(0)
-                loadTournaments()
-                loadMatches()
-                loadDashboardStats()
                 loadCoaches()
+                loadMatches()
+                loadTournaments()
             }
 
             is HomeContract.Event.ChangeTab -> updateState { copy(currentTab = event.index) }
@@ -163,7 +160,7 @@ class HomeViewModel(
                 if (canBook) {
                     updateState { copy(selectedSlot = event.slot, isBookingSlot = true) }
                 } else {
-                    sendEffect(HomeContract.Effect.ShowToast("Tanlangan vaqt oralig'ida bo'sh joy yetarli emas"))
+                    sendEffect(ShowToast("Tanlangan vaqt oralig'ida bo'sh joy yetarli emas"))
                 }
             }
 
@@ -207,7 +204,7 @@ class HomeViewModel(
                         val total = (match.currentPlayers ?: 0) * (match.pricePerPlayer ?: 0.0)
                         csv.append("${match.id},${match.dateTime},${match.title},${match.stadiumId},${match.currentPlayers},${match.pricePerPlayer},$total\n")
                     }
-                    sendEffect(HomeContract.Effect.DownloadFile("hisobot_${state.value.selectedDate}.csv", csv.toString()))
+                    sendEffect(DownloadFile("hisobot_${state.value.selectedDate}.csv", csv.toString()))
                 }
             }
 
@@ -258,6 +255,7 @@ class HomeViewModel(
                         isLoadingUser = false
                     ) 
                 }
+                loadDashboardStats() // Load stats after role is determined
             }
         }
     }
@@ -280,52 +278,66 @@ class HomeViewModel(
     }
 
     private fun loadDashboardStats() {
-        executeAsync {
-            val stadiumsFlow = getStadiumsUseCase(isActive = null)
-            val tournamentsFlow = getTournamentsUseCase()
-            val matchesFlow = getMatchesUseCase()
-            val usersFlow = getAllUsersUseCase()
-
-            stadiumsFlow.zip(tournamentsFlow) { s, t -> s to t }
-                .zip(matchesFlow) { (s, t), m -> Triple(s, t, m) }
-                .zip(usersFlow) { (s, t, m), u ->
-                    val totalEarnings = m.sumOf { (it.currentPlayers ?: 0) * (it.pricePerPlayer ?: 0.0) }
-
-                    val weeklyLabels = mutableListOf<String>()
-                    val weeklyEarnings = mutableListOf<Double>()
-
-                    for (i in 6 downTo 0) {
-                        val day = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.minus(i, DateTimeUnit.DAY)
-                        val dayStr = day.toString() // YYYY-MM-DD
-                        val dayEarnings = m.filter { it.dateTime?.startsWith(dayStr) == true }
-                            .sumOf { (it.currentPlayers?.toDouble() ?: 0.0) * (it.pricePerPlayer ?: 0.0) }
-
-                        weeklyEarnings.add(dayEarnings)
-                        weeklyLabels.add(
-                            when (day.dayOfWeek) {
-                                DayOfWeek.MONDAY -> "Du"
-                                DayOfWeek.TUESDAY -> "Se"
-                                DayOfWeek.WEDNESDAY -> "Ch"
-                                DayOfWeek.THURSDAY -> "Pa"
-                                DayOfWeek.FRIDAY -> "Ju"
-                                DayOfWeek.SATURDAY -> "Sh"
-                                DayOfWeek.SUNDAY -> "Ya"
+        if (state.value.isAdmin) {
+            updateState { copy(isLoadingDashboard = true, isLoadingWeeklyReport = true) }
+            executeAsync {
+                dashboardUseCase().collect { dashboard ->
+                    val totalRev = dashboard.stadiumRevenues.sumOf { it.totalRevenue }.toDouble()
+                    updateState {
+                        copy(
+                            dashboard = dashboard,
+                            isLoadingDashboard = false,
+                            activeStadiums = dashboard.activeStadiumsCount,
+                            totalTournaments = dashboard.tournamentsCount,
+                            totalUsers = dashboard.usersCount,
+                            totalEarnings = totalRev
+                        )
+                    }
+                }
+            }
+            executeAsync {
+                weeklyReportUseCase().collect { report ->
+                    updateState {
+                        copy(
+                            weeklyReport = report,
+                            isLoadingWeeklyReport = false,
+                            weeklyEarnings = report.dailyRevenue.map { it.revenue.toDouble() },
+                            weeklyLabels = report.dailyRevenue.map { day ->
+                                val parts = day.date.split("-")
+                                if (parts.size == 3) "${parts[2]}.${parts[1]}" else day.date
                             }
                         )
                     }
+                }
+            }
+        } else {
+            // For non-admin roles, we don't call admin dashboard APIs.
+            // Stats will be updated locally from other API calls (loadStadiums, loadMatches, etc.)
+            updateState { 
+                copy(
+                    isLoadingDashboard = false, 
+                    isLoadingWeeklyReport = false,
+                    dashboard = null,
+                    weeklyReport = null
+                ) 
+            }
+            updateLocalStats()
+        }
+    }
 
-                    updateState {
-                        copy(
-                            activeStadiums = s.content?.count { it.isActive == true } ?: 0,
-                            totalTournaments = t.size,
-                            totalMatches = m.size,
-                            totalEarnings = totalEarnings,
-                            totalUsers = u.size,
-                            weeklyEarnings = weeklyEarnings,
-                            weeklyLabels = weeklyLabels
-                        )
-                    }
-                }.collect {}
+    private fun updateLocalStats() {
+        val s = state.value
+        if (s.isAdmin) return // Admin uses dashboard API instead
+
+        val totalEarnings = s.matches.sumOf { (it.currentPlayers ?: 0) * (it.pricePerPlayer ?: 0.0) }
+        
+        updateState { 
+            copy(
+                totalEarnings = totalEarnings,
+                totalMatches = s.matches.size,
+                totalTournaments = s.tournaments.size,
+                // activeStadiums is updated in loadStadiums via pageData.totalElements
+            ) 
         }
     }
 
@@ -350,36 +362,11 @@ class HomeViewModel(
                         currentPage = page,
                         isLastPage = pageData.last ?: true,
                         isLoadingStadiums = false,
+                        activeStadiums = pageData.totalElements?.toInt() ?: activeStadiums
                     )
                 }
             },
             onError = { updateState { copy(isLoadingStadiums = false, stadiumError = it.message) } }
-        )
-    }
-
-    private fun loadTournaments() {
-        updateState { copy(isLoadingTournaments = true) }
-        executeAsync(
-            block = {
-                var r = emptyList<TournamentResponseDto>()
-                getTournamentsUseCase().collect { r = it }
-                r
-            },
-            onSuccess = { updateState { copy(tournaments = it, isLoadingTournaments = false) } },
-            onError = { updateState { copy(isLoadingTournaments = false) } }
-        )
-    }
-
-    private fun loadMatches() {
-        updateState { copy(isLoadingMatches = true) }
-        executeAsync(
-            block = {
-                var r = emptyList<MatchResponseDto>()
-                getMatchesUseCase().collect { r = it }
-                r
-            },
-            onSuccess = { updateState { copy(matches = it, isLoadingMatches = false) } },
-            onError = { updateState { copy(isLoadingMatches = false) } }
         )
     }
 
@@ -394,5 +381,25 @@ class HomeViewModel(
             onSuccess = { updateState { copy(coaches = it, isLoadingCoaches = false) } },
             onError = { updateState { copy(isLoadingCoaches = false) } }
         )
+    }
+
+    private fun loadMatches() {
+        updateState { copy(isLoadingMatches = true) }
+        executeAsync {
+            getMatchesUseCase().collect { matches ->
+                updateState { copy(matches = matches, isLoadingMatches = false) }
+                updateLocalStats()
+            }
+        }
+    }
+
+    private fun loadTournaments() {
+        updateState { copy(isLoadingTournaments = true) }
+        executeAsync {
+            getTournamentsUseCase().collect { tournaments ->
+                updateState { copy(tournaments = tournaments, isLoadingTournaments = false) }
+                updateLocalStats()
+            }
+        }
     }
 }

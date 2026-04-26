@@ -1,0 +1,11 @@
+package uz.coder.foottopbusiness.domain.model
+
+data class WeeklyReport(
+    val bookingsGrowthPercent: Int,
+    val dailyRevenue: List<DailyRevenue>,
+    val previousWeekBookings: Int,
+    val totalBookings: Int,
+    val weekEnd: String,
+    val weekStart: String,
+    val weeklyRevenue: Int
+)

@@ -44,6 +44,10 @@ class AuthRepositoryImpl(
         role: String?
     ) {
         val currentTime = Clock.System.now().toEpochMilliseconds()
+        
+        // Update SessionManager immediately to avoid race conditions with next requests
+        sessionManager.setToken(accessToken)
+
         preferencesManager.setToken(accessToken)
         preferencesManager.setRefreshToken(refreshToken)
         
