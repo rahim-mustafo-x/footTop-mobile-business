@@ -233,9 +233,9 @@ class UserCreateScreen : Screen {
                     }
                 }
 
-                if (state.role == "ROLE_DISTRICT_ADMIN") {
+                if (state.role == "ROLE_DISTRICT_ADMIN" || state.role == "ROLE_OWNER") {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Text("MUDDATHI BILAN HUDUDNI TANLANG", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Text("HUDUDNI TANLANG", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                         
                         var regionExpanded by remember { mutableStateOf(false) }
                         Box {

@@ -12,6 +12,7 @@ import uz.coder.foottopbusiness.data.local.PreferencesManager
 import kotlinx.coroutines.flow.firstOrNull
 import uz.coder.foottopbusiness.core.platform.getPlatform
 import uz.coder.foottopbusiness.core.notification.PushTokenProvider
+import uz.coder.foottopbusiness.core.log
 
 class LoginViewModel(
     private val loginUseCase: LoginUseCase,
@@ -47,18 +48,22 @@ class LoginViewModel(
                 when (result) {
                     LoginResult.Success -> {
                         viewModelScope.launch {
-                            val userId = preferencesManager.userId.firstOrNull() ?: 0
-                            if (userId.toLong() != 0L) {
-                                val token = pushTokenProvider.getToken()
-                                if (token != null) {
-                                    registerDeviceTokenUseCase(
-                                        DeviceTokenRequest(
-                                            userId = userId.toLong(),
-                                            token = token,
-                                            deviceType = if (getPlatform().name.contains("Android", ignoreCase = true)) "ANDROID" else "IOS"
-                                        )
-                                    ).collect { }
+                            try {
+                                val userId = preferencesManager.userId.firstOrNull() ?: 0
+                                if (userId.toLong() != 0L) {
+                                    val token = pushTokenProvider.getToken()
+                                    if (token != null) {
+                                        registerDeviceTokenUseCase(
+                                            DeviceTokenRequest(
+                                                userId = userId.toLong(),
+                                                token = token,
+                                                deviceType = if (getPlatform().name.contains("Android", ignoreCase = true)) "ANDROID" else "IOS"
+                                            )
+                                        ).collect { }
+                                    }
                                 }
+                            } catch (e: Exception) {
+                                log("LoginVM", "Token registration failed: ${e.message}")
                             }
                         }
                         sendEffect(LoginContract.Effect.NavigateToMain)

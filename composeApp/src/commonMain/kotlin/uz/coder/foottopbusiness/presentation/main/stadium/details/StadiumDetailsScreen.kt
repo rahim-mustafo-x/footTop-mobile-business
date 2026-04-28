@@ -28,8 +28,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Stadium
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -78,8 +76,6 @@ import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -170,7 +166,6 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
     // Auto-selection logic
     var hasAutoSelected by remember { mutableStateOf(false) }
     val durationMins = durationMinutesKey(state.selectedDurationKey)
-    var showRatingDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(stadiums, state.selectedDate, durationMins) {
         if (state.selectedPitchIndex == null && !hasAutoSelected && stadiums.isNotEmpty()) {
@@ -362,11 +357,6 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                         }
                         
                         Spacer(Modifier.height(16.dp))
-                        val addressName = if (stadium.regionName!=null && stadium.districtName!=null){
-                            "${stadium.regionName}, ${stadium.districtName}"
-                        }else{
-                            "Aniqlanmagan"
-                        }
                         
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             InfoCard(
@@ -381,36 +371,6 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                 subtitle = "${stadium.pricePerHour?.toInt() ?: 0} so'm/soat",
                                 modifier = Modifier.weight(1f)
                             )
-                        }
-
-                        Spacer(Modifier.height(8.dp))
-
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            InfoCard(
-                                icon = Icons.Default.Stadium,
-                                title = "Sig'im",
-                                subtitle = "${stadium.capacity ?: 0} kishi",
-                                modifier = Modifier.weight(1f)
-                            )
-                            InfoCard(
-                                icon = Icons.Default.LocationOn,
-                                title = "Manzil",
-                                subtitle = addressName,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-
-                        Spacer(Modifier.height(8.dp))
-
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            InfoCard(
-                                icon = Icons.Default.StarBorder,
-                                title = "Baholash",
-                                subtitle = "Fikr qoldirish",
-                                modifier = Modifier.weight(1f),
-                                onClick = { showRatingDialog = true }
-                            )
-                            Spacer(Modifier.weight(1f))
                         }
 
                         Spacer(Modifier.height(24.dp))
@@ -658,18 +618,6 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
     }
 
     // Slot Action Dialog
-    // Rating Dialog
-    if (showRatingDialog) {
-        RatingDialog(
-            isSubmitting = state.isSubmittingRating,
-            onDismiss = { showRatingDialog = false },
-            onSubmit = { rating, comment ->
-                viewModel.handleEvent(StadiumDetailsContract.Event.SubmitRating(rating, comment))
-                showRatingDialog = false
-            }
-        )
-    }
-
     // Booking Result Dialog
     if (state.showBookingResultDialog) {
         BookingResultDialog(
@@ -677,69 +625,6 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
             isSuccess = state.isBookingSuccess,
             onDismiss = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissBookingResultDialog) }
         )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun RatingDialog(
-    isSubmitting: Boolean,
-    onDismiss: () -> Unit,
-    onSubmit: (Int, String) -> Unit
-) {
-    var rating by remember { mutableStateOf(0) }
-    var comment by remember { mutableStateOf("") }
-    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-    ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp).navigationBarsPadding()) {
-            Text("Stadionni baholang", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-            Spacer(Modifier.height(24.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                (1..5).forEach { i ->
-                    IconButton(onClick = { rating = i }, modifier = Modifier.size(48.dp)) {
-                        Icon(
-                            imageVector = if (i <= rating) Icons.Default.Star else Icons.Default.StarBorder,
-                            contentDescription = null,
-                            tint = if (i <= rating) Color(0xFFFFC107) else MaterialTheme.colorScheme.outline,
-                            modifier = Modifier.size(36.dp)
-                        )
-                    }
-                }
-            }
-            Spacer(Modifier.height(24.dp))
-            OutlinedTextField(
-                value = comment,
-                onValueChange = { comment = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Fikringizni qoldiring", style = MaterialTheme.typography.bodyMedium) },
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                ),
-                minLines = 3
-            )
-            Spacer(Modifier.height(32.dp))
-            Button(
-                onClick = { focusManager.clearFocus(); onSubmit(rating, comment) },
-                enabled = rating > 0 && !isSubmitting,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-            ) {
-                if (isSubmitting) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                } else {
-                    Text("Yuborish", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                }
-            }
-            Spacer(Modifier.height(16.dp))
-        }
     }
 }
 

@@ -2,11 +2,13 @@ package uz.coder.foottopbusiness.data.repository
 
 import io.ktor.client.call.body
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
+import uz.coder.foottopbusiness.core.log
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.data.network.StadiumApiService
 import uz.coder.foottopbusiness.data.network.dto.BaseResponse
@@ -58,6 +60,9 @@ class StadiumRepositoryImpl(
         )
         
         emit(data)
+    }.catch {
+        log("StadiumRepository", "createStadium error: ${it.message}")
+        throw it
     }
 
     override fun updateStadium(
@@ -115,6 +120,9 @@ class StadiumRepositoryImpl(
         } catch (_: Exception) {}
         
         emit(stadiumResponse)
+    }.catch {
+        log("StadiumRepository", "updateStadium error: ${it.message}")
+        throw it
     }
 
     override fun getStadiums(
@@ -126,11 +134,17 @@ class StadiumRepositoryImpl(
             ownerId = ownerId.toLong(), isActive = isActive, page = page, size = size,
         )
         emit(response.data ?: PageStadiumResponseDto())
+    }.catch {
+        log("StadiumRepository", "getStadiums error: ${it.message}")
+        emit(PageStadiumResponseDto())
     }
 
     override fun getStadiumById(id: Int, date: String, duration: String): Flow<List<StadiumResponse>> = flow {
         val response = stadiumApiService.getStadiumById(id.toLong(), date, duration)
         emit(response.data ?: emptyList())
+    }.catch {
+        log("StadiumRepository", "getStadiumById error: ${it.message}")
+        emit(emptyList())
     }
 
     override fun updateOpenCloseTime(id: Int, openTime: String, closeTime: String): Flow<Unit> = flow {
@@ -140,19 +154,30 @@ class StadiumRepositoryImpl(
             formatToIsoDateTime(closeTime)
         )
         emit(Unit)
+    }.catch {
+        log("StadiumRepository", "updateOpenCloseTime error: ${it.message}")
     }
 
     override fun deleteStadium(id: Int) = flow {
         stadiumApiService.deleteStadium(id = id.toLong())
         emit(Unit)
+    }.catch {
+        log("StadiumRepository", "deleteStadium error: ${it.message}")
+        throw it
     }
 
     override fun getRegions() = flow {
         emit(stadiumApiService.getRegions().data ?: emptyList())
+    }.catch {
+        log("StadiumRepository", "getRegions error: ${it.message}")
+        emit(emptyList())
     }
 
     override fun getDistricts(regionId: Int) = flow {
         emit(stadiumApiService.getDistrictsByRegion(regionId).data ?: emptyList())
+    }.catch {
+        log("StadiumRepository", "getDistricts error: ${it.message}")
+        emit(emptyList())
     }
 
     override suspend fun saveRegionId(id: Int) = preferencesManager.setRegionId(id)

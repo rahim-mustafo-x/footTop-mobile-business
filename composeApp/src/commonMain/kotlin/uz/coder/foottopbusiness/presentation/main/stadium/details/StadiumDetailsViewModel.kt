@@ -155,9 +155,6 @@ class StadiumDetailsViewModel(
             StadiumDetailsContract.Event.DismissBookingResultDialog -> {
                 updateState { copy(showBookingResultDialog = false) }
             }
-            is StadiumDetailsContract.Event.SubmitRating -> {
-                submitRating(event.rating, event.comment)
-            }
         }
     }
 
@@ -191,24 +188,6 @@ class StadiumDetailsViewModel(
                         isBookingSuccess = false
                     ) 
                 }
-            }
-        )
-    }
-
-    private fun submitRating(rating: Int, comment: String) {
-        updateState { copy(isSubmittingRating = true) }
-        executeAsync(
-            block = {
-                kotlinx.coroutines.delay(1000)
-                true
-            },
-            onSuccess = {
-                updateState { copy(isSubmittingRating = false) }
-                sendEffect(StadiumDetailsContract.Effect.ShowToast("Sharhingiz uchun rahmat!"))
-            },
-            onError = {
-                updateState { copy(isSubmittingRating = false) }
-                sendEffect(StadiumDetailsContract.Effect.ShowToast("Sharh qoldirishda xatolik"))
             }
         )
     }

@@ -1,7 +1,9 @@
 package uz.coder.foottopbusiness.data.repository
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
+import uz.coder.foottopbusiness.core.log
 import uz.coder.foottopbusiness.data.network.AdminApiService
 import uz.coder.foottopbusiness.data.network.dto.UserDto
 import uz.coder.foottopbusiness.data.network.dto.admin.CreateStaffUserDto
@@ -31,6 +33,8 @@ class AdminRepositoryImpl(private val apiService: AdminApiService) : AdminReposi
                 )
             )
         }
+    }.catch {
+        log("AdminRepository", "dashboard error: ${it.message}")
     }
 
     override fun weeklyRepo(): Flow<WeeklyReport> = flow {
@@ -56,6 +60,8 @@ class AdminRepositoryImpl(private val apiService: AdminApiService) : AdminReposi
                 )
             )
         }
+    }.catch {
+        log("AdminRepository", "weeklyRepo error: ${it.message}")
     }
 
     override fun createStaff(dto: CreateStaffUserDto): Flow<UserDto> = flow {
@@ -65,5 +71,8 @@ class AdminRepositoryImpl(private val apiService: AdminApiService) : AdminReposi
         } else {
             throw Exception(response.message ?: "Xodim yaratishda xatolik")
         }
+    }.catch {
+        log("AdminRepository", "createStaff error: ${it.message}")
+        throw it
     }
 }

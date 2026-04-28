@@ -117,7 +117,7 @@ class UserCreateViewModel(
             return
         }
 
-        if (currentState.role == "ROLE_DISTRICT_ADMIN" && currentState.selectedDistrict == null) {
+        if ((currentState.role == "ROLE_DISTRICT_ADMIN" || currentState.role == "ROLE_OWNER") && currentState.selectedDistrict == null) {
             screenModelScope.launch {
                 _effect.emit(UserCreateContract.Effect.ShowError("Iltimos, tumanni tanlang"))
             }

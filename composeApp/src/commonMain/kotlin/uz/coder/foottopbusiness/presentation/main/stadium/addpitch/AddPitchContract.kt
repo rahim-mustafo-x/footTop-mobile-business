@@ -25,8 +25,8 @@ sealed interface AddPitchContract {
         val duration: StadiumDuration = StadiumDuration.SIXTY,
         val capacity: String = "",
         val pricePerHour: String = "",
-        val openTime: String = "",
-        val closeTime: String = "",
+        val openTime: String = "08:00",
+        val closeTime: String = "22:00",
         val imageUrl: String = "",
         // region/district
         val regions: List<RegionDto> = emptyList(),

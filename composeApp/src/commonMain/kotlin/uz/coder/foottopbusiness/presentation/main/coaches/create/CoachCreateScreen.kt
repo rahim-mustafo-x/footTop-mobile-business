@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.foundation.border
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,6 +34,7 @@ import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.koin.compose.koinInject
+import uz.coder.foottopbusiness.core.visualTransformation.AmountTransformation
 import uz.coder.foottopbusiness.presentation.main.coaches.CoachesContract
 import uz.coder.foottopbusiness.presentation.main.coaches.CoachesViewModel
 
@@ -202,7 +204,8 @@ class CoachCreateScreen : Screen {
                                 placeholder = "150 000",
                                 icon = Icons.Default.Payments,
                                 keyboardType = KeyboardType.Decimal,
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                visualTransformation = AmountTransformation()
                             )
                         }
 
@@ -290,7 +293,8 @@ class CoachCreateScreen : Screen {
         placeholder: String = "",
         icon: ImageVector,
         modifier: Modifier = Modifier,
-        keyboardType: KeyboardType = KeyboardType.Text
+        keyboardType: KeyboardType = KeyboardType.Text,
+        visualTransformation: VisualTransformation = VisualTransformation.None
     ) {
         Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -302,6 +306,7 @@ class CoachCreateScreen : Screen {
                 leadingIcon = { Icon(icon, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f), modifier = Modifier.size(20.dp)) },
                 shape = RoundedCornerShape(16.dp),
                 keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+                visualTransformation = visualTransformation,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),

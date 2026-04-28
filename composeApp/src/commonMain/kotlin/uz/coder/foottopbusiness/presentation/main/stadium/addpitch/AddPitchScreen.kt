@@ -70,10 +70,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uz.coder.foottopbusiness.core.BackHandler
 import uz.coder.foottopbusiness.core.log
+import uz.coder.foottopbusiness.core.visualTransformation.AmountTransformation
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -292,7 +294,8 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                         state.pricePerHour,
                         "50 000",
                         KeyboardType.Number,
-                        icon = Icons.Default.Payments
+                        icon = Icons.Default.Payments,
+                        visualTransformation = AmountTransformation()
                     ) {
                         viewModel.handleEvent(AddPitchContract.Event.PricePerHour(it))
                     }
@@ -434,6 +437,7 @@ private fun LabelAndField(
     keyboardType: KeyboardType = KeyboardType.Text,
     singleLine: Boolean = true,
     icon: ImageVector? = null,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
     onValueChange: (String) -> Unit
 ) {
     Column {
@@ -457,6 +461,7 @@ private fun LabelAndField(
             leadingIcon = icon?.let { { Icon(it, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f), modifier = Modifier.size(20.dp)) } },
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             singleLine = singleLine,
+            visualTransformation = visualTransformation,
             minLines = if (singleLine) 1 else 3,
             maxLines = if (singleLine) 1 else 5,
             shape = RoundedCornerShape(16.dp),

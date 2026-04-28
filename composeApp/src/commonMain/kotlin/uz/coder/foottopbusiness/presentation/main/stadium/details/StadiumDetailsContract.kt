@@ -78,7 +78,5 @@ sealed interface StadiumDetailsContract {
             val endTime: String,
             val price: Double
         ) : Event
-        
-        data class SubmitRating(val rating: Int, val comment: String) : Event
     }
 }

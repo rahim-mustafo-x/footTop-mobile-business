@@ -67,6 +67,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
@@ -76,6 +77,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
+import uz.coder.foottopbusiness.core.visualTransformation.AmountTransformation
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsContract
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsViewModel
 import kotlin.time.Instant
@@ -335,7 +337,8 @@ class TournamentCreateScreen : Screen {
                             icon = Icons.Default.Payments,
                             keyboardType = KeyboardType.Decimal,
                             modifier = Modifier.weight(1f),
-                            placeholder = "200 000"
+                            placeholder = "200 000",
+                            visualTransformation = AmountTransformation()
                         )
                     }
                 }
@@ -447,7 +450,8 @@ class TournamentCreateScreen : Screen {
         modifier: Modifier = Modifier,
         placeholder: String = "",
         keyboardType: KeyboardType = KeyboardType.Text,
-        enabled: Boolean = true
+        enabled: Boolean = true,
+        visualTransformation: VisualTransformation = VisualTransformation.None
     ) {
         Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
@@ -461,6 +465,7 @@ class TournamentCreateScreen : Screen {
                 keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
                 enabled = enabled,
                 singleLine = true,
+                visualTransformation = visualTransformation,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
