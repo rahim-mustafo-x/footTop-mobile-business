@@ -29,6 +29,10 @@ import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Person
+import uz.coder.foottopbusiness.domain.model.UserRole
+import uz.coder.foottopbusiness.data.network.dto.UserDto
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Schedule
@@ -230,6 +234,47 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                         icon = Icons.Default.Map
                     ) {
                         viewModel.handleEvent(AddPitchContract.Event.Name(it))
+                    }
+
+                    LabelAndField(
+                        "TELEFON RAQAM",
+                        state.phone,
+                        "+998 90 123 45 67",
+                        keyboardType = KeyboardType.Phone,
+                        icon = Icons.Default.Phone
+                    ) {
+                        viewModel.handleEvent(AddPitchContract.Event.Phone(it))
+                    }
+                }
+            }
+
+            if (state.userRole == UserRole.SUPER_ADMIN || state.userRole == UserRole.DISTRICT_ADMIN) {
+                Card(
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Person,
+                                null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                "Owner biriktirish",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        OwnerDropdown(state, viewModel)
                     }
                 }
             }
@@ -563,6 +608,54 @@ private fun DistrictDropdown(
                         text = { Text(district.name ?: "") },
                         onClick = {
                             viewModel.handleEvent(AddPitchContract.Event.SelectDistrict(district))
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun OwnerDropdown(
+    state: AddPitchContract.State,
+    viewModel: AddPitchViewModel
+) {
+    Column {
+        Text("OWNER TANLASH", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(8.dp))
+        ExposedDropdownMenuBox(
+            expanded = state.showOwnerDropdown,
+            onExpandedChange = { viewModel.handleEvent(AddPitchContract.Event.ShowOwnerDropdown(it)) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            OutlinedTextField(
+                value = state.selectedOwner?.fullName ?: state.selectedOwner?.username ?: "Tanlang (Ixtiyoriy)",
+                onValueChange = {},
+                readOnly = true,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+                singleLine = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showOwnerDropdown) },
+                modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                )
+            )
+            ExposedDropdownMenu(
+                expanded = state.showOwnerDropdown,
+                onDismissRequest = { viewModel.handleEvent(AddPitchContract.Event.ShowOwnerDropdown(false)) },
+                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+            ) {
+                state.owners.forEach { owner ->
+                    DropdownMenuItem(
+                        text = { Text(owner.fullName ?: owner.username ?: "") },
+                        onClick = {
+                            viewModel.handleEvent(AddPitchContract.Event.SelectOwner(owner))
                         }
                     )
                 }

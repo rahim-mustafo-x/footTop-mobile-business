@@ -117,8 +117,8 @@ val appModule = module {
     factory { LoginViewModel(get(), get(), get(), get()) }
     factory { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { StadiumViewModel(get(), get(), get(), get()) }
-    factory { AddPitchViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
-    factory { (stadium: StadiumResponse) -> EditStadiumViewModel(stadium, get(), get(), get()) }
+    factory { AddPitchViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    factory { (stadium: StadiumResponse) -> EditStadiumViewModel(stadium, get(), get(), get(), get(), get()) }
     factory { (stadium: StadiumResponse) -> StadiumDetailsViewModel(stadium, get(), get()) }
     factory { CoachesViewModel(get(), get()) }
     factory { TournamentsViewModel(get(), get(), get()) }

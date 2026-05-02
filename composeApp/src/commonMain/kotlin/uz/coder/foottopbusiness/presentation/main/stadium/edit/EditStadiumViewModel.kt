@@ -1,12 +1,16 @@
 package uz.coder.foottopbusiness.presentation.main.stadium.edit
 
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.datetime.LocalDateTime
 import uz.coder.foottopbusiness.core.formatAsTime
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
+import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.RegionDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
+import uz.coder.foottopbusiness.domain.model.UserRole
+import uz.coder.foottopbusiness.domain.repository.UserRepository
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetDistrictsUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetRegionsUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.UpdateStadiumUseCase
@@ -18,15 +22,18 @@ class EditStadiumViewModel(
     private val updateStadiumUseCase: UpdateStadiumUseCase,
     private val getRegionsUseCase: GetRegionsUseCase,
     private val getDistrictsUseCase: GetDistrictsUseCase,
+    private val userRepository: UserRepository,
+    private val preferencesManager: PreferencesManager,
 ) : BaseViewModel<EditStadiumContract.State, EditStadiumContract.Effect, EditStadiumContract.Event>(
     initialState = EditStadiumContract.State(
         id = stadium.id ?: 0,
         name = stadium.name ?: "",
+        phone = stadium.phone ?: "",
         description = stadium.description ?: "",
         capacity = stadium.capacity?.toString() ?: "",
         pricePerHour = stadium.pricePerHour?.toInt()?.toString() ?: "",
-        openTime = LocalDateTime.parse(stadium.openTime?:"").formatAsTime(),
-        closeTime = LocalDateTime.parse(stadium.closeTime?:"").formatAsTime(),
+        openTime = if (stadium.openTime.isNullOrBlank()) "08:00" else try { LocalDateTime.parse(stadium.openTime).formatAsTime() } catch (_: Exception) { stadium.openTime },
+        closeTime = if (stadium.closeTime.isNullOrBlank()) "22:00" else try { LocalDateTime.parse(stadium.closeTime).formatAsTime() } catch (_: Exception) { stadium.closeTime },
         // Note: images are handled differently in StadiumResponse vs CreateRequest
         // For simplicity assuming first image or empty
         imageUrl = "",
@@ -36,12 +43,38 @@ class EditStadiumViewModel(
 ) {
 
     init {
+        loadUserRole()
         loadRegions()
+    }
+
+    private fun loadUserRole() {
+        executeAsync(
+            block = {
+                val roleStr = preferencesManager.role.firstOrNull()
+                UserRole.fromString(roleStr)
+            },
+            onSuccess = { role ->
+                updateState { copy(userRole = role) }
+                if (role == UserRole.SUPER_ADMIN || role == UserRole.DISTRICT_ADMIN) {
+                    loadOwners()
+                }
+            }
+        )
+    }
+
+    private fun loadOwners() {
+        executeAsync(
+            block = { userRepository.getAllUsers().first() },
+            onSuccess = { users ->
+                updateState { copy(owners = users) }
+            }
+        )
     }
 
     override fun handleEvent(event: EditStadiumContract.Event) {
         when (event) {
             is EditStadiumContract.Event.Name -> updateState { copy(name = event.value) }
+            is EditStadiumContract.Event.Phone -> updateState { copy(phone = event.value) }
             is EditStadiumContract.Event.Description -> updateState { copy(description = event.value) }
             is EditStadiumContract.Event.Type -> updateState { copy(type = event.value, showTypeDropdown = false) }
             is EditStadiumContract.Event.Duration -> updateState { copy(duration = event.value, showDurationDropdown = false) }
@@ -52,8 +85,10 @@ class EditStadiumViewModel(
             is EditStadiumContract.Event.ImageUrl -> updateState { copy(imageUrl = event.value) }
             is EditStadiumContract.Event.SelectRegion -> onRegionSelected(event.region)
             is EditStadiumContract.Event.SelectDistrict -> onDistrictSelected(event.district)
+            is EditStadiumContract.Event.SelectOwner -> updateState { copy(selectedOwner = event.owner, showOwnerDropdown = false) }
             is EditStadiumContract.Event.ShowRegionDropdown -> updateState { copy(showRegionDropdown = event.show) }
             is EditStadiumContract.Event.ShowDistrictDropdown -> updateState { copy(showDistrictDropdown = event.show) }
+            is EditStadiumContract.Event.ShowOwnerDropdown -> updateState { copy(showOwnerDropdown = event.show) }
             is EditStadiumContract.Event.ShowTypeDropdown -> updateState { copy(showTypeDropdown = event.show) }
             is EditStadiumContract.Event.ShowDurationDropdown -> updateState { copy(showDurationDropdown = event.show) }
             is EditStadiumContract.Event.Save -> save()
@@ -105,6 +140,8 @@ class EditStadiumViewModel(
                     imageUrl = s.imageUrl,
                     regionId = s.selectedRegion?.id ?: 0,
                     districtId = s.selectedDistrict?.id ?: 0,
+                    ownerId = s.selectedOwner?.id?.toInt(),
+                    phone = s.phone
                 ).first()
             },
             onSuccess = {

@@ -2,11 +2,15 @@ package uz.coder.foottopbusiness.presentation.main.stadium.addpitch
 
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import uz.coder.foottopbusiness.core.log
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
+import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.RegionDto
+import uz.coder.foottopbusiness.domain.model.UserRole
+import uz.coder.foottopbusiness.domain.repository.UserRepository
 import uz.coder.foottopbusiness.domain.usecase.stadium.CreateStadiumUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetDistrictsUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetRegionsUseCase
@@ -25,6 +29,8 @@ class AddPitchViewModel(
     private val getSavedRegionIdUseCase: GetSavedRegionIdUseCase,
     private val getSavedDistrictIdUseCase: GetSavedDistrictIdUseCase,
     private val userIdUseCase: UserIdUseCase,
+    private val userRepository: UserRepository,
+    private val preferencesManager: PreferencesManager,
 ) : BaseViewModel<AddPitchContract.State, AddPitchContract.Effect, AddPitchContract.Event>(
     initialState = AddPitchContract.State()
 ) {
@@ -32,12 +38,39 @@ class AddPitchViewModel(
 
     init {
         log(logLabel, "ViewModel initialized, loading regions...")
+        loadUserRole()
         loadRegions()
+    }
+
+    private fun loadUserRole() {
+        executeAsync(
+            block = {
+                val roleStr = preferencesManager.role.firstOrNull()
+                UserRole.fromString(roleStr)
+            },
+            onSuccess = { role ->
+                updateState { copy(userRole = role) }
+                if (role == UserRole.SUPER_ADMIN || role == UserRole.DISTRICT_ADMIN) {
+                    loadOwners()
+                }
+            }
+        )
+    }
+
+    private fun loadOwners() {
+        executeAsync(
+            block = { userRepository.getAllUsers().first() },
+            onSuccess = { users ->
+                // Filter users who are owners or just show all for now
+                updateState { copy(owners = users) }
+            }
+        )
     }
 
     override fun handleEvent(event: AddPitchContract.Event) {
         when (event) {
             is AddPitchContract.Event.Name -> updateState { copy(name = event.value) }
+            is AddPitchContract.Event.Phone -> updateState { copy(phone = event.value) }
             is AddPitchContract.Event.Description -> updateState { copy(description = event.value) }
             is AddPitchContract.Event.Type -> updateState { copy(type = event.value, showTypeDropdown = false) }
             is AddPitchContract.Event.Duration -> updateState { copy(duration = event.value, showDurationDropdown = false) }
@@ -48,8 +81,10 @@ class AddPitchViewModel(
             is AddPitchContract.Event.ImageUrl -> updateState { copy(imageUrl = event.value) }
             is AddPitchContract.Event.SelectRegion -> onRegionSelected(event.region)
             is AddPitchContract.Event.SelectDistrict -> onDistrictSelected(event.district)
+            is AddPitchContract.Event.SelectOwner -> updateState { copy(selectedOwner = event.owner, showOwnerDropdown = false) }
             is AddPitchContract.Event.ShowRegionDropdown -> updateState { copy(showRegionDropdown = event.show) }
             is AddPitchContract.Event.ShowDistrictDropdown -> updateState { copy(showDistrictDropdown = event.show) }
+            is AddPitchContract.Event.ShowOwnerDropdown -> updateState { copy(showOwnerDropdown = event.show) }
             is AddPitchContract.Event.ShowTypeDropdown -> updateState { copy(showTypeDropdown = event.show) }
             is AddPitchContract.Event.ShowDurationDropdown -> updateState { copy(showDurationDropdown = event.show) }
             is AddPitchContract.Event.Save -> save()
@@ -164,7 +199,9 @@ class AddPitchViewModel(
                     closeTime = s.closeTime,
                     imageUrl = s.imageUrl,
                     regionId = regionId,
-                    districtId = districtId
+                    districtId = districtId,
+                    ownerId = s.selectedOwner?.id?.toInt(),
+                    phone = s.phone
                 ).first()
             },
             onSuccess = {

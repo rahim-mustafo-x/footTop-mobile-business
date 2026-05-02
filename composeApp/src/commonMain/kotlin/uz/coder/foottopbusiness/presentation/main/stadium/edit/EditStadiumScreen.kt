@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import uz.coder.foottopbusiness.core.BackHandler
+import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.core.visualTransformation.AmountTransformation
 import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.TimePickerDialog
 
@@ -248,6 +249,52 @@ fun EditStadiumScreen(viewModel: EditStadiumViewModel, onBack: () -> Unit) {
                 keyboardActions = KeyboardActions(onNext = { descFocus.requestFocus() })
             )
             Spacer(Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = state.phone,
+                onValueChange = { viewModel.handleEvent(EditStadiumContract.Event.Phone(it)) },
+                label = { Text("Telefon raqami") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
+            )
+            Spacer(Modifier.height(12.dp))
+
+            if (state.userRole == UserRole.SUPER_ADMIN || state.userRole == UserRole.DISTRICT_ADMIN) {
+                Text(
+                    "Owner biriktirish",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.height(8.dp))
+                ExposedDropdownMenuBox(
+                    expanded = state.showOwnerDropdown,
+                    onExpandedChange = { viewModel.handleEvent(EditStadiumContract.Event.ShowOwnerDropdown(it)) }
+                ) {
+                    OutlinedTextField(
+                        value = state.selectedOwner?.fullName ?: state.selectedOwner?.username ?: "Tanlang (Ixtiyoriy)",
+                        onValueChange = {},
+                        readOnly = true,
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showOwnerDropdown) },
+                        modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    ExposedDropdownMenu(
+                        expanded = state.showOwnerDropdown,
+                        onDismissRequest = { viewModel.handleEvent(EditStadiumContract.Event.ShowOwnerDropdown(false)) }
+                    ) {
+                        state.owners.forEach { owner ->
+                            DropdownMenuItem(
+                                text = { Text(owner.fullName ?: owner.username ?: "") },
+                                onClick = { viewModel.handleEvent(EditStadiumContract.Event.SelectOwner(owner)) }
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(24.dp))
+            }
 
             OutlinedTextField(
                 value = state.description,

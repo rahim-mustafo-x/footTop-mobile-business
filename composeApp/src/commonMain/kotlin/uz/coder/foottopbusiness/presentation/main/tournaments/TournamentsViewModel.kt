@@ -44,7 +44,7 @@ class TournamentsViewModel(
                                 startDate = event.startDate,
                                 endDate = event.endDate,
                                 maxTeams = event.maxTeams,
-                                entryFee = event.entryFee,
+                                entryFee = event.entryFee.toLong(),
                                 address = event.address,
                                 startTime = event.startTime,
                                 endTime = event.endTime,

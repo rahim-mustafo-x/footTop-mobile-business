@@ -8,6 +8,7 @@ import uz.coder.foottopbusiness.core.Serializable as KmpSerializable
 data class StadiumResponse(
     @SerialName("id") val id: Int? = null,
     @SerialName("name") val name: String? = null,
+    @SerialName("phone") val phone: String? = null,
     @SerialName("ownerId") val ownerId: Int? = null,
     @SerialName("ownerName") val ownerName: String? = null,
     @SerialName("description") val description: String? = null,
@@ -23,6 +24,7 @@ data class StadiumResponse(
     @SerialName("openTime") val openTime: String? = null,
     @SerialName("closeTime") val closeTime: String? = null,
     @SerialName("slots") val slots: List<SlotDto>? = null,
+    @SerialName("earliestAvailable") val earliestAvailable: String? = null,
 ) : KmpSerializable
 
 @Serializable

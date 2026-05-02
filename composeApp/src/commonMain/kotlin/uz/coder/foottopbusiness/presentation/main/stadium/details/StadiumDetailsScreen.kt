@@ -74,7 +74,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
@@ -92,8 +94,10 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.toInstant
 import uz.coder.foottopbusiness.core.formatToTime
+import uz.coder.foottopbusiness.core.platform.makePhoneCall
 import uz.coder.foottopbusiness.data.network.dto.stadium.SlotDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
+import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.stadium.edit.EditStadiumVoyager
 
 // ─── Utilities ──────────────────────────────────────────────────────────────
@@ -189,6 +193,10 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
     val selectedPitchIndex = state.selectedPitchIndex
     val startIdx = state.selectedStartIndex
     val showSticky = selectedPitchIndex != null && startIdx != null
+    val isOwnerless = stadium?.ownerId == null
+    val isStaff = state.userRole == UserRole.SUPER_ADMIN || state.userRole == UserRole.DISTRICT_ADMIN
+    val isOwner = state.userRole == UserRole.OWNER
+    val canEdit = isStaff || isOwner
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -201,7 +209,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     }
                 },
                 actions = {
-                    if (stadium != null) {
+                    if (stadium != null && canEdit) {
                         IconButton(onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.EditClick) }) {
                             Icon(Icons.Default.Edit, contentDescription = "Edit")
                         }
@@ -216,59 +224,94 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
             )
         },
         bottomBar = {
-            if (showSticky && stadium != null) {
-                val currentStadium = stadiums.getOrNull(selectedPitchIndex) ?: stadium
-                val price = currentStadium.pricePerHour ?: 0.0
-                val totalPrice = price * (durationMins / 60.0)
-                val currentSlots = currentStadium.slots ?: emptyList()
-                val selectedSlot = currentSlots.getOrNull(startIdx)
-                val startTime = selectedSlot?.start?.toLocalDateTimeSafe()
-                
-                // Calculate end time string based on duration
-                val slotsNeeded = slotsNeededForDuration(durationMins)
-                val endSlot = currentSlots.getOrNull(startIdx + slotsNeeded - 1)
-                
-                val startTimeStr = startTime?.let { "${it.hour.toString().padStart(2, '0')}:${it.minute.toString().padStart(2, '0')}" } ?: ""
-                val endTimeStr = endSlot?.end?.formatToTime() ?: ""
-
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding(),
-                    shadowElevation = 8.dp,
-                    color = MaterialTheme.colorScheme.surface
-                ) {
-                    Box(
+            if (stadium != null) {
+                if (isOwnerless) {
+                    // Ownerless stadium - show Call CTA
+                    Surface(
                         modifier = Modifier
-                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .fillMaxWidth()
+                            .navigationBarsPadding(),
+                        shadowElevation = 8.dp,
+                        color = MaterialTheme.colorScheme.surface
                     ) {
-                        Button(
-                            onClick = {
-                                viewModel.handleEvent(
-                                    StadiumDetailsContract.Event.CreateBooking(
-                                        stadiumId = currentStadium.id ?: 0,
-                                        startTime = selectedSlot?.start ?: "",
-                                        endTime = endSlot?.end ?: "",
-                                        price = totalPrice
-                                    )
-                                )
-                            },
-                            shape = RoundedCornerShape(20.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height(60.dp)
+                                .padding(horizontal = 16.dp, vertical = 12.dp)
                         ) {
-                            Text(
-                                text = "Bron qilish $startTimeStr – $endTimeStr",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                            )
+                            Button(
+                                onClick = {
+                                    stadium.phone?.let { makePhoneCall(it) }
+                                },
+                                shape = RoundedCornerShape(20.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(60.dp)
+                            ) {
+                                Icon(Icons.Default.Phone, null)
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = "Telefon orqali bog'lanish",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                )
+                            }
+                        }
+                    }
+                } else if (showSticky) {
+                    val currentStadium = stadiums.getOrNull(selectedPitchIndex) ?: stadium
+                    val price = currentStadium.pricePerHour ?: 0.0
+                    val totalPrice = price * (durationMins / 60.0)
+                    val currentSlots = currentStadium.slots ?: emptyList()
+                    val selectedSlot = currentSlots.getOrNull(startIdx)
+                    val startTime = selectedSlot?.start?.toLocalDateTimeSafe()
+                    
+                    // Calculate end time string based on duration
+                    val slotsNeeded = slotsNeededForDuration(durationMins)
+                    val endSlot = currentSlots.getOrNull(startIdx + slotsNeeded - 1)
+                    
+                    val startTimeStr = startTime?.let { "${it.hour.toString().padStart(2, '0')}:${it.minute.toString().padStart(2, '0')}" } ?: ""
+                    val endTimeStr = endSlot?.end?.formatToTime() ?: ""
+
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding(),
+                        shadowElevation = 8.dp,
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp, vertical = 12.dp)
+                        ) {
+                            Button(
+                                onClick = {
+                                    viewModel.handleEvent(
+                                        StadiumDetailsContract.Event.CreateBooking(
+                                            stadiumId = currentStadium.id ?: 0,
+                                            startTime = selectedSlot?.start ?: "",
+                                            endTime = endSlot?.end ?: "",
+                                            price = totalPrice
+                                        )
+                                    )
+                                },
+                                shape = RoundedCornerShape(20.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(60.dp)
+                            ) {
+                                Text(
+                                    text = "Bron qilish $startTimeStr – $endTimeStr",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                )
+                            }
                         }
                     }
                 }
             }
         }
-    ) { paddingValues ->
+    )
+{ paddingValues ->
         if (stadium == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
@@ -373,120 +416,187 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                             )
                         }
 
-                        Spacer(Modifier.height(24.dp))
-                        SectionTitle("Kunni tanlang")
-                        Spacer(Modifier.height(10.dp))
-                        DaySelector(state.selectedDate) { newDate ->
-                            viewModel.handleEvent(StadiumDetailsContract.Event.SelectDate(newDate))
-                        }
-
-                        Spacer(Modifier.height(24.dp))
-                        SectionTitle("Davomiylik")
-                        Spacer(Modifier.height(10.dp))
-                        DurationSelector(state.selectedDurationKey) { key ->
-                            viewModel.handleEvent(StadiumDetailsContract.Event.ClearSelection)
-                            viewModel.handleEvent(StadiumDetailsContract.Event.SelectDuration(key))
-                        }
-
-                        Spacer(Modifier.height(24.dp))
-                        SectionTitle("Bo'sh vaqtlar")
-                        Spacer(Modifier.height(12.dp))
-
-                        if (state.isSlotsLoading) {
-                            Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                            }
-                        } else if (stadiums.isNotEmpty()) {
-                            // Find earliest available slot across all pitches
-                            val earliestSlot = stadiums
-                                .flatMap { it.slots ?: emptyList() }
-                                .filter { state.selectedDate == null || it.start?.startsWith(state.selectedDate!!) == true }
-                                .let { allSlots ->
-                                    allSlots.firstOrNull { slot ->
-                                        val slotIdx = allSlots.indexOf(slot)
-                                        val slotInstant = slot.start?.toLocalDateTimeSafe()?.toInstant(tz)
-                                        val expired = slotInstant?.let { it <= now } ?: true
-                                        slot.status == "AVAILABLE" && !expired && canFitDuration(allSlots, slotIdx, tz, now, durationMins)
-                                    }
-                                }
-
-                            if (earliestSlot != null) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(Icons.Default.Schedule, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(
-                                        text = "Eng yaqin bo'sh vaqt: ",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = earliestSlot.start.formatToTime(),
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                        if (!isOwnerless) {
+                            Spacer(Modifier.height(24.dp))
+                            SectionTitle("Kunni tanlang")
+                            Spacer(Modifier.height(10.dp))
+                            DaySelector(state.selectedDate) { newDate ->
+                                viewModel.handleEvent(StadiumDetailsContract.Event.SelectDate(newDate))
                             }
 
-                            // Pitch selector (tabs)
-                            var selectedTabIndex by remember { mutableStateOf(0) }
-                            LaunchedEffect(selectedPitchIndex) {
-                                if (selectedPitchIndex != null) selectedTabIndex = selectedPitchIndex
+                            Spacer(Modifier.height(24.dp))
+                            SectionTitle("Davomiylik")
+                            Spacer(Modifier.height(10.dp))
+                            DurationSelector(state.selectedDurationKey) { key ->
+                                viewModel.handleEvent(StadiumDetailsContract.Event.ClearSelection)
+                                viewModel.handleEvent(StadiumDetailsContract.Event.SelectDuration(key))
                             }
 
-                            LazyRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                contentPadding = PaddingValues(end = 16.dp)
-                            ) {
-                                items(stadiums.size) { index ->
-                                    val isActive = selectedTabIndex == index
-                                    Surface(
-                                        modifier = Modifier.clickable { 
-                                            selectedTabIndex = index
-                                            viewModel.handleEvent(StadiumDetailsContract.Event.ClearSelection)
-                                        },
-                                        shape = RoundedCornerShape(10.dp),
-                                        color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                                    ) {
-                                        Text(
-                                            text = "Maydon ${index + 1}",
-                                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                            color = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
-                                        )
-                                    }
-                                }
-                            }
-
+                            Spacer(Modifier.height(24.dp))
+                            SectionTitle("Bo'sh vaqtlar")
                             Spacer(Modifier.height(12.dp))
 
-                            val currentPitchSlots = stadiums.getOrNull(selectedTabIndex)?.slots ?: emptyList()
-                            if (currentPitchSlots.isEmpty()) {
-                                Text("Bu kunda slot yo'q", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            } else {
-                                val slotsNeeded = slotsNeededForDuration(durationMins)
-                                SlotRow(
-                                    slots = currentPitchSlots,
-                                    pitchIndex = selectedTabIndex,
-                                    selectedPitchIndex = state.selectedPitchIndex,
-                                    selectedStartIndex = state.selectedStartIndex,
-                                    slotsPerBooking = slotsNeeded,
-                                    durationMins = durationMins,
-                                    now = now,
-                                    tz = tz,
-                                    onSelectStart = { idx ->
-                                        viewModel.handleEvent(StadiumDetailsContract.Event.SelectSlotSelection(selectedTabIndex, idx))
-                                    },
-                                    onClear = {
-                                        viewModel.handleEvent(StadiumDetailsContract.Event.ClearSelection)
+                            if (state.isSlotsLoading) {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().height(100.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                                }
+                            } else if (stadiums.isNotEmpty()) {
+                                // Find earliest available slot across all pitches
+                                val earliestSlot = stadiums
+                                    .flatMap { it.slots ?: emptyList() }
+                                    .filter {
+                                        state.selectedDate == null || it.start?.startsWith(state.selectedDate!!) == true
                                     }
+                                    .let { allSlots ->
+                                        allSlots.firstOrNull { slot ->
+                                            val slotIdx = allSlots.indexOf(slot)
+                                            val slotInstant =
+                                                slot.start?.toLocalDateTimeSafe()?.toInstant(tz)
+                                            val expired = slotInstant?.let { it <= now } ?: true
+                                            slot.status == "AVAILABLE" && !expired && canFitDuration(
+                                                allSlots,
+                                                slotIdx,
+                                                tz,
+                                                now,
+                                                durationMins
+                                            )
+                                        }
+                                    }
+
+                                if (earliestSlot != null) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Schedule,
+                                            null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            text = "Eng yaqin bo'sh vaqt: ",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = earliestSlot.start.formatToTime(),
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                fontWeight = FontWeight.Bold
+                                            ),
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(vertical = 8.dp),
+                                        color = MaterialTheme.colorScheme.outlineVariant
+                                    )
+                                }
+
+                                // Pitch selector (tabs)
+                                var selectedTabIndex by remember { mutableStateOf(0) }
+                                LaunchedEffect(selectedPitchIndex) {
+                                    if (selectedPitchIndex != null) selectedTabIndex =
+                                        selectedPitchIndex
+                                }
+
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    contentPadding = PaddingValues(end = 16.dp)
+                                ) {
+                                    items(stadiums.size) { index ->
+                                        val isActive = selectedTabIndex == index
+                                        Surface(
+                                            modifier = Modifier.clickable {
+                                                selectedTabIndex = index
+                                                viewModel.handleEvent(StadiumDetailsContract.Event.ClearSelection)
+                                            },
+                                            shape = RoundedCornerShape(10.dp),
+                                            color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                        ) {
+                                            Text(
+                                                text = "Maydon ${index + 1}",
+                                                modifier = Modifier.padding(
+                                                    horizontal = 16.dp,
+                                                    vertical = 8.dp
+                                                ),
+                                                color = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                style = MaterialTheme.typography.labelLarge.copy(
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Spacer(Modifier.height(12.dp))
+
+                                val currentPitchSlots =
+                                    stadiums.getOrNull(selectedTabIndex)?.slots ?: emptyList()
+                                if (currentPitchSlots.isEmpty()) {
+                                    Text(
+                                        "Bu kunda slot yo'q",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                } else {
+                                    val slotsNeeded = slotsNeededForDuration(durationMins)
+                                    SlotRow(
+                                        slots = currentPitchSlots,
+                                        pitchIndex = selectedTabIndex,
+                                        selectedPitchIndex = state.selectedPitchIndex,
+                                        selectedStartIndex = state.selectedStartIndex,
+                                        slotsPerBooking = slotsNeeded,
+                                        durationMins = durationMins,
+                                        now = now,
+                                        tz = tz,
+                                        onSelectStart = { idx ->
+                                            viewModel.handleEvent(
+                                                StadiumDetailsContract.Event.SelectSlotSelection(
+                                                    selectedTabIndex,
+                                                    idx
+                                                )
+                                            )
+                                        },
+                                        onClear = {
+                                            viewModel.handleEvent(StadiumDetailsContract.Event.ClearSelection)
+                                        }
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    "Ma'lumot mavjud emas",
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         } else {
-                            Text("Ma'lumot mavjud emas", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.height(12.dp))
+                            Surface(
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.Info,
+                                        null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(Modifier.width(12.dp))
+                                    Text(
+                                        "Bu stadion uchun onlayn bron mavjud emas. Iltimos, telefon orqali bog'laning.",
+                                        fontSize = 14.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
                         }
 
                         Spacer(Modifier.height(24.dp))
@@ -502,27 +612,36 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                         Spacer(Modifier.height(32.dp))
 
                         // Add Pitch Button
-                        Button(
-                            onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.ShowAddPitchDialog) },
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
-                            shape = RoundedCornerShape(16.dp),
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Pitch qo'shish", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                        }
+                        if (canEdit) {
+                            Button(
+                                onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.ShowAddPitchDialog) },
+                                modifier = Modifier.fillMaxWidth().height(56.dp),
+                                shape = RoundedCornerShape(16.dp),
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Pitch qo'shish", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            }
 
-                        Spacer(Modifier.height(12.dp))
+                            Spacer(Modifier.height(12.dp))
 
-                        OutlinedButton(
-                            onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.EditClick) },
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                        ) {
-                            Icon(Icons.Default.Edit, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Stadionni tahrirlash", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            OutlinedButton(
+                                onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.EditClick) },
+                                modifier = Modifier.fillMaxWidth().height(56.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.primary
+                                ),
+                            ) {
+                                Icon(Icons.Default.Edit, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    "Stadionni tahrirlash",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                         Spacer(Modifier.height(80.dp))
                     }

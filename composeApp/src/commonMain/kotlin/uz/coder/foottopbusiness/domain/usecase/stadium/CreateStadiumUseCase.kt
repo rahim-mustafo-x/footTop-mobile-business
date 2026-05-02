@@ -15,6 +15,8 @@ data class CreateStadiumUseCase(private val stadiumRepository: StadiumRepository
         imageUrl: String,
         regionId: Int,
         districtId: Int,
+        ownerId: Int? = null,
+        phone: String? = null,
     ) = stadiumRepository.createStadium(
         name = name,
         description = description,
@@ -27,5 +29,7 @@ data class CreateStadiumUseCase(private val stadiumRepository: StadiumRepository
         imageUrl = imageUrl,
         regionId = regionId,
         districtId = districtId,
+        ownerId = ownerId,
+        phone = phone
     )
 }

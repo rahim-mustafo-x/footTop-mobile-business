@@ -3,8 +3,10 @@ package uz.coder.foottopbusiness.presentation.main.stadium.addpitch
 import uz.coder.foottopbusiness.core.mvi.MviEffect
 import uz.coder.foottopbusiness.core.mvi.MviEvent
 import uz.coder.foottopbusiness.core.mvi.MviState
+import uz.coder.foottopbusiness.data.network.dto.UserDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.RegionDto
+import uz.coder.foottopbusiness.domain.model.UserRole
 
 enum class StadiumType(val label: String) {
     FOOTBALL("Football"),
@@ -20,6 +22,7 @@ enum class StadiumDuration(val label: String) {
 sealed interface AddPitchContract {
     data class State(
         val name: String = "",
+        val phone: String = "",
         val description: String = "",
         val type: StadiumType = StadiumType.FOOTBALL,
         val duration: StadiumDuration = StadiumDuration.SIXTY,
@@ -35,6 +38,11 @@ sealed interface AddPitchContract {
         val selectedDistrict: DistrictDto? = null,
         val showRegionDropdown: Boolean = false,
         val showDistrictDropdown: Boolean = false,
+        // owners
+        val owners: List<UserDto> = emptyList(),
+        val selectedOwner: UserDto? = null,
+        val showOwnerDropdown: Boolean = false,
+        val userRole: UserRole = UserRole.UNKNOWN,
         // dropdowns
         val showTypeDropdown: Boolean = false,
         val showDurationDropdown: Boolean = false,
@@ -49,6 +57,7 @@ sealed interface AddPitchContract {
 
     sealed interface Event : MviEvent {
         data class Name(val value: String) : Event
+        data class Phone(val value: String) : Event
         data class Description(val value: String) : Event
         data class Type(val value: StadiumType) : Event
         data class Duration(val value: StadiumDuration) : Event
@@ -59,8 +68,10 @@ sealed interface AddPitchContract {
         data class ImageUrl(val value: String) : Event
         data class SelectRegion(val region: RegionDto) : Event
         data class SelectDistrict(val district: DistrictDto) : Event
+        data class SelectOwner(val owner: UserDto) : Event
         data class ShowRegionDropdown(val show: Boolean) : Event
         data class ShowDistrictDropdown(val show: Boolean) : Event
+        data class ShowOwnerDropdown(val show: Boolean) : Event
         data class ShowTypeDropdown(val show: Boolean) : Event
         data class ShowDurationDropdown(val show: Boolean) : Event
         object Save : Event

@@ -77,7 +77,6 @@ import uz.coder.foottopbusiness.core.platform.exitApp
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.domain.model.UserRole
-import uz.coder.foottopbusiness.presentation.main.components.UserCardItem
 import uz.coder.foottopbusiness.presentation.main.home.history.HistoryScreen
 import uz.coder.foottopbusiness.presentation.main.reports.ReportItem
 import uz.coder.foottopbusiness.presentation.main.settings.SettingsVoyager
@@ -192,12 +191,12 @@ fun HomeScreen(
                                 )
                             }
 
-                            UserRole.OWNER, UserRole.COACH -> {
+                            UserRole.OWNER -> {
                                 OwnerHomeTab(
                                     state = state,
                                     onAddStadium = { navigator.push(AddPitchVoyager) },
                                     onAddTournament = { navigator.push(TournamentsVoyager) },
-                                    onAddCoach = { navigator.push(uz.coder.foottopbusiness.presentation.main.coaches.create.CoachCreateScreen()) },
+                                    onAddCoach = { /* navigator.push(uz.coder.foottopbusiness.presentation.main.coaches.create.CoachCreateScreen()) */ },
                                     onProfileClick = { navigator.push(SettingsVoyager) },
                                     onNotificationClick = { navigator.push(SendNotificationVoyager) }
                                 )
@@ -256,8 +255,7 @@ private fun HomeTab(
                 QuickActionsGrid(
                     onAddStadium = onAddStadium,
                     onAddUser = onAddUser,
-                    onAddTournament = onAddTournament,
-                    onAddCoach = null
+                    onAddTournament = onAddTournament
                 )
 
                 Spacer(Modifier.height(40.dp))
@@ -367,8 +365,7 @@ private fun OwnerHomeTab(
                 QuickActionsGrid(
                     onAddStadium = onAddStadium,
                     onAddUser = null,
-                    onAddTournament = onAddTournament,
-                    onAddCoach = onAddCoach
+                    onAddTournament = onAddTournament
                 )
 
                 Spacer(Modifier.height(24.dp))
@@ -386,7 +383,7 @@ private fun OwnerHomeTab(
                 
                 Spacer(Modifier.height(24.dp))
 
-                if (state.isLoadingCoaches) {
+                /* if (state.isLoadingCoaches) {
                     Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                     }
@@ -403,7 +400,7 @@ private fun OwnerHomeTab(
                             )
                         }
                     }
-                }
+                } */
             }
         }
     }
@@ -598,8 +595,7 @@ private fun StatCard(
 private fun QuickActionsGrid(
     onAddStadium: () -> Unit,
     onAddUser: (() -> Unit)?,
-    onAddTournament: () -> Unit,
-    onAddCoach: (() -> Unit)?
+    onAddTournament: () -> Unit
 ) {
     val primary = MaterialTheme.colorScheme.primary
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -607,19 +603,13 @@ private fun QuickActionsGrid(
             QuickActionItem("Stadion qo'sh", Icons.Default.Home, primary, Modifier.weight(1f), onAddStadium)
             if (onAddUser != null) {
                 QuickActionItem("Xodim qo'shish", Icons.Default.AddCircle, primary, Modifier.weight(1f), onAddUser)
-            } else if (onAddCoach != null) {
-                QuickActionItem("Coach qo'sh", Icons.Default.Person, primary, Modifier.weight(1f), onAddCoach)
             } else {
                 Spacer(Modifier.weight(1f))
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             QuickActionItem("Turnir yarat", Icons.Default.Add, primary, Modifier.weight(1f), onAddTournament)
-            if (onAddUser != null && onAddCoach != null) {
-                QuickActionItem("Coach qo'sh", Icons.Default.Person, primary, Modifier.weight(1f), onAddCoach)
-            } else {
-                Spacer(Modifier.weight(1f))
-            }
+            Spacer(Modifier.weight(1f))
         }
     }
 }

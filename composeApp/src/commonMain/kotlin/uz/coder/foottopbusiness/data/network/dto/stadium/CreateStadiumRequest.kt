@@ -7,7 +7,8 @@ import uz.coder.foottopbusiness.core.Serializable as KmpSerializable
 @Serializable
 data class CreateStadiumRequest(
     @SerialName("name") val name: String,
-    @SerialName("ownerId") val ownerId: Int,
+    @SerialName("phone") val phone: String? = null,
+    @SerialName("ownerId") val ownerId: Int? = null,
     @SerialName("regionId") val regionId: Int,
     @SerialName("districtId") val districtId: Int,
     @SerialName("description") val description: String,

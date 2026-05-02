@@ -7,11 +7,12 @@ import kotlinx.serialization.Serializable
 data class TournamentRequestDto(
     @SerialName("name") val name: String,
     @SerialName("organizerId") val organizerId: Long,
+    @SerialName("districtId") val districtId: Long? = null,
     @SerialName("startDate") val startDate: String,       // "yyyy-MM-dd"
     @SerialName("endDate") val endDate: String,           // "yyyy-MM-dd"
     @SerialName("sportType") val sportType: String = "FOOTBALL",
     @SerialName("maxTeams") val maxTeams: Int,
-    @SerialName("entryFee") val entryFee: Double = 0.0,
+    @SerialName("entryFee") val entryFee: Long = 0,
     @SerialName("status") val status: String = "UPCOMING",
     @SerialName("address") val address: String? = null,
     @SerialName("startTime") val startTime: String? = null, // "HH:mm"

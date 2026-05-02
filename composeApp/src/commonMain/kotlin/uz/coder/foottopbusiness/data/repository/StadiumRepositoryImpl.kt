@@ -39,12 +39,12 @@ class StadiumRepositoryImpl(
     override fun createStadium(
         name: String, description: String, type: String, duration: String,
         capacity: Int, pricePerHour: Int, openTime: String, closeTime: String,
-        imageUrl: String, regionId: Int, districtId: Int,
+        imageUrl: String, regionId: Int, districtId: Int, ownerId: Int?, phone: String?,
     ): Flow<StadiumResponse> = flow {
-        val ownerId = preferencesManager.userId.first()
+        val finalOwnerId = ownerId ?: preferencesManager.userId.first().takeIf { it != 0 }
         val response = stadiumApiService.createStadium(
             request = CreateStadiumRequest(
-                name = name, ownerId = ownerId, regionId = regionId, districtId = districtId,
+                name = name, phone = phone, ownerId = finalOwnerId, regionId = regionId, districtId = districtId,
                 description = description, location = LocationDto(), type = type, duration = duration,
                 capacity = capacity, pricePerHour = pricePerHour,
                 images = if (imageUrl.isNotBlank()) listOf(ImageDto(imageUrl)) else emptyList(),
@@ -78,13 +78,14 @@ class StadiumRepositoryImpl(
         imageUrl: String,
         regionId: Int,
         districtId: Int,
-        isActive: Boolean
+        isActive: Boolean,
+        ownerId: Int?,
+        phone: String?,
     ): Flow<StadiumResponse> = flow {
-        val ownerId = preferencesManager.userId.first()
         val response = stadiumApiService.updateStadium(
             id = id.toLong(),
             request = CreateStadiumRequest(
-                name = name, ownerId = ownerId, regionId = regionId, districtId = districtId,
+                name = name, phone = phone, ownerId = ownerId, regionId = regionId, districtId = districtId,
                 description = description, location = LocationDto(), type = type, duration = duration,
                 capacity = capacity, pricePerHour = pricePerHour,
                 images = if (imageUrl.isNotBlank()) listOf(ImageDto(imageUrl)) else emptyList(),
@@ -97,6 +98,8 @@ class StadiumRepositoryImpl(
              StadiumResponse(
                  id = id,
                  name = name,
+                 phone = phone,
+                 ownerId = ownerId,
                  description = description,
                  type = type,
                  duration = duration,

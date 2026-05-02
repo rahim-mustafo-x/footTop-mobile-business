@@ -10,4 +10,6 @@ data class CoachRequestDto(
     @SerialName("experienceYears") val experienceYears: Int,
     @SerialName("hourlyRate") val hourlyRate: Double,
     @SerialName("availability") val availability: String? = null,
+    @SerialName("reviews") val reviews: String? = null,
+    @SerialName("duration") val duration: String? = null, // SIXTY, NINETY, ONE_HUNDRED_TWENTY
 )

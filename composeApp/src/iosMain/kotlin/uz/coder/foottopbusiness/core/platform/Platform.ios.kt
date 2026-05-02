@@ -41,3 +41,10 @@ actual fun openFile(path: String) {
     // In a real app, you might use UIDocumentInteractionController
 }
 
+actual fun makePhoneCall(phoneNumber: String) {
+    val url = platform.Foundation.NSURL(string = "tel:$phoneNumber")
+    if (UIApplication.sharedApplication.canOpenURL(url)) {
+        UIApplication.sharedApplication.openURL(url)
+    }
+}
+

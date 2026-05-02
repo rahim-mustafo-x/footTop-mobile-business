@@ -104,9 +104,9 @@ fun MainScreen() {
                         ) {
                             TabNavigationItem(HomeTab, if (currentRole == UserRole.OWNER) "Bosh" else "Panel")
                             TabNavigationItem(StadiumTab, if (currentRole == UserRole.OWNER) "Jadval" else "Stadion")
-                            if (isAdminOrOwner) {
+                            /* if (isAdminOrOwner) {
                                 TabNavigationItem(CoachesTab, if (currentRole == UserRole.OWNER) "Coachlar" else "Rollar")
-                            }
+                            } */
                             if (isAdminOrOwner) {
                                 TabNavigationItem(ReportsTab, "Daromad")
                             }
@@ -117,9 +117,9 @@ fun MainScreen() {
                 Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
                     CurrentTabContent(HomeTab)
                     CurrentTabContent(StadiumTab)
-                    if (isAdminOrOwner) {
+                    /* if (isAdminOrOwner) {
                         CurrentTabContent(CoachesTab)
-                    }
+                    } */
                     if (isAdminOrOwner) {
                         CurrentTabContent(ReportsTab)
                     }

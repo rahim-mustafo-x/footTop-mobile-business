@@ -68,3 +68,11 @@ actual fun openFile(path: String) {
     }
     context.startActivity(intent)
 }
+
+actual fun makePhoneCall(phoneNumber: String) {
+    val context = ContextProvider.getContext()
+    val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phoneNumber")).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    context.startActivity(intent)
+}
