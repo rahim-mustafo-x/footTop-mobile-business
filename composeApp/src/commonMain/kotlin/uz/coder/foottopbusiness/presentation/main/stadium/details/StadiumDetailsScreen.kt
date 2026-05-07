@@ -94,6 +94,8 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.toInstant
 import uz.coder.foottopbusiness.core.formatToTime
+import uz.coder.foottopbusiness.core.localization.ErrorMapper
+import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.platform.makePhoneCall
 import uz.coder.foottopbusiness.data.network.dto.stadium.SlotDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
@@ -149,6 +151,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
     val snackbarHostState = remember { SnackbarHostState() }
     val tz = TimeZone.currentSystemDefault()
     val now = remember { kotlin.time.Clock.System.now() }
+    val strings = Localization.current
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
@@ -158,7 +161,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     navigator.push(EditStadiumVoyager(effect.stadium))
                 }
                 is StadiumDetailsContract.Effect.ShowToast -> {
-                    snackbarHostState.showSnackbar(effect.message)
+                    snackbarHostState.showSnackbar(ErrorMapper.map(effect.message, strings))
                 }
                 is StadiumDetailsContract.Effect.ShowBookingResult -> {
                     // This is handled by showBookingResultDialog in state
@@ -170,6 +173,10 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
     // Auto-selection logic
     var hasAutoSelected by remember { mutableStateOf(false) }
     val durationMins = durationMinutesKey(state.selectedDurationKey)
+
+    LaunchedEffect(state.selectedDate, state.selectedDurationKey) {
+        hasAutoSelected = false
+    }
 
     LaunchedEffect(stadiums, state.selectedDate, durationMins) {
         if (state.selectedPitchIndex == null && !hasAutoSelected && stadiums.isNotEmpty()) {
@@ -202,7 +209,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(stadium?.name ?: "Stadion ma'lumotlari", fontWeight = FontWeight.Bold) },
+                title = { Text(stadium?.name ?: strings.stadiumInfo, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.BackClick) }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -270,7 +277,10 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     val endSlot = currentSlots.getOrNull(startIdx + slotsNeeded - 1)
                     
                     val startTimeStr = startTime?.let { "${it.hour.toString().padStart(2, '0')}:${it.minute.toString().padStart(2, '0')}" } ?: ""
-                    val endTimeStr = endSlot?.end?.formatToTime() ?: ""
+                    val endTimeStr = selectedSlot?.let { 
+                        val endSlot = currentSlots.getOrNull(startIdx + slotsNeeded - 1)
+                        endSlot?.start?.formatToTime() 
+                    } ?: ""
 
                     Surface(
                         modifier = Modifier
@@ -285,11 +295,12 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                         ) {
                             Button(
                                 onClick = {
+                                    val endSlot = currentSlots.getOrNull(startIdx + slotsNeeded - 1)
                                     viewModel.handleEvent(
                                         StadiumDetailsContract.Event.CreateBooking(
                                             stadiumId = currentStadium.id ?: 0,
                                             startTime = selectedSlot?.start ?: "",
-                                            endTime = endSlot?.end ?: "",
+                                            endTime = endSlot?.start ?: "",
                                             price = totalPrice
                                         )
                                     )
@@ -301,7 +312,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                     .height(60.dp)
                             ) {
                                 Text(
-                                    text = "Bron qilish $startTimeStr – $endTimeStr",
+                                    text = "${strings.bookNow} $startTimeStr – $endTimeStr",
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                                 )
                             }
@@ -379,7 +390,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 val statusColor = if (stadium.isActive == true) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurfaceVariant
                                 Text(
-                                    text = if (stadium.isActive == true) "Faol" else "Nofaol",
+                                    text = if (stadium.isActive == true) strings.active else strings.inactive,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = statusColor
@@ -404,28 +415,28 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             InfoCard(
                                 icon = Icons.Default.Schedule,
-                                title = "Ish vaqti",
+                                title = strings.workingHours,
                                 subtitle = "${stadium.openTime.formatToTime()} - ${stadium.closeTime.formatToTime()}",
                                 modifier = Modifier.weight(1f)
                             )
                             InfoCard(
                                 icon = Icons.Default.Payments,
-                                title = "Narx",
-                                subtitle = "${stadium.pricePerHour?.toInt() ?: 0} so'm/soat",
+                                title = strings.price,
+                                subtitle = "${stadium.pricePerHour?.toInt() ?: 0} ${strings.uzsPerHour}",
                                 modifier = Modifier.weight(1f)
                             )
                         }
 
                         if (!isOwnerless) {
                             Spacer(Modifier.height(24.dp))
-                            SectionTitle("Kunni tanlang")
+                            SectionTitle(strings.selectDay)
                             Spacer(Modifier.height(10.dp))
                             DaySelector(state.selectedDate) { newDate ->
                                 viewModel.handleEvent(StadiumDetailsContract.Event.SelectDate(newDate))
                             }
 
                             Spacer(Modifier.height(24.dp))
-                            SectionTitle("Davomiylik")
+                            SectionTitle(strings.duration)
                             Spacer(Modifier.height(10.dp))
                             DurationSelector(state.selectedDurationKey) { key ->
                                 viewModel.handleEvent(StadiumDetailsContract.Event.ClearSelection)
@@ -433,7 +444,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                             }
 
                             Spacer(Modifier.height(24.dp))
-                            SectionTitle("Bo'sh vaqtlar")
+                            SectionTitle(strings.freeSlots)
                             Spacer(Modifier.height(12.dp))
 
                             if (state.isSlotsLoading) {
@@ -479,7 +490,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                         )
                                         Spacer(Modifier.width(8.dp))
                                         Text(
-                                            text = "Eng yaqin bo'sh vaqt: ",
+                                            text = "${strings.nearestSlot}: ",
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
@@ -519,7 +530,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                             color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                                         ) {
                                             Text(
-                                                text = "Maydon ${index + 1}",
+                                                text = "${strings.addPitch} ${index + 1}",
                                                 modifier = Modifier.padding(
                                                     horizontal = 16.dp,
                                                     vertical = 8.dp
@@ -539,7 +550,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                     stadiums.getOrNull(selectedTabIndex)?.slots ?: emptyList()
                                 if (currentPitchSlots.isEmpty()) {
                                     Text(
-                                        "Bu kunda slot yo'q",
+                                        strings.noSlotsToday,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 } else {
@@ -568,7 +579,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                 }
                             } else {
                                 Text(
-                                    "Ma'lumot mavjud emas",
+                                    strings.infoNotAvailable,
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -591,7 +602,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                     )
                                     Spacer(Modifier.width(12.dp))
                                     Text(
-                                        "Bu stadion uchun onlayn bron mavjud emas. Iltimos, telefon orqali bog'laning.",
+                                        strings.noAccount + strings.contactAdmin, // Placeholder for "online booking not available"
                                         fontSize = 14.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -600,10 +611,10 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                         }
 
                         Spacer(Modifier.height(24.dp))
-                        SectionTitle("Tavsif")
+                        SectionTitle(strings.description)
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            text = stadium.description ?: "Tavsif mavjud emas.",
+                            text = stadium.description ?: strings.noDataYet,
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 20.sp
@@ -620,7 +631,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                             ) {
                                 Icon(Icons.Default.Add, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
-                                Text("Pitch qo'shish", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                Text(strings.addPitch, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                             }
 
                             Spacer(Modifier.height(12.dp))
@@ -637,7 +648,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                 Icon(Icons.Default.Edit, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
                                 Text(
-                                    "Stadionni tahrirlash",
+                                    strings.editStadium,
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -685,13 +696,13 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
 
         AlertDialog(
             onDismissRequest = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissAddPitchDialog) },
-            title = { Text("Pitch qo'shish", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
+            title = { Text(strings.addPitch, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(
                         value = state.pitchName,
                         onValueChange = { viewModel.handleEvent(StadiumDetailsContract.Event.PitchNameChanged(it)) },
-                        label = { Text("Pitch nomi") },
+                        label = { Text(strings.pitchName) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
@@ -699,7 +710,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     OutlinedTextField(
                         value = state.pitchStartTime,
                         onValueChange = { },
-                        label = { Text("Boshlanish vaqti") },
+                        label = { Text(strings.openTime) },
                         modifier = Modifier.fillMaxWidth().clickable { showStartTimePicker = !showStartTimePicker },
                         enabled = false,
                         colors = OutlinedTextFieldDefaults.colors(
@@ -712,7 +723,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     OutlinedTextField(
                         value = state.pitchEndTime,
                         onValueChange = { },
-                        label = { Text("Tugash vaqti") },
+                        label = { Text(strings.closeTime) },
                         modifier = Modifier.fillMaxWidth().clickable { showEndTimePicker = true },
                         enabled = false,
                         colors = OutlinedTextFieldDefaults.colors(
@@ -725,12 +736,12 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
             },
             confirmButton = {
                 TextButton(onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.SavePitch) }) {
-                    Text("Saqlash", color = MaterialTheme.colorScheme.primary)
+                    Text(strings.save, color = MaterialTheme.colorScheme.primary)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissAddPitchDialog) }) {
-                    Text("Bekor qilish")
+                    Text(strings.cancel)
                 }
             }
         )
@@ -753,6 +764,7 @@ fun BookingResultDialog(message: String, isSuccess: Boolean, onDismiss: () -> Un
     val iconBgColor = if (isSuccess) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
     val iconColor = if (isSuccess) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
     val buttonColor = if (isSuccess) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+    val strings = Localization.current
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -781,7 +793,7 @@ fun BookingResultDialog(message: String, isSuccess: Boolean, onDismiss: () -> Un
             }
             Spacer(Modifier.height(20.dp))
             Text(
-                text = if (isSuccess) "Muvaffaqiyatli!" else "Xatolik yuz berdi",
+                text = if (isSuccess) strings.success + "!" else strings.error,
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 color = iconColor
             )
@@ -801,7 +813,7 @@ fun BookingResultDialog(message: String, isSuccess: Boolean, onDismiss: () -> Un
                 colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
             ) {
                 Text(
-                    if (isSuccess) "Tushundim" else "Yopish",
+                    if (isSuccess) strings.understand else strings.back,
                     color = MaterialTheme.colorScheme.onPrimary,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                 )
@@ -824,6 +836,7 @@ fun SlotRow(
     onClear: () -> Unit
 ) {
     val isSelectedPitch = selectedPitchIndex == pitchIndex
+    val strings = Localization.current
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -833,9 +846,9 @@ fun SlotRow(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            LegendDot(MaterialTheme.colorScheme.primary, "Bo'sh")
-            LegendDot(MaterialTheme.colorScheme.error, "Band")
-            LegendDot(MaterialTheme.colorScheme.outline, "O'tgan")
+            LegendDot(MaterialTheme.colorScheme.primary, strings.free)
+            LegendDot(MaterialTheme.colorScheme.error, strings.booked)
+            LegendDot(MaterialTheme.colorScheme.outline, strings.past)
         }
 
         LazyVerticalGrid(
@@ -859,7 +872,7 @@ fun SlotRow(
 
                 val cardColor = when {
                     isStart || isInRange -> MaterialTheme.colorScheme.primary
-                    isBooked -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f)
+                    isBooked -> Color(0xFFEF5350)
                     isExpired -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
                     else -> MaterialTheme.colorScheme.surface
                 }
@@ -908,10 +921,10 @@ fun SlotRow(
                         )
                         val statusLabel = when {
                             isStart -> "Start"
-                            isInRange -> "Tanlangan"
-                            isBooked -> "Band"
-                            isExpired -> "O'tgan"
-                            else -> "Bo'sh"
+                            isInRange -> strings.selected
+                            isBooked -> strings.booked
+                            isExpired -> strings.past
+                            else -> strings.free
                         }
                         Text(
                             text = statusLabel,

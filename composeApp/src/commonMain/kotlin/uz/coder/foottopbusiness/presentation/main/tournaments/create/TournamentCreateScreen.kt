@@ -77,6 +77,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
+import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.visualTransformation.AmountTransformation
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsContract
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsViewModel
@@ -89,6 +90,7 @@ class TournamentCreateScreen : Screen {
         val navigator = LocalNavigator.currentOrThrow
         val viewModel = koinInject<TournamentsViewModel>()
         val state by viewModel.state.collectAsState()
+        val strings = Localization.current
 
         var name by remember { mutableStateOf("") }
         var startDate by remember { mutableStateOf("") }
@@ -115,10 +117,10 @@ class TournamentCreateScreen : Screen {
                             startDate = "${date.day.toString().padStart(2, '0')}.${date.month.number.toString().padStart(2, '0')}.${date.year}"
                         }
                         showStartDatePicker = !showStartDatePicker
-                    }) { Text("Tanlash") }
+                    }) { Text(strings.save) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showStartDatePicker = !showStartDatePicker }) { Text("Bekor qilish") }
+                    TextButton(onClick = { showStartDatePicker = !showStartDatePicker }) { Text(strings.cancel) }
                 }
             ) {
                 DatePicker(state = datePickerState)
@@ -136,10 +138,10 @@ class TournamentCreateScreen : Screen {
                             endDate = "${date.day.toString().padStart(2, '0')}.${date.month.number.toString().padStart(2, '0')}.${date.year}"
                         }
                         showEndDatePicker = !showEndDatePicker
-                    }) { Text("Tanlash") }
+                    }) { Text(strings.save) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showEndDatePicker = !showEndDatePicker }) { Text("Bekor qilish") }
+                    TextButton(onClick = { showEndDatePicker = !showEndDatePicker }) { Text(strings.cancel) }
                 }
             ) {
                 DatePicker(state = datePickerState)
@@ -156,10 +158,10 @@ class TournamentCreateScreen : Screen {
                         val m = timePickerState.minute.toString().padStart(2, '0')
                         startTime = "$h:$m"
                         showStartTimePicker = !showStartTimePicker
-                    }) { Text("Tanlash") }
+                    }) { Text(strings.save) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showStartTimePicker = !showStartTimePicker }) { Text("Bekor qilish") }
+                    TextButton(onClick = { showStartTimePicker = !showStartTimePicker }) { Text(strings.cancel) }
                 }
             ) {
                 TimePicker(state = timePickerState)
@@ -176,10 +178,10 @@ class TournamentCreateScreen : Screen {
                         val m = timePickerState.minute.toString().padStart(2, '0')
                         endTime = "$h:$m"
                         showEndTimePicker = !showEndTimePicker
-                    }) { Text("Tanlash") }
+                    }) { Text(strings.save) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showEndTimePicker = !showEndTimePicker }) { Text("Bekor qilish") }
+                    TextButton(onClick = { showEndTimePicker = !showEndTimePicker }) { Text(strings.cancel) }
                 }
             ) {
                 TimePicker(state = timePickerState)
@@ -226,13 +228,13 @@ class TournamentCreateScreen : Screen {
                         Spacer(Modifier.width(16.dp))
                         Column {
                             Text(
-                                "Turnir yaratish",
+                                strings.createTournament,
                                 color = MaterialTheme.colorScheme.onPrimary,
                                 fontSize = 24.sp,
                                 fontWeight = FontWeight.Black
                             )
                             Text(
-                                "Yangi musobaqa tafsilotlari",
+                                strings.technicalInfo,
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium
@@ -251,32 +253,32 @@ class TournamentCreateScreen : Screen {
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 // Info Card
-                CreateCard(title = "Asosiy ma'lumotlar", icon = Icons.Default.EmojiEvents) {
+                CreateCard(title = strings.management, icon = Icons.Default.EmojiEvents) {
                     TournamentInputField(
                         value = name,
                         onValueChange = { name = it },
-                        label = "Turnir nomi",
+                        label = strings.tournamentName,
                         icon = Icons.Default.Edit,
-                        placeholder = "Masalan: Kuzgi Kubok 2024"
+                        placeholder = strings.titleHint
                     )
 
                     TournamentInputField(
                         value = address,
                         onValueChange = { address = it },
-                        label = "Manzil",
+                        label = strings.location,
                         icon = Icons.Default.LocationOn,
-                        placeholder = "Stadion yoki joy nomi"
+                        placeholder = strings.location
                     )
                 }
 
                 // Date and Time Card
-                CreateCard(title = "Vaqt va Sanalar", icon = Icons.Default.CalendarToday) {
+                CreateCard(title = "${strings.tournamentDate} & ${strings.tournamentTime}", icon = Icons.Default.CalendarToday) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Box(modifier = Modifier.weight(1f).clickable { showStartDatePicker = true }) {
                             TournamentInputField(
                                 value = startDate,
                                 onValueChange = { },
-                                label = "Boshlanish",
+                                label = strings.active,
                                 icon = Icons.Default.CalendarMonth,
                                 enabled = false,
                                 placeholder = "KK.OO.YYYY"
@@ -286,7 +288,7 @@ class TournamentCreateScreen : Screen {
                             TournamentInputField(
                                 value = endDate,
                                 onValueChange = { },
-                                label = "Tugash",
+                                label = strings.inactive,
                                 icon = Icons.Default.CalendarMonth,
                                 enabled = false,
                                 placeholder = "KK.OO.YYYY"
@@ -299,7 +301,7 @@ class TournamentCreateScreen : Screen {
                             TournamentInputField(
                                 value = startTime,
                                 onValueChange = { },
-                                label = "Bosh. vaqti",
+                                label = strings.openTime,
                                 icon = Icons.Default.AccessTime,
                                 enabled = false,
                                 placeholder = "00:00"
@@ -309,7 +311,7 @@ class TournamentCreateScreen : Screen {
                             TournamentInputField(
                                 value = endTime,
                                 onValueChange = { },
-                                label = "Tugash vaqti",
+                                label = strings.closeTime,
                                 icon = Icons.Default.AccessTime,
                                 enabled = false,
                                 placeholder = "00:00"
@@ -319,12 +321,12 @@ class TournamentCreateScreen : Screen {
                 }
 
                 // Conditions Card
-                CreateCard(title = "Shartlar", icon = Icons.Default.Settings) {
+                CreateCard(title = strings.technicalInfo, icon = Icons.Default.Settings) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         TournamentInputField(
                             value = maxTeams,
                             onValueChange = { maxTeams = it.filter { c -> c.isDigit() } },
-                            label = "Jamoalar soni",
+                            label = strings.participants,
                             icon = Icons.Default.Groups,
                             keyboardType = KeyboardType.Number,
                             modifier = Modifier.weight(1f),
@@ -333,7 +335,7 @@ class TournamentCreateScreen : Screen {
                         TournamentInputField(
                             value = entryFee,
                             onValueChange = { entryFee = it.filter { c -> c.isDigit() || c == '.' } },
-                            label = "To'lov (so'm)",
+                            label = strings.entryFee,
                             icon = Icons.Default.Payments,
                             keyboardType = KeyboardType.Decimal,
                             modifier = Modifier.weight(1f),
@@ -397,7 +399,7 @@ class TournamentCreateScreen : Screen {
                     if (state.isCreating) {
                         CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                     } else {
-                        Text("TURNIRNI YARATISH", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+                        Text(strings.createTournament.uppercase(), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
                     }
                 }
                 

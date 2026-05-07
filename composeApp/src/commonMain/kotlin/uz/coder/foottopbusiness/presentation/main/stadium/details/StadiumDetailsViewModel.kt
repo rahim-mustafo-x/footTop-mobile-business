@@ -14,6 +14,10 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.toInstant
 
+import uz.coder.foottopbusiness.domain.usecase.booking.CreateBookingUseCase
+import uz.coder.foottopbusiness.data.network.dto.booking.BookingRequestDto
+import kotlinx.coroutines.flow.first
+
 fun durationMinutesKey(key: String): Int = when(key) {
     "SIXTY" -> 60
     "NINETY" -> 90
@@ -21,12 +25,13 @@ fun durationMinutesKey(key: String): Int = when(key) {
     else -> 60
 }
 
-fun slotsNeededForDuration(mins: Int): Int = mins / 30
+fun slotsNeededForDuration(mins: Int): Int = (mins / 30) + 1
 
 class StadiumDetailsViewModel(
     stadium: StadiumResponse,
     private val stadiumRepository: StadiumRepository,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val createBookingUseCase: CreateBookingUseCase
 ) : BaseViewModel<StadiumDetailsContract.State, StadiumDetailsContract.Effect, StadiumDetailsContract.Event>(
     initialState = StadiumDetailsContract.State(stadium = stadium)
 ) {
@@ -51,12 +56,7 @@ class StadiumDetailsViewModel(
         val currentStadium = state.value.stadium ?: return
         val now = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
         val dateStr = state.value.selectedDate ?: "${now.year}-${now.month.number.toString().padStart(2, '0')}-${now.day.toString().padStart(2, '0')}"
-        val duration = when(state.value.selectedDurationKey) {
-            "SIXTY" -> "01:00"
-            "NINETY" -> "01:30"
-            "ONE_HUNDRED_TWENTY" -> "02:00"
-            else -> "01:00"
-        }
+        val duration = state.value.selectedDurationKey
         
         executeAsync(
             onLoading = { updateState { copy(isLoading = true, isSlotsLoading = true) } },
@@ -162,9 +162,17 @@ class StadiumDetailsViewModel(
         updateState { copy(isBooking = true) }
         executeAsync(
             block = {
-                // In a real app, this would call a repository to create a booking
-                kotlinx.coroutines.delay(1000)
-                true
+                val userId = preferencesManager.userId.first().toLong()
+                val request = BookingRequestDto(
+                    userId = userId,
+                    stadiumId = event.stadiumId.toLong(),
+                    startTime = event.startTime,
+                    endTime = event.endTime,
+                    totalPrice = event.price,
+                    status = "PENDING",
+                    paymentMethod = "CASH"
+                )
+                createBookingUseCase(request).first()
             },
             onSuccess = {
                 updateState { 
@@ -193,13 +201,21 @@ class StadiumDetailsViewModel(
     }
 
     private fun bookSlot() {
+        val slot = state.value.selectedSlot ?: return
         updateState { copy(isBooking = true) }
         executeAsync(
             block = {
-                // In a real app, this would call a repository to create a booking or match
-                // For now, we simulate success after a delay
-                kotlinx.coroutines.delay(1000)
-                true
+                val userId = preferencesManager.userId.first().toLong()
+                val request = BookingRequestDto(
+                    userId = userId,
+                    stadiumId = state.value.stadium?.id?.toLong(),
+                    startTime = slot.start,
+                    endTime = slot.end,
+                    totalPrice = state.value.stadium?.pricePerHour,
+                    status = "PENDING",
+                    paymentMethod = "CASH"
+                )
+                createBookingUseCase(request).first()
             },
             onSuccess = {
                 updateState { copy(isBooking = false, showSlotActionDialog = false, selectedSlot = null) }
@@ -208,7 +224,7 @@ class StadiumDetailsViewModel(
             },
             onError = {
                 updateState { copy(isBooking = false) }
-                sendEffect(StadiumDetailsContract.Effect.ShowToast("Band qilishda xatolik yuz berdi"))
+                sendEffect(StadiumDetailsContract.Effect.ShowToast("Band qilishda xatolik yuz berdi: ${it.message}"))
             }
         )
     }

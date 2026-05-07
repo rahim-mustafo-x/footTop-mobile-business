@@ -57,6 +57,7 @@ import cafe.adriel.voyager.navigator.tab.TabOptions
 import org.koin.compose.koinInject
 import uz.coder.foottopbusiness.core.SessionManager
 import uz.coder.foottopbusiness.domain.model.UserRole
+import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.presentation.main.coaches.CoachesVoyager
 import uz.coder.foottopbusiness.presentation.main.home.HomeVoyager
 import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
@@ -87,6 +88,7 @@ fun MainScreen() {
 
     val currentRole = UserRole.valueOf(persistedRole)
     val isAdminOrOwner = currentRole == UserRole.SUPER_ADMIN || currentRole == UserRole.DISTRICT_ADMIN || currentRole == UserRole.OWNER
+    val strings = Localization.current
 
     CompositionLocalProvider(LocalBottomBarVisible provides bottomBarVisible) {
         TabNavigator(HomeTab) {
@@ -102,13 +104,13 @@ fun MainScreen() {
                             containerColor = MaterialTheme.colorScheme.surface,
                             tonalElevation = 8.dp
                         ) {
-                            TabNavigationItem(HomeTab, if (currentRole == UserRole.OWNER) "Bosh" else "Panel")
-                            TabNavigationItem(StadiumTab, if (currentRole == UserRole.OWNER) "Jadval" else "Stadion")
+                            TabNavigationItem(HomeTab, if (currentRole == UserRole.OWNER) strings.tabHome else strings.tabPanel)
+                            TabNavigationItem(StadiumTab, if (currentRole == UserRole.OWNER) strings.tabSchedule else strings.tabStadium)
                             /* if (isAdminOrOwner) {
-                                TabNavigationItem(CoachesTab, if (currentRole == UserRole.OWNER) "Coachlar" else "Rollar")
+                                TabNavigationItem(CoachesTab, if (currentRole == UserRole.OWNER) strings.tabCoaches else strings.tabRoles)
                             } */
                             if (isAdminOrOwner) {
-                                TabNavigationItem(ReportsTab, "Daromad")
+                                TabNavigationItem(ReportsTab, strings.tabRevenue)
                             }
                         }
                     }

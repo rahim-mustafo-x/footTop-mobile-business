@@ -43,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.platform.getPlatform
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -60,6 +61,7 @@ fun AboutAppScreen() {
     val navigator = LocalNavigator.currentOrThrow
     val primary = MaterialTheme.colorScheme.primary
     val platform = getPlatform()
+    val strings = Localization.current
 
     Scaffold(
         topBar = {
@@ -73,7 +75,7 @@ fun AboutAppScreen() {
                 IconButton(onClick = { navigator.pop() }) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
                 }
-                Text("Ilova haqida", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(strings.aboutApp, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
         }
     ) { padding ->
@@ -116,7 +118,7 @@ fun AboutAppScreen() {
             )
 
             Text(
-                "Versiya ${platform.version}",
+                "${strings.version} ${platform.version}",
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Medium
@@ -133,22 +135,22 @@ fun AboutAppScreen() {
             ) {
                 AboutFeatureItem(
                     icon = Icons.Default.Analytics,
-                    title = "To'liq Boshqaruv",
-                    description = "Stadioningizdagi barcha band qilingan vaqtlar va moliyaviy hisobotlarni bir joyda kuzatib boring.",
+                    title = strings.fullControl,
+                    description = strings.fullControlDesc,
                     color = Color(0xFF4CAF50)
                 )
 
                 AboutFeatureItem(
                     icon = Icons.Default.EmojiEvents,
-                    title = "Turnirlar Tizimi",
-                    description = "O'z turnirlaringizni tashkil qiling, jamoalarni boshqaring va futbol hamjamiyatini rivojlantiring.",
+                    title = strings.tournamentSystem,
+                    description = strings.tournamentSystemDesc,
                     color = Color(0xFFFF9800)
                 )
 
                 AboutFeatureItem(
                     icon = Icons.Default.SportsSoccer,
-                    title = "Oson Band Qilish",
-                    description = "Mijozlar uchun real vaqt rejimida bo'sh vaqtlarni ko'rish va band qilish imkoniyatini taqdim eting.",
+                    title = strings.easyBooking,
+                    description = strings.easyBookingDesc,
                     color = Color(0xFF2196F3)
                 )
             }
@@ -156,7 +158,7 @@ fun AboutAppScreen() {
             Spacer(Modifier.height(48.dp))
 
             Text(
-                "© 2026 FootTop Team.\nBarcha huquqlar himoyalangan.",
+                "© 2026 FootTop Team.\n${strings.allRightsReserved}",
                 textAlign = TextAlign.Center,
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),

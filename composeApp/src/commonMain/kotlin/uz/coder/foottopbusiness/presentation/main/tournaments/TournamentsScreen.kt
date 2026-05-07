@@ -75,6 +75,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import uz.coder.foottopbusiness.core.localization.ErrorMapper
+import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.presentation.main.tournaments.create.TournamentCreateScreen
 
@@ -83,12 +85,15 @@ import uz.coder.foottopbusiness.presentation.main.tournaments.create.TournamentC
 fun TournamentsScreen(viewModel: TournamentsViewModel) {
     val state by viewModel.state.collectAsState()
     val navigator = LocalNavigator.currentOrThrow
+    val strings = Localization.current
 
     LaunchedEffect(Unit) {
         viewModel.handleEvent(TournamentsContract.Event.Load)
         viewModel.effect.collect { effect ->
             when (effect) {
-                is TournamentsContract.Effect.ShowToast -> { /* snackbar yoki toast */ }
+                is TournamentsContract.Effect.ShowToast -> {
+                    // Show in snackbar or toast
+                }
             }
         }
     }
@@ -117,7 +122,7 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "Turnirlar",
+                        strings.tournaments,
                         color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
@@ -152,7 +157,7 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
                         value = "",
                         onValueChange = {},
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("Qidirish...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        placeholder = { Text("${strings.search}...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
@@ -205,7 +210,7 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
                 state.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(state.error ?: "", color = MaterialTheme.colorScheme.error)
-                        TextButton(onClick = { viewModel.handleEvent(TournamentsContract.Event.Load) }) { Text("Qayta urinish") }
+                        TextButton(onClick = { viewModel.handleEvent(TournamentsContract.Event.Load) }) { Text(strings.refresh) }
                     }
                 }
                 state.tournaments.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -213,7 +218,7 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
                         Icon(Icons.Default.DateRange, null, modifier = Modifier.size(64.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
                         Spacer(Modifier.height(8.dp))
-                        Text("Turnirlar yo'q", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(strings.noTournaments, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 else -> LazyColumn(
@@ -297,11 +302,12 @@ private fun TournamentCard(t: TournamentResponseDto, onClick: () -> Unit) {
 @Composable
 private fun TournamentDetailScreen(tournament: TournamentResponseDto, onBack: () -> Unit) {
     val scrollState = rememberScrollState()
+    val strings = Localization.current
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Turnir Tafsilotlari", fontWeight = FontWeight.Bold) },
+                title = { Text(strings.tournamentDetails, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
@@ -365,19 +371,19 @@ private fun TournamentDetailScreen(tournament: TournamentResponseDto, onBack: ()
                     ) {
                         QuickInfoItem(
                             icon = Icons.Default.CalendarMonth,
-                            label = "Sana",
+                            label = strings.tournamentDate,
                             value = tournament.startDate?.substringAfter("-") ?: "—",
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         QuickInfoItem(
                             icon = Icons.Default.Groups,
-                            label = "Jamoalar",
+                            label = strings.participants,
                             value = "${tournament.teamApplied ?: 0}/${tournament.maxTeams ?: 0}",
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         QuickInfoItem(
                             icon = Icons.Default.Payments,
-                            label = "To'lov",
+                            label = strings.entryFee,
                             value = "${tournament.entryFee?.toInt() ?: 0}",
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
@@ -391,22 +397,22 @@ private fun TournamentDetailScreen(tournament: TournamentResponseDto, onBack: ()
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    "Ma'lumotlar",
+                    strings.technicalInfo,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     modifier = Modifier.padding(start = 4.dp, top = 8.dp)
                 )
 
                 DetailInfoCard {
-                    DetailRowItem(Icons.Default.SportsSoccer, "Sport turi", tournament.sportType ?: "Futbol")
-                    DetailRowItem(Icons.Default.CalendarMonth, "Davomiyligi", "${tournament.startDate} — ${tournament.endDate}")
+                    DetailRowItem(Icons.Default.SportsSoccer, strings.sportType, tournament.sportType ?: strings.football)
+                    DetailRowItem(Icons.Default.CalendarMonth, strings.description, "${tournament.startDate} — ${tournament.endDate}")
                     if (!tournament.address.isNullOrBlank()) {
-                        DetailRowItem(Icons.Default.LocationOn, "Manzil", tournament.address)
+                        DetailRowItem(Icons.Default.LocationOn, strings.location, tournament.address)
                     }
                 }
                 if (!tournament.prizes.isNullOrBlank()) {
                     ExpandableInfoCard(
-                        title = "Mukofotlar",
+                        title = strings.prizeFund,
                         icon = Icons.Default.EmojiEvents,
                         content = tournament.prizes,
                         iconColor = Color(0xFFFFD700)
@@ -515,6 +521,7 @@ private fun ExpandableInfoCard(title: String, icon: ImageVector, content: String
 
 @Composable
 private fun StatusChip(status: String?) {
+    val strings = Localization.current
     val (bg, fg) = when (status) {
         "UPCOMING" -> MaterialTheme.colorScheme.secondary to MaterialTheme.colorScheme.onSecondary
         "ONGOING" -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
@@ -522,7 +529,7 @@ private fun StatusChip(status: String?) {
         else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
     }
     val label = when (status) {
-        "UPCOMING" -> "Kutilmoqda"; "ONGOING" -> "Davom etmoqda"; "FINISHED" -> "Tugagan"; else -> status ?: "—"
+        "UPCOMING" -> strings.upcoming; "ONGOING" -> strings.ongoing; "FINISHED" -> strings.finished; else -> status ?: "—"
     }
     Box(modifier = Modifier.background(bg, RoundedCornerShape(6.dp)).padding(horizontal = 8.dp, vertical = 4.dp)) {
         Text(label, fontSize = 11.sp, color = fg, fontWeight = FontWeight.Medium)

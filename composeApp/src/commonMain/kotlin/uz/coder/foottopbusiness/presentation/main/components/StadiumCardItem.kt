@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import uz.coder.foottopbusiness.core.localization.Localization
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,6 +34,7 @@ fun StadiumCardItem(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
+    val strings = Localization.current
     val statusColor = when {
         isActive -> Color(0xFF4CAF50)
         description?.contains("ta'mir", ignoreCase = true) == true -> Color(0xFFFF9800)
@@ -124,12 +126,12 @@ fun StadiumCardItem(
             ) {
                 InfoChip(
                     icon = Icons.Default.GridView,
-                    text = "$pitchCount maydon",
+                    text = "$pitchCount ${strings.fieldCount}",
                     modifier = Modifier.weight(1f)
                 )
                 InfoChip(
                     icon = Icons.Default.Payments,
-                    text = "${price.toInt()} so'm/s",
+                    text = "${price.toInt()} ${strings.uzsPerHour}",
                     modifier = Modifier.weight(1.2f)
                 )
             }
@@ -139,10 +141,11 @@ fun StadiumCardItem(
 
 @Composable
 private fun StatusBadge(isActive: Boolean, description: String?) {
+    val strings = Localization.current
     val statusText = when {
-        isActive -> "Aktiv"
-        description?.contains("ta'mir", ignoreCase = true) == true -> "Ta'mirda"
-        else -> "Yopiq"
+        isActive -> strings.active
+        description?.contains("ta'mir", ignoreCase = true) == true -> strings.underRepair
+        else -> strings.closed
     }
     
     val statusColor = when {

@@ -10,6 +10,7 @@ import uz.coder.foottopbusiness.domain.repository.*
 import uz.coder.foottopbusiness.domain.usecase.admin.CreateStaffUseCase
 import uz.coder.foottopbusiness.domain.usecase.admin.DashboardUseCase
 import uz.coder.foottopbusiness.domain.usecase.admin.WeeklyReportUseCase
+import uz.coder.foottopbusiness.domain.usecase.booking.CreateBookingUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.ChangePasswordUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.IsLoginInUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.LoginUseCase
@@ -67,6 +68,7 @@ val appModule = module {
     single { UserApiService(get()) }
     single { NotificationApiService(get()) }
     single { AdminApiService(get()) }
+    single { BookingApiService(get()) }
 
     // repositories
     single<AuthRepository> { AuthRepositoryImpl(get(), get(), get()) }
@@ -77,6 +79,7 @@ val appModule = module {
     single<UserRepository> { UserRepositoryImpl(get(), get()) }
     single<NotificationRepository> { NotificationRepositoryImpl(get()) }
     single<AdminRepository> { AdminRepositoryImpl(get()) }
+    single<BookingRepository> { BookingRepositoryImpl(get()) }
 
     // use-cases
     factory { LoginUseCase(get()) }
@@ -110,22 +113,23 @@ val appModule = module {
     factory { DashboardUseCase(get()) }
     factory { WeeklyReportUseCase(get()) }
     factory { CreateStaffUseCase(get()) }
+    factory { CreateBookingUseCase(get()) }
 
 
     // viewModels
     factory { SplashViewModel(get()) }
     factory { LoginViewModel(get(), get(), get(), get()) }
-    factory { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    factory { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { StadiumViewModel(get(), get(), get(), get()) }
     factory { AddPitchViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { (stadium: StadiumResponse) -> EditStadiumViewModel(stadium, get(), get(), get(), get(), get()) }
-    factory { (stadium: StadiumResponse) -> StadiumDetailsViewModel(stadium, get(), get()) }
-    factory { CoachesViewModel(get(), get()) }
+    factory { (stadium: StadiumResponse) -> StadiumDetailsViewModel(stadium, get(), get(), get()) }
+    factory { CoachesViewModel(get(), get(), get()) }
     factory { TournamentsViewModel(get(), get(), get()) }
     factory { SettingsViewModel(get(), get(), get()) }
     factory { EditProfileViewModel(get(), get()) }
     factory { SendNotificationViewModel(get()) }
-    factory { UserCreateViewModel(get(), get(), get(), get()) }
+    factory { UserCreateViewModel(get(), get(), get(), get(), get(), get()) }
 }
 
 expect fun platformModule(): Module

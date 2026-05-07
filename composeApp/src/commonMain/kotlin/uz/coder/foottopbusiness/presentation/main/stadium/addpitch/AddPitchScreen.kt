@@ -78,14 +78,18 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uz.coder.foottopbusiness.core.BackHandler
+import uz.coder.foottopbusiness.core.localization.ErrorMapper
+import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.log
 import uz.coder.foottopbusiness.core.visualTransformation.AmountTransformation
+import uz.coder.foottopbusiness.core.visualTransformation.PhoneTransformation
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsState()
     val hostState = remember { SnackbarHostState() }
+    val strings = Localization.current
 
     BackHandler { onBack() }
 
@@ -94,8 +98,9 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
             when (effect) {
                 AddPitchContract.Effect.NavigateBack -> onBack()
                 is AddPitchContract.Effect.ShowToast -> {
-                    log("AddPitch", "Effect message: ${effect.message}")
-                    hostState.showSnackbar(effect.message)
+                    val mappedMessage = ErrorMapper.map(effect.message, strings)
+                    log("AddPitch", "Effect message: $mappedMessage")
+                    hostState.showSnackbar(mappedMessage)
                 }
             }
         }
@@ -173,7 +178,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                         )
                     }
                     Text(
-                        "Yangi stadion",
+                        strings.newStadium,
                         color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
@@ -208,7 +213,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            "Manzil ma'lumotlari",
+                            strings.locationInfo,
                             color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
@@ -228,22 +233,25 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                     }
 
                     LabelAndField(
-                        "ANIQ MANZIL",
+                        strings.preciseAddress,
                         state.name,
-                        "Ko'cha, uy raqami",
+                        strings.addressPlaceholder,
                         icon = Icons.Default.Map
                     ) {
                         viewModel.handleEvent(AddPitchContract.Event.Name(it))
                     }
 
                     LabelAndField(
-                        "TELEFON RAQAM",
+                        strings.phoneNumber,
                         state.phone,
-                        "+998 90 123 45 67",
+                        "901234567",
                         keyboardType = KeyboardType.Phone,
-                        icon = Icons.Default.Phone
+                        icon = Icons.Default.Phone,
+                        visualTransformation = PhoneTransformation()
                     ) {
-                        viewModel.handleEvent(AddPitchContract.Event.Phone(it))
+                        if (it.length <= 9) {
+                            viewModel.handleEvent(AddPitchContract.Event.Phone(it))
+                        }
                     }
                 }
             }
@@ -267,7 +275,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                             )
                             Spacer(Modifier.width(8.dp))
                             Text(
-                                "Owner biriktirish",
+                                strings.assignOwner,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold
@@ -297,7 +305,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            "Texnik ma'lumotlar",
+                            strings.technicalInfo,
                             color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
@@ -305,7 +313,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                     }
 
                     LabelAndField(
-                        "TAVSIF (DESCRIPTION)",
+                        strings.description,
                         state.description,
                         "Stadion haqida qo'shimcha ma'lumot...",
                         singleLine = false,
@@ -320,7 +328,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                     ) {
                         Box(modifier = Modifier.weight(1f)) {
                             LabelAndField(
-                                "MAYDONLAR",
+                                strings.fieldCapacity,
                                 state.capacity,
                                 "3",
                                 KeyboardType.Number,
@@ -335,7 +343,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                     }
 
                     LabelAndField(
-                        "SOATLIK NARX (SO'M)",
+                        strings.hourlyPrice,
                         state.pricePerHour,
                         "50 000",
                         KeyboardType.Number,
@@ -365,7 +373,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            "Ish vaqti va Rasmlar",
+                            strings.workingHoursAndImages,
                             color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
@@ -374,7 +382,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
 
                     Column {
                         Text(
-                            "ISH VAQTI",
+                            strings.workingHours,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -438,7 +446,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                     ) {
                         Icon(Icons.Default.AddPhotoAlternate, null, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Rasm qo'shish", fontWeight = FontWeight.SemiBold)
+                        Text(strings.addPhoto, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -467,7 +475,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                 } else {
                     Icon(Icons.Default.Save, null)
                     Spacer(Modifier.width(8.dp))
-                    Text("SAQLASH", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+                    Text(strings.save.uppercase(), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
                 }
             }
         }
@@ -526,8 +534,9 @@ private fun RegionDropdown(
     state: AddPitchContract.State,
     viewModel: AddPitchViewModel
 ) {
+    val strings = Localization.current
     Column {
-        Text("VILOYAT", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(strings.chooseRegion.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(8.dp))
         ExposedDropdownMenuBox(
             expanded = state.showRegionDropdown,
@@ -535,7 +544,7 @@ private fun RegionDropdown(
             modifier = Modifier.fillMaxWidth()
         ) {
             OutlinedTextField(
-                value = state.selectedRegion?.name ?: "Tanlang",
+                value = state.selectedRegion?.name ?: strings.chooseRegion,
                 onValueChange = {},
                 readOnly = true,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
@@ -574,8 +583,9 @@ private fun DistrictDropdown(
     state: AddPitchContract.State,
     viewModel: AddPitchViewModel
 ) {
+    val strings = Localization.current
     Column {
-        Text("TUMAN/SHAHAR", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(strings.chooseDistrict.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(8.dp))
         ExposedDropdownMenuBox(
             expanded = state.showDistrictDropdown,
@@ -583,7 +593,7 @@ private fun DistrictDropdown(
             modifier = Modifier.fillMaxWidth()
         ) {
             OutlinedTextField(
-                value = state.selectedDistrict?.name ?: "Tanlang",
+                value = state.selectedDistrict?.name ?: strings.chooseDistrict,
                 onValueChange = {},
                 readOnly = true,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
@@ -622,8 +632,9 @@ private fun OwnerDropdown(
     state: AddPitchContract.State,
     viewModel: AddPitchViewModel
 ) {
+    val strings = Localization.current
     Column {
-        Text("OWNER TANLASH", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(strings.assignOwner.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(8.dp))
         ExposedDropdownMenuBox(
             expanded = state.showOwnerDropdown,
@@ -631,7 +642,7 @@ private fun OwnerDropdown(
             modifier = Modifier.fillMaxWidth()
         ) {
             OutlinedTextField(
-                value = state.selectedOwner?.fullName ?: state.selectedOwner?.username ?: "Tanlang (Ixtiyoriy)",
+                value = state.selectedOwner?.let { "${it.id} | ${it.fullName ?: it.username}" } ?: strings.chooseRegion, // Using chooseRegion as placeholder for Select
                 onValueChange = {},
                 readOnly = true,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
@@ -653,7 +664,9 @@ private fun OwnerDropdown(
             ) {
                 state.owners.forEach { owner ->
                     DropdownMenuItem(
-                        text = { Text(owner.fullName ?: owner.username ?: "") },
+                        text = { 
+                            Text("${owner.id} | ${owner.fullName ?: owner.username ?: ""}") 
+                        },
                         onClick = {
                             viewModel.handleEvent(AddPitchContract.Event.SelectOwner(owner))
                         }
@@ -670,8 +683,9 @@ private fun SportTypeDropdown(
     state: AddPitchContract.State,
     viewModel: AddPitchViewModel
 ) {
+    val strings = Localization.current
     Column {
-        Text("SPORT TURI", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(strings.sportType, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(8.dp))
         ExposedDropdownMenuBox(
             expanded = state.showTypeDropdown,
@@ -679,7 +693,7 @@ private fun SportTypeDropdown(
             modifier = Modifier.fillMaxWidth()
         ) {
             OutlinedTextField(
-                value = state.type.label,
+                value = when(state.type) { StadiumType.FOOTBALL -> strings.football; StadiumType.TENNIS -> strings.tennis },
                 onValueChange = {},
                 readOnly = true,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),

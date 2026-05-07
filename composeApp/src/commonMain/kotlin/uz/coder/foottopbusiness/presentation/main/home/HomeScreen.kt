@@ -77,6 +77,7 @@ import uz.coder.foottopbusiness.core.platform.exitApp
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.domain.model.UserRole
+import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.presentation.main.home.history.HistoryScreen
 import uz.coder.foottopbusiness.presentation.main.reports.ReportItem
 import uz.coder.foottopbusiness.presentation.main.settings.SettingsVoyager
@@ -184,7 +185,7 @@ fun HomeScreen(
                                 HomeTab(
                                     state = state,
                                     onAddStadium = { navigator.push(AddPitchVoyager) },
-                                    onAddUser = { navigator.push(uz.coder.foottopbusiness.presentation.main.home.user.UserCreateTypeScreen()) },
+                                    onAddUser = { navigator.push(uz.coder.foottopbusiness.presentation.main.home.user.UserCreateScreen()) },
                                     onAddTournament = { navigator.push(TournamentsVoyager) },
                                     onProfileClick = { navigator.push(SettingsVoyager) },
                                     onNotificationClick = { navigator.push(SendNotificationVoyager) }
@@ -196,7 +197,7 @@ fun HomeScreen(
                                     state = state,
                                     onAddStadium = { navigator.push(AddPitchVoyager) },
                                     onAddTournament = { navigator.push(TournamentsVoyager) },
-                                    onAddCoach = { /* navigator.push(uz.coder.foottopbusiness.presentation.main.coaches.create.CoachCreateScreen()) */ },
+                                    onAddCoach = { navigator.push(uz.coder.foottopbusiness.presentation.main.home.user.UserCreateScreen()) },
                                     onProfileClick = { navigator.push(SettingsVoyager) },
                                     onNotificationClick = { navigator.push(SendNotificationVoyager) }
                                 )
@@ -229,6 +230,7 @@ private fun HomeTab(
     onProfileClick: () -> Unit,
     onNotificationClick: () -> Unit
 ) {
+    val strings = Localization.current
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
         contentPadding = PaddingValues(bottom = 16.dp),
@@ -244,7 +246,7 @@ private fun HomeTab(
                 Spacer(Modifier.height(24.dp))
 
                 Text(
-                    "Boshqaruv",
+                    strings.management,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     color = MaterialTheme.colorScheme.onBackground
@@ -255,6 +257,7 @@ private fun HomeTab(
                 QuickActionsGrid(
                     onAddStadium = onAddStadium,
                     onAddUser = onAddUser,
+                    onAddCoach = null,
                     onAddTournament = onAddTournament
                 )
 
@@ -267,6 +270,7 @@ private fun HomeTab(
 @Composable
 private fun MalaebHeader(state: HomeContract.State, onProfileClick: () -> Unit, onNotificationClick: () -> Unit) {
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val strings = Localization.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -288,14 +292,14 @@ private fun MalaebHeader(state: HomeContract.State, onProfileClick: () -> Unit, 
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    if (state.isAdmin) "Tizim Boshqaruvi" else "Mening Stadionim",
+                    if (state.isAdmin) strings.systemManagement else strings.myStadium,
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
                 )
                 Text(
-                    if (state.isAdmin) "Xush kelibsiz!" else state.stadiums.firstOrNull()?.name ?: "FootTop",
+                    if (state.isAdmin) strings.welcome else state.stadiums.firstOrNull()?.name ?: "FootTop",
                     color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Black,
@@ -339,6 +343,7 @@ private fun OwnerHomeTab(
     onProfileClick: () -> Unit,
     onNotificationClick: () -> Unit
 ) {
+    val strings = Localization.current
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
         contentPadding = PaddingValues(bottom = 16.dp),
@@ -354,7 +359,7 @@ private fun OwnerHomeTab(
                 Spacer(Modifier.height(24.dp))
 
                 Text(
-                    "Tezkor amallar",
+                    strings.quickActions,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     color = MaterialTheme.colorScheme.onBackground
@@ -365,13 +370,14 @@ private fun OwnerHomeTab(
                 QuickActionsGrid(
                     onAddStadium = onAddStadium,
                     onAddUser = null,
+                    onAddCoach = onAddCoach,
                     onAddTournament = onAddTournament
                 )
 
                 Spacer(Modifier.height(24.dp))
                 
                 Text(
-                    "Bugungi jadval",
+                    strings.todaySchedule,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     color = MaterialTheme.colorScheme.onBackground
@@ -408,20 +414,21 @@ private fun OwnerHomeTab(
 
 @Composable
 private fun OwnerDashboard(state: HomeContract.State) {
+    val strings = Localization.current
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatCard(
-                title = "STADIONLAR",
+                title = strings.stadiums,
                 value = "${state.activeStadiums}",
-                subValue = "Aktiv maydonlar",
+                subValue = strings.activeFields,
                 icon = Icons.Default.SportsSoccer,
                 color = Color(0xFF4CAF50),
                 modifier = Modifier.weight(1f)
             )
             StatCard(
-                title = "FOYDALANUVCHILAR",
+                title = strings.users,
                 value = "${state.totalUsers}",
-                subValue = "Jami a'zolar",
+                subValue = strings.totalMembers,
                 icon = Icons.Default.Groups,
                 color = Color(0xFF2196F3),
                 modifier = Modifier.weight(1f)
@@ -429,17 +436,17 @@ private fun OwnerDashboard(state: HomeContract.State) {
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatCard(
-                title = "TURNIRLAR",
+                title = strings.tournaments,
                 value = "${state.totalTournaments}",
-                subValue = "Jami tadbirlar",
+                subValue = strings.totalEvents,
                 icon = Icons.Default.EmojiEvents,
                 color = Color(0xFFFF9800),
                 modifier = Modifier.weight(1f)
             )
             StatCard(
-                title = "DAROMAD",
+                title = strings.revenue,
                 value = if (state.totalEarnings > 1000000) "${(state.totalEarnings / 1000000).toInt()}M" else "${state.totalEarnings.toInt()}",
-                subValue = "Daromad",
+                subValue = strings.revenue,
                 icon = Icons.Default.AttachMoney,
                 color = Color(0xFFE91E63),
                 modifier = Modifier.weight(1f)
@@ -450,20 +457,21 @@ private fun OwnerDashboard(state: HomeContract.State) {
 
 @Composable
 private fun MalaebDashboard(state: HomeContract.State) {
+    val strings = Localization.current
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatCard(
-                title = "STADIONLAR",
+                title = strings.stadiums,
                 value = "${state.activeStadiums}",
-                subValue = "Aktiv maydonlar",
+                subValue = strings.activeFields,
                 icon = Icons.Default.SportsSoccer,
                 color = Color(0xFF4CAF50),
                 modifier = Modifier.weight(1f)
             )
             StatCard(
-                title = "FOYDALANUVCHILAR",
+                title = strings.users,
                 value = "${state.totalUsers}",
-                subValue = "Jami a'zolar",
+                subValue = strings.totalMembers,
                 icon = Icons.Default.Groups,
                 color = Color(0xFF2196F3),
                 modifier = Modifier.weight(1f)
@@ -471,17 +479,17 @@ private fun MalaebDashboard(state: HomeContract.State) {
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatCard(
-                title = "TURNIRLAR",
+                title = strings.tournaments,
                 value = "${state.totalTournaments}",
-                subValue = "Jami tadbirlar",
+                subValue = strings.totalEvents,
                 icon = Icons.Default.EmojiEvents,
                 color = Color(0xFFFF9800),
                 modifier = Modifier.weight(1f)
             )
             StatCard(
-                title = "DAROMAD",
+                title = strings.revenue,
                 value = if (state.totalEarnings > 1000000) "${(state.totalEarnings / 1000000).toInt()}M" else "${state.totalEarnings.toInt()}",
-                subValue = "Daromad",
+                subValue = strings.revenue,
                 icon = Icons.Default.AttachMoney,
                 color = Color(0xFFE91E63),
                 modifier = Modifier.weight(1f)
@@ -493,6 +501,7 @@ private fun MalaebDashboard(state: HomeContract.State) {
 @Composable
 private fun ScheduleList(state: HomeContract.State) {
     val bookedMatches = state.matches
+    val strings = Localization.current
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (state.isLoadingMatches) {
@@ -501,7 +510,7 @@ private fun ScheduleList(state: HomeContract.State) {
             }
         } else if (bookedMatches.isEmpty()) {
             Text(
-                "Bugun uchun bandlar yo'q",
+                strings.noBookingsToday,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 14.sp
             )
@@ -595,21 +604,27 @@ private fun StatCard(
 private fun QuickActionsGrid(
     onAddStadium: () -> Unit,
     onAddUser: (() -> Unit)?,
+    onAddCoach: (() -> Unit)?,
     onAddTournament: () -> Unit
 ) {
     val primary = MaterialTheme.colorScheme.primary
+    val strings = Localization.current
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            QuickActionItem("Stadion qo'sh", Icons.Default.Home, primary, Modifier.weight(1f), onAddStadium)
+            QuickActionItem(strings.addStadium, Icons.Default.Home, primary, Modifier.weight(1f), onAddStadium)
             if (onAddUser != null) {
-                QuickActionItem("Xodim qo'shish", Icons.Default.AddCircle, primary, Modifier.weight(1f), onAddUser)
+                QuickActionItem(strings.addEmployee, Icons.Default.AddCircle, primary, Modifier.weight(1f), onAddUser)
+            } else if (onAddCoach != null) {
+                QuickActionItem(strings.addCoach, Icons.Default.AddCircle, primary, Modifier.weight(1f), onAddCoach)
             } else {
-                Spacer(Modifier.weight(1f))
+                QuickActionItem(strings.createTournament, Icons.Default.Add, primary, Modifier.weight(1f), onAddTournament)
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            QuickActionItem("Turnir yarat", Icons.Default.Add, primary, Modifier.weight(1f), onAddTournament)
-            Spacer(Modifier.weight(1f))
+        if (onAddUser != null || onAddCoach != null) {
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                QuickActionItem(strings.createTournament, Icons.Default.Add, primary, Modifier.weight(1f), onAddTournament)
+                Spacer(Modifier.weight(1f))
+            }
         }
     }
 }
@@ -657,6 +672,7 @@ private fun QuickActionItem(title: String, icon: ImageVector, color: Color, modi
 
 @Composable
 private fun RestrictedAccessView(role: UserRole, onRefresh: () -> Unit, onLogout: () -> Unit) {
+    val strings = Localization.current
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -680,7 +696,7 @@ private fun RestrictedAccessView(role: UserRole, onRefresh: () -> Unit, onLogout
         Spacer(Modifier.height(32.dp))
         
         Text(
-            "Kirish cheklangan",
+            strings.accessRestricted,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
@@ -690,9 +706,9 @@ private fun RestrictedAccessView(role: UserRole, onRefresh: () -> Unit, onLogout
         
         Text(
             if (role == UserRole.UNKNOWN) 
-                "Sizning profilingiz yuklanmoqda yoki ruxsatnomalar aniqlanmadi." 
+                strings.loading 
             else 
-                "Sizning hisobingiz (${role.name}) ushbu panelga kirish huquqiga ega emas.",
+                "${strings.accessRestricted} (${role.name})",
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp)
@@ -707,19 +723,20 @@ private fun RestrictedAccessView(role: UserRole, onRefresh: () -> Unit, onLogout
         ) {
             Icon(Icons.Default.Refresh, null)
             Spacer(Modifier.width(8.dp))
-            Text("Yangilash")
+            Text(strings.refresh)
         }
         
         Spacer(Modifier.height(16.dp))
         
         TextButton(onClick = onLogout) {
-            Text("Boshqa hisobga o'tish", color = MaterialTheme.colorScheme.error)
+            Text(strings.switchAccount, color = MaterialTheme.colorScheme.error)
         }
     }
 }
 
 @Composable
 private fun TournamentDetailScreen(tournament: TournamentResponseDto, onBack: () -> Unit) {
+    val strings = Localization.current
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -729,8 +746,8 @@ private fun TournamentDetailScreen(tournament: TournamentResponseDto, onBack: ()
         IconButton(onClick = onBack) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
         }
-        Text("Turnir Tafsilotlari", fontWeight = FontWeight.Bold, fontSize = 24.sp)
+        Text(strings.tournamentDetails, fontWeight = FontWeight.Bold, fontSize = 24.sp)
         Spacer(Modifier.height(16.dp))
-        Text("Nomi: ${tournament.name}")
+        Text("${strings.tournamentName}: ${tournament.name}")
     }
 }

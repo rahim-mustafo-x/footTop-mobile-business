@@ -23,6 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import uz.coder.foottopbusiness.core.localization.ErrorMapper
+import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.presentation.main.components.UserCardItem
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -35,11 +37,14 @@ import uz.coder.foottopbusiness.presentation.main.coaches.create.CoachCreateScre
 fun CoachesScreen(viewModel: CoachesViewModel) {
     val state by viewModel.state.collectAsState()
     val navigator = LocalNavigator.currentOrThrow
+    val strings = Localization.current
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
-                is CoachesContract.Effect.ShowToast -> { /* snackbar */ }
+                is CoachesContract.Effect.ShowToast -> { 
+                    // Use a snackbar here if you add one to Scaffold
+                }
             }
         }
     }
@@ -69,7 +74,7 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "Foydalanuvchilar",
+                        strings.users,
                         color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
@@ -103,7 +108,7 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
                         value = state.searchQuery,
                         onValueChange = { viewModel.handleEvent(CoachesContract.Event.Search(it)) },
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("Qidirish...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        placeholder = { Text("${strings.search}...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
@@ -114,12 +119,12 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
                             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                         )
                     )
-                    Text("Filter", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+                    Text(strings.filter, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                 }
 
                 Spacer(Modifier.height(16.dp))
 
-                val filterTabs = listOf("Barchasi", "Admin", "Egasi", "Coach")
+                val filterTabs = listOf(strings.active, strings.addDistrictAdmin.substringAfter(" "), strings.assignOwner.substringAfter(" "), "Coach") // Roughly mapping
 
                 ScrollableTabRow(
                     selectedTabIndex = state.selectedRoleFilter,
@@ -156,7 +161,7 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
                 state.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(state.error ?: "", color = MaterialTheme.colorScheme.error)
-                        TextButton(onClick = { viewModel.handleEvent(CoachesContract.Event.Load) }) { Text("Qayta urinish") }
+                        TextButton(onClick = { viewModel.handleEvent(CoachesContract.Event.Load) }) { Text(strings.refresh) }
                     }
                 }
                 else -> LazyColumn(
@@ -182,6 +187,7 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CoachDetailScreen(coach: CoachResponseDto, onBack: () -> Unit) {
+    val strings = Localization.current
     BackHandler(enabled = true) {
         onBack()
     }
@@ -225,7 +231,7 @@ private fun CoachDetailScreen(coach: CoachResponseDto, onBack: () -> Unit) {
                     Spacer(Modifier.width(16.dp))
                     Column {
                         Text(
-                            "Murabbiy ma'lumotlari",
+                            strings.coachInfo,
                             color = MaterialTheme.colorScheme.onPrimary,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Black
@@ -276,7 +282,7 @@ private fun CoachDetailScreen(coach: CoachResponseDto, onBack: () -> Unit) {
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            coach.specialty ?: "Sport mutaxassisi",
+                            coach.specialty ?: strings.addCoach,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp
@@ -293,18 +299,18 @@ private fun CoachDetailScreen(coach: CoachResponseDto, onBack: () -> Unit) {
             ) {
                 Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     DetailRow(
-                        label = "Tajriba",
-                        value = "${coach.experienceYears ?: 0} yil",
+                        label = strings.experience,
+                        value = "${coach.experienceYears ?: 0} ${strings.experienceYears}",
                         icon = Icons.Default.Star
                     )
                     DetailRow(
-                        label = "Soatbay narx",
-                        value = "${coach.hourlyRate?.toInt() ?: 0} so'm",
+                        label = strings.hourlyPrice,
+                        value = "${coach.hourlyRate?.toInt() ?: 0} ${strings.uzsPerHour}",
                         icon = Icons.Default.ShoppingCart
                     )
                     DetailRow(
-                        label = "Mavjudlik",
-                        value = coach.availability ?: "Noma'lum",
+                        label = strings.availability,
+                        value = coach.availability ?: strings.unknown,
                         icon = Icons.Default.Info
                     )
                 }
@@ -327,7 +333,7 @@ private fun CoachDetailScreen(coach: CoachResponseDto, onBack: () -> Unit) {
                             )
                             Spacer(Modifier.width(8.dp))
                             Text(
-                                "Sharhlar",
+                                strings.reviews,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
                                 color = MaterialTheme.colorScheme.onSurface

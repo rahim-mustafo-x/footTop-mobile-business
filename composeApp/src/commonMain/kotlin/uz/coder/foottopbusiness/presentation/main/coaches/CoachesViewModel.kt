@@ -5,14 +5,30 @@ import uz.coder.foottopbusiness.data.network.dto.CoachResponseDto
 import uz.coder.foottopbusiness.data.network.dto.coach.CoachRequestDto
 import uz.coder.foottopbusiness.domain.usecase.coach.CreateCoachUseCase
 import uz.coder.foottopbusiness.domain.usecase.coach.GetCoachesUseCase
+import uz.coder.foottopbusiness.domain.usecase.user.GetAllUsersUseCase
 
 class CoachesViewModel(
     private val getCoachesUseCase: GetCoachesUseCase,
     private val createCoachUseCase: CreateCoachUseCase,
+    private val getAllUsersUseCase: GetAllUsersUseCase
 ) : BaseViewModel<CoachesContract.State, CoachesContract.Effect, CoachesContract.Event>(
     initialState = CoachesContract.State()
 ) {
-    init { handleEvent(CoachesContract.Event.Load) }
+    init { 
+        handleEvent(CoachesContract.Event.Load)
+        loadUsers()
+    }
+
+    private fun loadUsers() {
+        executeAsync(
+            block = { 
+                var result = emptyList<uz.coder.foottopbusiness.data.network.dto.UserDto>()
+                getAllUsersUseCase().collect { result = it }
+                result
+            },
+            onSuccess = { updateState { copy(users = it) } }
+        )
+    }
 
     override fun handleEvent(event: CoachesContract.Event) {
         when (event) {

@@ -136,18 +136,26 @@ class StadiumRepositoryImpl(
             name = name, type = type,
             ownerId = ownerId.toLong(), isActive = isActive, page = page, size = size,
         )
-        emit(response.data ?: PageStadiumResponseDto())
+        if (response.success == true) {
+            emit(response.data ?: PageStadiumResponseDto())
+        } else {
+            throw Exception(response.message ?: "Xatolik yuz berdi")
+        }
     }.catch {
         log("StadiumRepository", "getStadiums error: ${it.message}")
-        emit(PageStadiumResponseDto())
+        throw it
     }
 
     override fun getStadiumById(id: Int, date: String, duration: String): Flow<List<StadiumResponse>> = flow {
         val response = stadiumApiService.getStadiumById(id.toLong(), date, duration)
-        emit(response.data ?: emptyList())
+        if (response.success == true) {
+            emit(response.data ?: emptyList())
+        } else {
+            throw Exception(response.message ?: "Xatolik yuz berdi")
+        }
     }.catch {
         log("StadiumRepository", "getStadiumById error: ${it.message}")
-        emit(emptyList())
+        throw it
     }
 
     override fun updateOpenCloseTime(id: Int, openTime: String, closeTime: String): Flow<Unit> = flow {

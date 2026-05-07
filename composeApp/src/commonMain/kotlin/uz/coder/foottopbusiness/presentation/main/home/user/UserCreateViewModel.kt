@@ -14,16 +14,21 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import uz.coder.foottopbusiness.data.network.dto.UserRequestDto
 import uz.coder.foottopbusiness.data.network.dto.admin.CreateStaffUserDto
+import uz.coder.foottopbusiness.data.network.dto.coach.CoachRequestDto
 import uz.coder.foottopbusiness.domain.repository.UserRepository
 import uz.coder.foottopbusiness.domain.usecase.admin.CreateStaffUseCase
+import uz.coder.foottopbusiness.domain.usecase.coach.CreateCoachUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetDistrictsUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetRegionsUseCase
+import uz.coder.foottopbusiness.domain.usecase.user.GetAllUsersUseCase
 
 class UserCreateViewModel(
     private val userRepository: UserRepository,
     private val getRegionsUseCase: GetRegionsUseCase,
     private val getDistrictsUseCase: GetDistrictsUseCase,
-    private val createStaffUseCase: CreateStaffUseCase
+    private val createStaffUseCase: CreateStaffUseCase,
+    private val createCoachUseCase: CreateCoachUseCase,
+    private val getAllUsersUseCase: GetAllUsersUseCase
 ) : ScreenModel, UserCreateContract {
 
     private val _state = MutableStateFlow(UserCreateContract.State())
@@ -34,6 +39,13 @@ class UserCreateViewModel(
 
     init {
         loadRegions()
+        loadUsers()
+    }
+
+    private fun loadUsers() {
+        getAllUsersUseCase()
+            .onEach { users -> _state.update { it.copy(users = users) } }
+            .launchIn(screenModelScope)
     }
 
     private fun loadRegions() {
@@ -92,6 +104,32 @@ class UserCreateViewModel(
             is UserCreateContract.Event.DistrictSelected -> {
                 _state.update { it.copy(selectedDistrict = event.district) }
             }
+            is UserCreateContract.Event.SpecialtyChanged -> {
+                _state.update { it.copy(specialty = event.value) }
+            }
+            is UserCreateContract.Event.ExperienceChanged -> {
+                _state.update { it.copy(experience = event.value) }
+            }
+            is UserCreateContract.Event.HourlyRateChanged -> {
+                _state.update { it.copy(hourlyRate = event.value) }
+            }
+            is UserCreateContract.Event.AvailabilityChanged -> {
+                _state.update { it.copy(availability = event.value) }
+            }
+            is UserCreateContract.Event.UserSelected -> {
+                _state.update { 
+                    it.copy(
+                        selectedUser = event.user,
+                        fullName = event.user?.fullName ?: it.fullName,
+                        login = event.user?.username ?: it.login,
+                        phone = event.user?.phone ?: it.phone,
+                        showUserDropdown = false
+                    ) 
+                }
+            }
+            is UserCreateContract.Event.ShowUserDropdown -> {
+                _state.update { it.copy(showUserDropdown = event.show) }
+            }
         }
     }
 
@@ -110,6 +148,13 @@ class UserCreateViewModel(
 
     private fun createUser() {
         val currentState = _state.value
+        
+        // If an existing user is selected, just call createCoach for ROLE_COACH
+        if (currentState.role == "ROLE_COACH" && currentState.selectedUser != null) {
+            promoteToCoach(currentState.selectedUser.id ?: 0L)
+            return
+        }
+
         if (currentState.fullName.isBlank() || currentState.phone.isBlank() || currentState.login.isBlank()) {
             screenModelScope.launch {
                 _effect.emit(UserCreateContract.Effect.ShowError("Iltimos, barcha maydonlarni to'ldiring"))
@@ -137,13 +182,39 @@ class UserCreateViewModel(
 
         createStaffUseCase(staffDto)
             .onStart { _state.update { it.copy(isLoading = true) } }
+            .onEach { userDto ->
+                if (currentState.role == "ROLE_COACH") {
+                    promoteToCoach(userDto.id ?: 0L)
+                } else {
+                    _state.update { it.copy(isLoading = false, isSuccess = true) }
+                    _effect.emit(UserCreateContract.Effect.NavigateBack)
+                }
+            }
+            .catch { t ->
+                _state.update { it.copy(isLoading = false) }
+                _effect.emit(UserCreateContract.Effect.ShowError(t.message ?: "Xatolik yuz berdi"))
+            }
+            .launchIn(screenModelScope)
+    }
+
+    private fun promoteToCoach(userId: Long) {
+        val currentState = _state.value
+        val coachDto = CoachRequestDto(
+            userId = userId,
+            specialty = currentState.specialty,
+            experienceYears = currentState.experience.toIntOrNull() ?: 0,
+            hourlyRate = currentState.hourlyRate.toDoubleOrNull() ?: 0.0,
+            availability = currentState.availability
+        )
+        createCoachUseCase(coachDto)
+            .onStart { _state.update { it.copy(isLoading = true) } }
             .onEach {
                 _state.update { it.copy(isLoading = false, isSuccess = true) }
                 _effect.emit(UserCreateContract.Effect.NavigateBack)
             }
             .catch { t ->
                 _state.update { it.copy(isLoading = false) }
-                _effect.emit(UserCreateContract.Effect.ShowError(t.message ?: "Xatolik yuz berdi"))
+                _effect.emit(UserCreateContract.Effect.ShowError("Coach ma'lumotlarini qo'shishda xatolik: ${t.message}"))
             }
             .launchIn(screenModelScope)
     }

@@ -16,10 +16,19 @@ import uz.coder.foottopbusiness.domain.usecase.tournament.GetTournamentsUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GetAllUsersUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
 import uz.coder.foottopbusiness.data.local.PreferencesManager
+import uz.coder.foottopbusiness.domain.usecase.booking.CreateBookingUseCase
+import uz.coder.foottopbusiness.data.network.dto.booking.BookingRequestDto
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.home.HomeContract.Effect.*
+
+private fun durationMinutesKey(key: String): Int = when(key) {
+    "SIXTY" -> 60
+    "NINETY" -> 90
+    "ONE_HUNDRED_TWENTY" -> 120
+    else -> 60
+}
 
 class HomeViewModel(
     private val getStadiumsUseCase: GetStadiumsUseCase,
@@ -35,6 +44,7 @@ class HomeViewModel(
     private val getMatchesUseCase: GetMatchesUseCase,
     private val getTournamentsUseCase: GetTournamentsUseCase,
     private val getAllUsersUseCase: GetAllUsersUseCase,
+    private val createBookingUseCase: CreateBookingUseCase
 ) : BaseViewModel<HomeContract.State, HomeContract.Effect, HomeContract.Event>(
     initialState = HomeContract.State(
         selectedDate = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
@@ -146,13 +156,13 @@ class HomeViewModel(
                 val slotsToSelect = when (duration) {
                     "SIXTY" -> 3
                     "NINETY" -> 4
-                    "HUNDRED_TWENTY" -> 5
+                    "ONE_HUNDRED_TWENTY" -> 5
                     else -> 1
                 }
 
                 val availableSlots = state.value.stadiumSlots
                 val canBook = if (slotIndex + slotsToSelect <= availableSlots.size) {
-                    (slotIndex until slotIndex + slotsToSelect).all { availableSlots[it].third }
+                    (slotIndex until slotIndex + slotsToSelect - 1).all { availableSlots[it].third }
                 } else {
                     false
                 }
@@ -165,8 +175,48 @@ class HomeViewModel(
             }
 
             is HomeContract.Event.CreateBooking -> {
+                val s = state.value
+                val slot = s.selectedSlot ?: return
+                val stadium = s.selectedStadiumForTime ?: return
+                
                 updateState { copy(isBookingSlot = false, selectedSlot = null) }
-                sendEffect(ShowToast("Muvaffaqiyatli band qilindi: ${event.name}"))
+                
+                executeAsync(
+                    block = {
+                        val userId = preferencesManager.userId.first().toLong()
+                        val duration = s.selectedDuration
+                        val slotsToSelect = when (duration) {
+                            "SIXTY" -> 3
+                            "NINETY" -> 4
+                            "ONE_HUNDRED_TWENTY" -> 5
+                            else -> 1
+                        }
+                        
+                        val availableSlots = s.stadiumSlots
+                        val slotIndex = availableSlots.indexOf(slot)
+                        val endSlot = availableSlots.getOrNull(slotIndex + slotsToSelect - 1)
+                        
+                        val totalPrice = (stadium.pricePerHour ?: 0.0) * (durationMinutesKey(duration) / 60.0)
+                        
+                        val request = BookingRequestDto(
+                            userId = userId,
+                            stadiumId = stadium.id?.toLong(),
+                            startTime = slot.first.toString(),
+                            endTime = endSlot?.first?.toString() ?: slot.second.toString(),
+                            totalPrice = totalPrice,
+                            status = "PENDING",
+                            paymentMethod = "CASH"
+                        )
+                        createBookingUseCase(request).first()
+                    },
+                    onSuccess = {
+                        sendEffect(ShowToast("Muvaffaqiyatli band qilindi: ${event.name}"))
+                        loadSlots(stadium.id ?: return@executeAsync, s.selectedDate, s.selectedDuration)
+                    },
+                    onError = {
+                        sendEffect(ShowToast("Xatolik: ${it.message}"))
+                    }
+                )
             }
 
             HomeContract.Event.DismissBookingDialog -> updateState { copy(isBookingSlot = false) }

@@ -71,12 +71,16 @@ import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.core.visualTransformation.AmountTransformation
 import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.TimePickerDialog
 
+import uz.coder.foottopbusiness.core.localization.ErrorMapper
+import uz.coder.foottopbusiness.core.localization.Localization
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditStadiumScreen(viewModel: EditStadiumViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
     val hostState = remember { SnackbarHostState() }
+    val strings = Localization.current
 
     val descFocus = remember { FocusRequester() }
     val capacityFocus = remember { FocusRequester() }
@@ -89,7 +93,7 @@ fun EditStadiumScreen(viewModel: EditStadiumViewModel, onBack: () -> Unit) {
             when (effect) {
                 EditStadiumContract.Effect.NavigateBack -> onBack()
                 is EditStadiumContract.Effect.ShowToast -> {
-                    hostState.showSnackbar(effect.message)
+                    hostState.showSnackbar(ErrorMapper.map(effect.message, strings))
                 }
             }
         }

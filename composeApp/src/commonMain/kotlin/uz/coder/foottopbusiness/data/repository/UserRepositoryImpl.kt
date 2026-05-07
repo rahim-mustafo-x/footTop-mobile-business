@@ -17,27 +17,47 @@ class UserRepositoryImpl(
 
     override fun getUserById(id: Long) = flow {
         val response = api.getUserById(id)
-        response.data?.let { emit(it) }
+        if (response.success == true) {
+            response.data?.let { emit(it) } ?: throw Exception("Foydalanuvchi ma'lumotlari topilmadi")
+        } else {
+            throw Exception(response.message ?: "Foydalanuvchini yuklashda xatolik")
+        }
     }
 
     override fun createUser(dto: UserRequestDto) = flow {
         val response = api.createUser(dto)
-        response.data?.let { emit(it) }
+        if (response.success == true) {
+            response.data?.let { emit(it) } ?: throw Exception("Foydalanuvchi yaratildi, lekin ma'lumotlar qaytmadi")
+        } else {
+            throw Exception(response.message ?: "Foydalanuvchi yaratishda xatolik")
+        }
     }
 
     override fun updateUser(id: Long, dto: UserRequestDto) = flow {
         val response = api.updateUser(id, dto)
-        response.data?.let { emit(it) }
+        if (response.success == true) {
+            response.data?.let { emit(it) } ?: throw Exception("Foydalanuvchi yangilandi, lekin ma'lumotlar qaytmadi")
+        } else {
+            throw Exception(response.message ?: "Foydalanuvchini yangilashda xatolik")
+        }
     }
 
     override fun getAllUsers() = flow {
         val response = api.getAllUsers()
-        response.data?.let { emit(it) }
+        if (response.success == true) {
+            emit(response.data ?: emptyList())
+        } else {
+            throw Exception(response.message ?: "Foydalanuvchilarni yuklashda xatolik")
+        }
     }
 
     override fun generatePassword() = flow {
         val response = api.generatePassword()
-        response.data?.let { emit(it) }
+        if (response.success == true) {
+            response.data?.let { emit(it) } ?: throw Exception("Parol yaratishda xatolik")
+        } else {
+            throw Exception(response.message ?: "Parol yaratishda xatolik")
+        }
     }
 
     override suspend fun userId(): Long {

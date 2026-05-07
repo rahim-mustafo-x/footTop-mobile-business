@@ -17,12 +17,23 @@ interface UserCreateContract {
         val isLoading: Boolean = false,
         val isSuccess: Boolean = false,
         
+        // Coach specific
+        val specialty: String = "",
+        val experience: String = "",
+        val hourlyRate: String = "",
+        val availability: String = "",
+
         val regions: List<RegionDto> = emptyList(),
         val selectedRegion: RegionDto? = null,
         val districts: List<DistrictDto> = emptyList(),
         val selectedDistrict: DistrictDto? = null,
         val isLoadingRegions: Boolean = false,
-        val isLoadingDistricts: Boolean = false
+        val isLoadingDistricts: Boolean = false,
+
+        // User selection
+        val users: List<uz.coder.foottopbusiness.data.network.dto.UserDto> = emptyList(),
+        val selectedUser: uz.coder.foottopbusiness.data.network.dto.UserDto? = null,
+        val showUserDropdown: Boolean = false
     ) : MviState
 
     sealed interface Event : MviEvent {
@@ -35,6 +46,16 @@ interface UserCreateContract {
         data object CreateClicked : Event
         data object GeneratePasswordClicked : Event
         
+        // Coach events
+        data class SpecialtyChanged(val value: String) : Event
+        data class ExperienceChanged(val value: String) : Event
+        data class HourlyRateChanged(val value: String) : Event
+        data class AvailabilityChanged(val value: String) : Event
+
+        // User selection
+        data class UserSelected(val user: uz.coder.foottopbusiness.data.network.dto.UserDto?) : Event
+        data class ShowUserDropdown(val show: Boolean) : Event
+
         data object LoadRegions : Event
         data class RegionSelected(val region: RegionDto) : Event
         data class DistrictSelected(val district: DistrictDto) : Event

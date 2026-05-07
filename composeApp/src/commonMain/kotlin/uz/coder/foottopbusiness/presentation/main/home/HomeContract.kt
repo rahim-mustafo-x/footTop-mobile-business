@@ -58,7 +58,7 @@ sealed interface HomeContract {
         val selectedStadiumForTime: StadiumResponse? = null,
         val isUpdatingTime: Boolean = false,
         val selectedDate: String = "", // YYYY-MM-DD
-        val selectedDuration: String = "SIXTY", // SIXTY, NINETY, HUNDRED_TWENTY
+        val selectedDuration: String = "SIXTY", // SIXTY, NINETY, ONE_HUNDRED_TWENTY
         val stadiumSlots: List<Triple<LocalDateTime, LocalDateTime, Boolean>> = emptyList(),
         val isLoadingSlots: Boolean = false,
         val newOpenTime: String = "",

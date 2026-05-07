@@ -32,12 +32,15 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.style.TextAlign
 
+import uz.coder.foottopbusiness.core.localization.Localization
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
     val navigator = LocalNavigator.currentOrThrow
     val state by viewModel.state.collectAsState()
     val snackbarHostState = androidx.compose.runtime.remember { SnackbarHostState() }
+    val strings = Localization.current
 
     androidx.compose.runtime.LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
@@ -88,13 +91,13 @@ fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
                     Spacer(Modifier.width(12.dp))
                     Column {
                         Text(
-                            "Xabarnoma",
+                            strings.notifications,
                             color = Color.White,
                             fontSize = 22.sp,
                             fontWeight = FontWeight.ExtraBold
                         )
                         Text(
-                            "Foydalanuvchilarni xabardor qiling",
+                            strings.notifyUsers,
                             color = Color.White.copy(alpha = 0.7f),
                             fontSize = 12.sp
                         )
@@ -119,7 +122,7 @@ fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Text(
-                        "XABAR TURI",
+                        strings.msgType,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.primary,
@@ -131,7 +134,7 @@ fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         TypeItem(
-                            title = "Band qilish",
+                            title = strings.booking,
                             icon = Icons.Default.CalendarMonth,
                             color = Color(0xFF4CAF50),
                             isSelected = state.type == "BOOKING",
@@ -140,7 +143,7 @@ fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
                             viewModel.handleEvent(SendNotificationContract.Event.UpdateType("BOOKING"))
                         }
                         TypeItem(
-                            title = "O'yin",
+                            title = strings.match,
                             icon = Icons.Default.SportsSoccer,
                             color = Color(0xFF2196F3),
                             isSelected = state.type == "MATCH",
@@ -155,7 +158,7 @@ fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         TypeItem(
-                            title = "Turnir",
+                            title = strings.tournament,
                             icon = Icons.Default.EmojiEvents,
                             color = Color(0xFFFF9800),
                             isSelected = state.type == "TOURNAMENT",
@@ -164,7 +167,7 @@ fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
                             viewModel.handleEvent(SendNotificationContract.Event.UpdateType("TOURNAMENT"))
                         }
                         TypeItem(
-                            title = "Tizim",
+                            title = strings.system,
                             icon = Icons.Default.Campaign,
                             color = Color(0xFF9C27B0),
                             isSelected = state.type == "SYSTEM",
@@ -184,9 +187,9 @@ fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     LabelAndField(
-                        label = "SARLAVHA",
+                        label = strings.title,
                         value = state.title,
-                        placeholder = "Masalan: Yangi turnir e'loni"
+                        placeholder = strings.titleHint
                     ) {
                         viewModel.handleEvent(SendNotificationContract.Event.UpdateTitle(it))
                     }
@@ -194,9 +197,9 @@ fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
                     Spacer(modifier = Modifier.height(20.dp))
 
                     LabelAndField(
-                        label = "XABAR MATNI",
+                        label = strings.msgBody,
                         value = state.body,
-                        placeholder = "Xabaringizni batafsil yozing...",
+                        placeholder = strings.bodyHint,
                         isMultiline = true
                     ) {
                         viewModel.handleEvent(SendNotificationContract.Event.UpdateBody(it))
@@ -221,12 +224,12 @@ fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
                 } else {
                     Icon(Icons.Default.Notifications, null, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(12.dp))
-                    Text("Barchaga yuborish", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(strings.sendToAll, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
             
             Text(
-                "Xabar yuborilganda barcha foydalanuvchilarga push-xabarnoma boradi.",
+                strings.pushHint,
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                 textAlign = TextAlign.Center,

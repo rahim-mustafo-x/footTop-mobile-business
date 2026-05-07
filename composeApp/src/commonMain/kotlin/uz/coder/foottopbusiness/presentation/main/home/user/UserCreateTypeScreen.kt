@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.presentation.main.coaches.create.CoachCreateScreen
 
 class UserCreateTypeScreen : Screen {
@@ -27,6 +28,7 @@ class UserCreateTypeScreen : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
+        val strings = Localization.current
 
         Scaffold(
             topBar = {
@@ -43,7 +45,7 @@ class UserCreateTypeScreen : Screen {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = MaterialTheme.colorScheme.onPrimary)
                         }
                         Text(
-                            "Foydalanuvchi yaratish",
+                            strings.createUser,
                             color = MaterialTheme.colorScheme.onPrimary,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
@@ -60,22 +62,22 @@ class UserCreateTypeScreen : Screen {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    "Qaysi turdagi foydalanuvchini yaratmoqchisiz?",
+                    strings.userTypeQuestion,
                     fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 TypeCard(
-                    title = "Yangi xodim",
-                    subtitle = "Admin yoki Owner uchun tizimga kirish hisobini yaratish",
+                    title = strings.newEmployee,
+                    subtitle = strings.newEmployeeSubtitle,
                     icon = Icons.Default.Person,
                     gradient = Brush.horizontalGradient(listOf(Color(0xFF6200EE), Color(0xFF3700B3))),
                     onClick = { navigator.push(UserCreateScreen()) }
                 )
 
                 TypeCard(
-                    title = "Coach profili",
-                    subtitle = "Mavjud foydalanuvchiga coachlik vakolatlarini va ma'lumotlarini biriktirish",
+                    title = strings.coachProfile,
+                    subtitle = strings.coachProfileSubtitle,
                     icon = Icons.Default.SportsSoccer,
                     gradient = Brush.horizontalGradient(listOf(Color(0xFF03DAC6), Color(0xFF018786))),
                     onClick = { navigator.push(CoachCreateScreen()) }

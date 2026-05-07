@@ -13,23 +13,37 @@ class CoachRepositoryImpl(
 
     override fun getCoaches() = flow {
         val response = api.getCoaches()
-        emit(response.data ?: emptyList())
+        if (response.success == true) {
+            emit(response.data ?: emptyList())
+        } else {
+            throw Exception(response.message ?: "Coachlarni yuklashda xatolik")
+        }
     }.catch {
         log("CoachRepository", "getCoaches error: ${it.message}")
-        emit(emptyList())
+        throw it
     }
 
     override fun getCoachById(id: Long) = flow {
         val response = api.getCoachById(id)
-        emit(response.data!!)
+        if (response.success == true) {
+            response.data?.let { emit(it) } ?: throw Exception("Coach topilmadi")
+        } else {
+            throw Exception(response.message ?: "Coachni yuklashda xatolik")
+        }
     }.catch {
         log("CoachRepository", "getCoachById error: ${it.message}")
+        throw it
     }
 
     override fun createCoach(dto: CoachRequestDto) = flow {
         val response = api.createCoach(dto)
-        emit(response.data!!)
+        if (response.success == true) {
+            response.data?.let { emit(it) } ?: throw Exception("Coach yaratildi, lekin ma'lumotlar qaytmadi")
+        } else {
+            throw Exception(response.message ?: "Coach yaratishda xatolik")
+        }
     }.catch {
         log("CoachRepository", "createCoach error: ${it.message}")
+        throw it
     }
 }

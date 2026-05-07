@@ -25,6 +25,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
+import uz.coder.foottopbusiness.core.localization.ErrorMapper
+import uz.coder.foottopbusiness.core.localization.Localization
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
@@ -35,13 +38,14 @@ fun LoginScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var passwordVisible by remember { mutableStateOf(false) }
+    val strings = Localization.current
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
                 LoginContract.Effect.NavigateToMain -> navigateToMain()
                 LoginContract.Effect.NavigateBack -> navigateBack()
-                is LoginContract.Effect.ShowToast -> showToast(effect.message)
+                is LoginContract.Effect.ShowToast -> showToast(ErrorMapper.map(effect.message, strings))
             }
         }
     }
@@ -93,14 +97,14 @@ fun LoginScreen(
                 Spacer(Modifier.height(24.dp))
 
                 Text(
-                    "Xush kelibsiz!",
+                    strings.welcome,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 
                 Text(
-                    "Tizimga kirish uchun ma'lumotlaringizni kiriting",
+                    strings.loginDescription,
                     fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 8.dp)
@@ -109,7 +113,7 @@ fun LoginScreen(
                 Spacer(Modifier.height(48.dp))
 
                 Text(
-                    "Foydalanuvchi nomi",
+                    strings.username,
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
@@ -130,7 +134,7 @@ fun LoginScreen(
                 Spacer(Modifier.height(20.dp))
 
                 Text(
-                    "Parol",
+                    strings.password,
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
@@ -173,7 +177,7 @@ fun LoginScreen(
                     if (state.isLoading) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                     } else {
-                        Text("Kirish", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text(strings.login, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     }
                 }
                 
@@ -185,9 +189,9 @@ fun LoginScreen(
                 ) {
                     Text(
                         buildAnnotatedString {
-                            append("Hisobingiz yo'qmi? ")
+                            append(strings.noAccount)
                             withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)) {
-                                append("Admin bilan bog'laning")
+                                append(strings.contactAdmin)
                             }
                         },
                         fontSize = 14.sp,

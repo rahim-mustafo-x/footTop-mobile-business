@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.presentation.main.components.StadiumCardItem
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
@@ -31,24 +32,25 @@ import kotlinx.coroutines.launch
 @Composable
 fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddPitch: () -> Unit = {}) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val strings = Localization.current
     val scope = rememberCoroutineScope()
 
     if (state.stadiumToDelete != null) {
         AlertDialog(
             onDismissRequest = { viewModel.handleEvent(StadiumContract.Event.DismissDelete) },
-            title = { Text("O'chirishni tasdiqlang") },
-            text = { Text("${state.stadiumToDelete?.name} stadionini rostdan ham o'chirmoqchimisiz?") },
+            title = { Text(strings.confirmDelete) },
+            text = { Text("${state.stadiumToDelete?.name} ${strings.deleteConfirmMsg}") },
             confirmButton = {
                 TextButton(
                     onClick = { viewModel.handleEvent(StadiumContract.Event.ConfirmDelete) },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("O'chirish")
+                    Text(strings.delete)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.handleEvent(StadiumContract.Event.DismissDelete) }) {
-                    Text("Bekor qilish")
+                    Text(strings.cancel)
                 }
             }
         )
@@ -71,7 +73,7 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddPitch: () -> Unit 
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        if (state.isOwner) "Jadval" else "Stadionlar",
+                        if (state.isOwner) strings.schedule else strings.stadiums,
                         color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
@@ -102,7 +104,7 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddPitch: () -> Unit 
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                placeholder = { Text("Qidirish...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                placeholder = { Text("${strings.search}...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
@@ -141,7 +143,7 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddPitch: () -> Unit 
                 ) {
                     itemsIndexed(state.stadiums) { index, item ->
                         StadiumCardItem(
-                            name = item.name ?: "Noma'lum",
+                            name = item.name ?: strings.unknown,
                             address = "${item.districtName}, ${item.regionName}",
                             pitchCount = item.capacity ?: 0,
                             price = item.pricePerHour ?: 0.0,
@@ -185,6 +187,7 @@ private fun StadiumListItem(
     onClick: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val strings = Localization.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -224,7 +227,7 @@ private fun StadiumListItem(
             // Info
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stadium.name ?: "Noma'lum",
+                    text = stadium.name ?: strings.unknown,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 18.sp,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -244,16 +247,16 @@ private fun StadiumListItem(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    StadiumInfoChip(Icons.Default.GridView, "${stadium.capacity ?: 0} maydon")
-                    StadiumInfoChip(Icons.Default.Payments, "${stadium.pricePerHour?.toInt() ?: 0} so'm/s")
+                    StadiumInfoChip(Icons.Default.GridView, "${stadium.capacity ?: 0} ${strings.fieldCount}")
+                    StadiumInfoChip(Icons.Default.Payments, "${stadium.pricePerHour?.toInt() ?: 0} ${strings.uzsPerHour}")
                 }
             }
 
             // Status Badge
             val statusText = when {
-                stadium.isActive == true -> "Aktiv"
-                stadium.description?.contains("ta'mir", ignoreCase = true) == true -> "Ta'mirda"
-                else -> "Yopiq"
+                stadium.isActive == true -> strings.active
+                stadium.description?.contains("ta'mir", ignoreCase = true) == true -> strings.underRepair
+                else -> strings.closed
             }
 
             Box(

@@ -13,23 +13,37 @@ class TournamentRepositoryImpl(
 
     override fun getTournaments() = flow {
         val response = api.getTournaments()
-        emit(response.data ?: emptyList())
+        if (response.success == true) {
+            emit(response.data ?: emptyList())
+        } else {
+            throw Exception(response.message ?: "Turnirlarni yuklashda xatolik")
+        }
     }.catch {
         log("TournamentRepository", "getTournaments error: ${it.message}")
-        emit(emptyList())
+        throw it
     }
 
     override fun getTournamentById(id: Long) = flow {
         val response = api.getTournamentById(id)
-        response.data?.let { emit(it) }
+        if (response.success == true) {
+            response.data?.let { emit(it) } ?: throw Exception("Turnir topilmadi")
+        } else {
+            throw Exception(response.message ?: "Turnirni yuklashda xatolik")
+        }
     }.catch {
         log("TournamentRepository", "getTournamentById error: ${it.message}")
+        throw it
     }
 
     override fun createTournament(request: TournamentRequestDto) = flow {
         val response = api.createTournament(request)
-        response.data?.let { emit(it) }
+        if (response.success == true) {
+            response.data?.let { emit(it) } ?: throw Exception("Turnir yaratildi, lekin ma'lumotlar qaytmadi")
+        } else {
+            throw Exception(response.message ?: "Turnir yaratishda xatolik")
+        }
     }.catch {
         log("TournamentRepository", "createTournament error: ${it.message}")
+        throw it
     }
 }

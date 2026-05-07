@@ -4,11 +4,13 @@ import uz.coder.foottopbusiness.core.mvi.MviEffect
 import uz.coder.foottopbusiness.core.mvi.MviEvent
 import uz.coder.foottopbusiness.core.mvi.MviState
 import uz.coder.foottopbusiness.data.network.dto.CoachResponseDto
+import uz.coder.foottopbusiness.data.network.dto.UserDto
 
 sealed interface CoachesContract {
     data class State(
         val coaches: List<CoachResponseDto> = emptyList(),
         val filteredCoaches: List<CoachResponseDto> = emptyList(),
+        val users: List<UserDto> = emptyList(),
         val searchQuery: String = "",
         val selectedRoleFilter: Int = 0, // 0: All, 1: Admin, 2: Owner, 3: Coach
         val isLoading: Boolean = false,

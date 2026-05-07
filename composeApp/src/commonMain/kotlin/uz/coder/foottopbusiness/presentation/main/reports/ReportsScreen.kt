@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -53,9 +54,12 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.koin.compose.koinInject
+import uz.coder.foottopbusiness.core.localization.ErrorMapper
+import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.presentation.main.home.HomeContract
 import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
 
@@ -65,6 +69,7 @@ fun ReportsScreen() {
     val homeViewModel = koinInject<HomeViewModel>()
     val homeState by homeViewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val strings = Localization.current
 
     androidx.compose.runtime.LaunchedEffect(Unit) {
         homeViewModel.effect.collect { effect ->
@@ -80,7 +85,7 @@ fun ReportsScreen() {
                 }
                 is HomeContract.Effect.ShowToast -> {
                     snackbarHostState.showSnackbar(
-                        message = effect.message,
+                        message = ErrorMapper.map(effect.message, strings),
                         withDismissAction = true
                     )
                 }
@@ -115,13 +120,13 @@ fun ReportsScreen() {
                 ) {
                     Column {
                         Text(
-                            "Moliyaviy Hisobot",
+                            strings.financialReport,
                             color = Color.White,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Black
                         )
                         Text(
-                            "Daromad va tahlillar monitoringi",
+                            strings.incomeMonitoring,
                             color = Color.White.copy(alpha = 0.7f),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
@@ -143,7 +148,8 @@ fun ReportsScreen() {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(top = padding.calculateTopPadding(), start = padding.calculateStartPadding(
+                    LayoutDirection.Ltr), end = padding.calculateRightPadding(LayoutDirection.Rtl))
                 .background(MaterialTheme.colorScheme.background),
             contentPadding = PaddingValues(bottom = 32.dp, start = 20.dp, end = 20.dp, top = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -171,14 +177,14 @@ fun ReportsScreen() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "Kunlik tafsilotlar",
+                        strings.dailyDetails,
                         fontWeight = FontWeight.Black,
                         fontSize = 20.sp,
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     TextButton(onClick = { /* TODO */ }) {
                         Text(
-                            "Filtrlash",
+                            strings.filter,
                             color = MaterialTheme.colorScheme.primary,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
@@ -207,7 +213,7 @@ fun ReportsScreen() {
             if (recentMatches.isEmpty()) {
                 item {
                     Text(
-                        "Hozircha ma'lumotlar yo'q",
+                        strings.noDataYet,
                         modifier = Modifier.fillMaxWidth().padding(16.dp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -219,6 +225,7 @@ fun ReportsScreen() {
 
 @Composable
 private fun IncomeOverviewCard(totalEarnings: Double, weeklyTotal: Double, totalUsers: Int, growth: Double) {
+    val strings = Localization.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
@@ -239,7 +246,7 @@ private fun IncomeOverviewCard(totalEarnings: Double, weeklyTotal: Double, total
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.PieChart, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("UMUMIY HISOB", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
+                    Text(strings.incomeOverview, color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
                 }
                 Spacer(Modifier.height(8.dp))
                 val formattedEarnings = if (totalEarnings > 1000000) {
@@ -260,11 +267,11 @@ private fun IncomeOverviewCard(totalEarnings: Double, weeklyTotal: Double, total
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     val weeklyFormatted = if (weeklyTotal > 1000000) "${(weeklyTotal / 1000000).toInt()}M" else "${(weeklyTotal / 1000).toInt()}K"
-                    SummaryStatSmall("BU HAFTA", weeklyFormatted, Color.White)
+                    SummaryStatSmall(strings.active.uppercase(), weeklyFormatted, Color.White) // Placeholder for "THIS WEEK"
                     Box(modifier = Modifier.width(1.dp).height(30.dp).background(Color.White.copy(alpha = 0.2f)))
-                    SummaryStatSmall("O'SISH", "${if(growth >= 0) "+" else ""}$growth%", Color(0xFFB9F6CA))
+                    SummaryStatSmall(strings.growth, "${if(growth >= 0) "+" else ""}$growth%", Color(0xFFB9F6CA))
                     Box(modifier = Modifier.width(1.dp).height(30.dp).background(Color.White.copy(alpha = 0.2f)))
-                    SummaryStatSmall("MIJOZLAR", totalUsers.toString(), Color.White)
+                    SummaryStatSmall(strings.customers, totalUsers.toString(), Color.White)
                 }
             }
         }
@@ -284,6 +291,7 @@ private fun WeeklyRevenueChart(
     weeklyEarnings: List<Double>,
     weeklyLabels: List<String>
 ) {
+    val strings = Localization.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -300,9 +308,9 @@ private fun WeeklyRevenueChart(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("Haftalik tahlil", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+                    Text(strings.weeklyAnalysis, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
                     Text(
-                        "Daromad dinamikasi",
+                        strings.revenueDynamics,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
@@ -448,22 +456,23 @@ private fun ReportSummaryCard(
     totalTournaments: Int,
     totalMatches: Int
 ) {
+    val strings = Localization.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text("Umumiy tahlil", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+            Text(strings.weeklyAnalysis, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(16.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                SummaryStat("Jami daromad", "${totalEarnings.toInt() / 1000}K so'm", MaterialTheme.colorScheme.primary)
-                SummaryStat("Aktiv stadionlar", "$activeStadiums ta", MaterialTheme.colorScheme.secondary)
+                SummaryStat(strings.totalRevenue, "${totalEarnings.toInt() / 1000}K ${strings.uzsPerHour.substringBefore("/")}", MaterialTheme.colorScheme.primary)
+                SummaryStat(strings.activeStadiums, "$activeStadiums ta", MaterialTheme.colorScheme.secondary)
             }
             Spacer(Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                SummaryStat("Jami turnirlar", "$totalTournaments ta", Color(0xFFFF9800))
-                SummaryStat("Jami o'yinlar", "$totalMatches ta", Color(0xFF9C27B0))
+                SummaryStat(strings.totalTournaments, "$totalTournaments ta", Color(0xFFFF9800))
+                SummaryStat(strings.totalMatches, "$totalMatches ta", Color(0xFF9C27B0))
             }
         }
     }

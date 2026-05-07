@@ -89,11 +89,11 @@ class HttpClientFactory(
                             null
                         }
                     }
-                    sendWithoutRequest { false } // Add token in defaultRequest for reactivity
+                    sendWithoutRequest { true }
                 }
             }
 
-            expectSuccess = false
+            expectSuccess = true
 
             HttpResponseValidator {
                 validateResponse { response ->
@@ -128,17 +128,6 @@ class HttpClientFactory(
                                         errorBody.contains("TOKEN_INVALID", ignoreCase = true)) {
                                         log("Auth", "401 received with ${if(errorBody.contains("TOKEN_INVALID")) "TOKEN_INVALID" else "REFRESH_TOKEN_NOT_FOUND"}, logging out")
                                         ioScope.launch { sessionManager.logout() }
-                                    } else if (errorBody.contains("TOKEN_EXPIRED", ignoreCase = true) || errorBody.contains("TOKEN", ignoreCase = true)) {
-                                        log("Auth", "401 received with TOKEN error, attempting refresh")
-                                        val refreshToken = preferencesManager.refreshToken.first()
-                                        if (!refreshToken.isNullOrBlank()) {
-                                            sessionManager.refreshToken(refreshToken)
-                                        } else {
-                                            ioScope.launch { sessionManager.logout() }
-                                        }
-                                    } else {
-                                        log("Auth", "401 received without TOKEN error, logging out")
-                                        ioScope.launch { sessionManager.logout() }
                                     }
                                 } else if (code == 403) {
                                     log("Auth", "403 Forbidden: Access denied to $path")
@@ -154,21 +143,6 @@ class HttpClientFactory(
             }
             defaultRequest {
                 url(BASE_URL)
-                val path = url.encodedPath
-                val isAuthEndpoint = path.contains("/api/auth/login") ||
-                        path.contains("/api/auth/send-otp") ||
-                        path.contains("/api/auth/refresh") ||
-                        path.contains("/api/auth/logout") ||
-                        path.contains("/v1/users/create") ||
-                        url.host == "nominatim.openstreetmap.org"
-
-                if (!isAuthEndpoint) {
-                    sessionManager.token.value?.let { token ->
-                        if (token.isNotBlank()) {
-                            header(HttpHeaders.Authorization, "Bearer $token")
-                        }
-                    }
-                }
             }
         }
     }

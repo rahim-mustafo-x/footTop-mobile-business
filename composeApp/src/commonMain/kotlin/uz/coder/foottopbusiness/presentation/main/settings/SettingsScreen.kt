@@ -78,10 +78,13 @@ import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
+import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.platform.getPlatform
 import uz.coder.foottopbusiness.presentation.auth.login.LoginVoyager
 import uz.coder.foottopbusiness.presentation.main.settings.about.AboutAppVoyager
 import uz.coder.foottopbusiness.presentation.main.settings.editprofile.EditProfileVoyager
+
+import uz.coder.foottopbusiness.core.visualTransformation.formatPhoneNumber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,6 +97,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     val platform = getPlatform()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val strings = Localization.current
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
@@ -116,15 +120,15 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
 
         AlertDialog(
             onDismissRequest = { viewModel.handleEvent(SettingsContract.Event.DismissChangePassword) },
-            title = { Text("Parolni o'zgartirish") },
+            title = { Text(strings.changePassword) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(
                         value = state.oldPassword,
                         onValueChange = { viewModel.handleEvent(SettingsContract.Event.UpdateOldPassword(it)) },
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Eski parol") },
-                        placeholder = { Text("Eski parolni kiriting", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
+                        label = { Text(strings.oldPassword) },
+                        placeholder = { Text(strings.oldPasswordPlaceholder, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
                         visualTransformation = if (oldPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { oldPasswordVisible = !oldPasswordVisible }) {
@@ -141,8 +145,8 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                         value = state.newPassword,
                         onValueChange = { viewModel.handleEvent(SettingsContract.Event.UpdateNewPassword(it)) },
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Yangi parol") },
-                        placeholder = { Text("Yangi parolni kiriting", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
+                        label = { Text(strings.newPassword) },
+                        placeholder = { Text(strings.newPasswordPlaceholder, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
                         visualTransformation = if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
@@ -159,8 +163,8 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                         value = state.confirmPassword,
                         onValueChange = { viewModel.handleEvent(SettingsContract.Event.UpdateConfirmPassword(it)) },
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Parolni tasdiqlang") },
-                        placeholder = { Text("Yangi parolni qayta kiriting", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
+                        label = { Text(strings.confirmPassword) },
+                        placeholder = { Text(strings.confirmPasswordPlaceholder, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
                         visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
@@ -183,13 +187,13 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     if (state.isChangingPassword) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
                     } else {
-                        Text("Saqlash")
+                        Text(strings.save)
                     }
                 }
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.handleEvent(SettingsContract.Event.DismissChangePassword) }) {
-                    Text("Bekor qilish")
+                    Text(strings.cancel)
                 }
             }
         )
@@ -198,10 +202,10 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     if (state.showDeleteAccountDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.handleEvent(SettingsContract.Event.DismissDeleteAccount) },
-            title = { Text("Hisobni o'chirish", color = MaterialTheme.colorScheme.error) },
+            title = { Text(strings.deleteAccountTitle, color = MaterialTheme.colorScheme.error) },
             text = {
                 Column {
-                    Text("Hisobingizni o'chirishni tasdiqlash uchun foydalanuvchi nomingizni (@${state.user?.username ?: ""}) pastga kiriting:")
+                    Text(strings.deleteConfirmText)
                     Spacer(Modifier.height(16.dp))
                     OutlinedTextField(
                         value = state.deleteConfirmText,
@@ -222,13 +226,13 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     if (state.isDeleting) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
                     } else {
-                        Text("O'chirish")
+                        Text(strings.delete)
                     }
                 }
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.handleEvent(SettingsContract.Event.DismissDeleteAccount) }) {
-                    Text("Bekor qilish")
+                    Text(strings.cancel)
                 }
             }
         )
@@ -264,10 +268,10 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     )
                 }
                 Spacer(Modifier.height(16.dp))
-                Text("Chiqish", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(strings.logoutConfirmTitle, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Hisobingizdan chiqmoqchimisiz?",
+                    strings.logoutConfirmMessage,
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -282,7 +286,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Ha, chiqish", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Text(strings.yesLogout, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                 }
                 Spacer(Modifier.height(10.dp))
                 OutlinedButton(
@@ -290,7 +294,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(14.dp),
                 ) {
-                    Text("Bekor qilish", fontSize = 15.sp)
+                    Text(strings.cancel, fontSize = 15.sp)
                 }
             }
         }
@@ -311,7 +315,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
                 }
                 Text(
-                    "Profil va Sozlamalar",
+                    strings.profileAndSettings,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(start = 8.dp)
@@ -387,14 +391,14 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                                 Spacer(Modifier.height(16.dp))
 
                                 Text(
-                                    state.user?.fullName ?: "Foydalanuvchi",
+                                    state.user?.fullName ?: strings.user,
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = 22.sp,
                                     textAlign = TextAlign.Center
                                 )
 
                                 Text(
-                                    state.user?.phone ?: "+998 -- --- -- --",
+                                    formatPhoneNumber(state.user?.phone),
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontWeight = FontWeight.Medium
@@ -430,60 +434,60 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     .padding(horizontal = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                SettingsSectionTitle("SHAXSIY")
+                SettingsSectionTitle(strings.personal)
                 
                 SettingsItem(
                     icon = Icons.Default.Edit,
                     iconTint = Color(0xFF4CAF50),
-                    title = "Profilni tahrirlash",
-                    subtitle = "Ism, xodimlar va ma'lumotlar",
+                    title = strings.editProfile,
+                    subtitle = strings.editProfileSubtitle,
                     onClick = { navigator.push(EditProfileVoyager) }
                 )
 
                 SettingsItem(
                     icon = Icons.Default.Lock,
                     iconTint = Color(0xFF2196F3),
-                    title = "Parolni o'zgartirish",
-                    subtitle = "Xavfsizlikni ta'minlash uchun",
+                    title = strings.changePassword,
+                    subtitle = strings.changePasswordSubtitle,
                     onClick = { viewModel.handleEvent(SettingsContract.Event.ShowChangePassword) }
                 )
 
-                SettingsSectionTitle("ILOVA")
+                SettingsSectionTitle(strings.app)
 
                 SettingsItem(
                     icon = Icons.AutoMirrored.Filled.Help,
                     iconTint = Color(0xFFFF9800),
-                    title = "Yordam va Aloqa",
-                    subtitle = "Biz bilan bog'laning",
+                    title = strings.helpAndContact,
+                    subtitle = strings.helpAndContactSubtitle,
                     onClick = { uriHandler.openUri("https://t.me/rahim_mustafo_x") }
                 )
 
                 SettingsItem(
                     icon = Icons.Default.Star,
                     iconTint = Color(0xFFE91E63),
-                    title = "Ilovani baholang",
-                    subtitle = "Fikringiz biz uchun muhim",
+                    title = strings.rateApp,
+                    subtitle = strings.rateAppSubtitle,
                     onClick = { uz.coder.foottopbusiness.core.platform.rateApp() }
                 )
 
                 SettingsItem(
                     icon = Icons.Default.Info,
                     iconTint = Color(0xFF9C27B0),
-                    title = "Ilova haqida",
-                    subtitle = "Versiya ${platform.version}",
+                    title = strings.aboutApp,
+                    subtitle = "${strings.version} ${platform.version}",
                     onClick = { viewModel.handleEvent(SettingsContract.Event.ShowAboutApp) }
                 )
 
                 Spacer(Modifier.height(8.dp))
                 
                 // Danger Zone
-                SettingsSectionTitle("XAVFLI")
+                SettingsSectionTitle(strings.danger)
                 
                 SettingsItem(
                     icon = Icons.Default.DeleteOutline,
                     iconTint = MaterialTheme.colorScheme.error,
-                    title = "Hisobni o'chirish",
-                    subtitle = "Ma'lumotlar qaytarilmaydi",
+                    title = strings.deleteAccountTitle,
+                    subtitle = strings.deleteAccountSubtitle,
                     onClick = { viewModel.handleEvent(SettingsContract.Event.ShowDeleteAccount) }
                 )
 
@@ -507,7 +511,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                         Icon(Icons.AutoMirrored.Filled.Logout, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(12.dp))
                         Text(
-                            "Tizimdan chiqish",
+                            strings.logout,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.error

@@ -14,18 +14,25 @@ class MatchRepositoryImpl(
 
     override fun getMatches(): Flow<List<MatchResponseDto>> = flow {
         val response = api.getMatches()
-        emit(response.data ?: emptyList())
+        if (response.success == true) {
+            emit(response.data ?: emptyList())
+        } else {
+            throw Exception(response.message ?: "O'yinlarni yuklashda xatolik")
+        }
     }.catch {
         log("MatchRepository", "getMatches error: ${it.message}")
-        emit(emptyList())
+        throw it
     }
 
     override fun getMatchById(id: Long): Flow<MatchResponseDto> = flow {
         val response = api.getMatchById(id)
-        response.data?.let { emit(it) }
+        if (response.success == true) {
+            response.data?.let { emit(it) } ?: throw Exception("O'yin topilmadi")
+        } else {
+            throw Exception(response.message ?: "O'yinni yuklashda xatolik")
+        }
     }.catch {
         log("MatchRepository", "getMatchById error: ${it.message}")
-        // For single item, it might be better to not emit or throw custom error
-        // but here let's just log it to prevent crash.
+        throw it
     }
 }

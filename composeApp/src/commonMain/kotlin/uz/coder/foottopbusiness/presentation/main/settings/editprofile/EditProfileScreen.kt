@@ -22,18 +22,22 @@ import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 
+import uz.coder.foottopbusiness.core.localization.Localization
+import uz.coder.foottopbusiness.core.visualTransformation.formatPhoneNumber
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen(viewModel: EditProfileViewModel) {
     val state by viewModel.state.collectAsState()
     val navigator = LocalNavigator.currentOrThrow
     val snackbarHostState = remember { SnackbarHostState() }
+    val strings = Localization.current
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
                 EditProfileContract.Effect.SavedSuccessfully -> {
-                    snackbarHostState.showSnackbar("Profil muvaffaqiyatli yangilandi")
+                    snackbarHostState.showSnackbar(strings.saveSuccessfully)
                     navigator.pop()
                 }
                 is EditProfileContract.Effect.ShowError -> {
@@ -47,7 +51,7 @@ fun EditProfileScreen(viewModel: EditProfileViewModel) {
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Profilni tahrirlash", fontSize = 18.sp, fontWeight = FontWeight.Bold) },
+                title = { Text(strings.editProfile, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navigator.pop() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
@@ -124,30 +128,30 @@ fun EditProfileScreen(viewModel: EditProfileViewModel) {
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 EditField(
-                    label = "To'liq ism",
+                    label = strings.fullName,
                     value = state.fullName,
                     onValueChange = { viewModel.handleEvent(EditProfileContract.Event.FullNameChanged(it)) },
-                    placeholder = "Ismingizni kiriting"
+                    placeholder = strings.enterName
                 )
 
                 EditField(
-                    label = "Foydalanuvchi nomi",
+                    label = strings.username,
                     value = state.username,
                     onValueChange = { viewModel.handleEvent(EditProfileContract.Event.UsernameChanged(it)) },
-                    placeholder = "Username tanlang"
+                    placeholder = strings.chooseUsername
                 )
 
                 ReadOnlyField(
-                    label = "Telefon raqam",
-                    value = state.phone,
+                    label = strings.phoneNumber,
+                    value = formatPhoneNumber(state.phone),
                     icon = Icons.Default.Phone
                 )
 
                 EditField(
-                    label = "Manzil",
+                    label = strings.location,
                     value = state.location,
                     onValueChange = { viewModel.handleEvent(EditProfileContract.Event.LocationChanged(it)) },
-                    placeholder = "Manzilingizni kiriting"
+                    placeholder = strings.enterLocation
                 )
             }
 
@@ -166,7 +170,7 @@ fun EditProfileScreen(viewModel: EditProfileViewModel) {
                 if (state.isSaving) {
                     CircularProgressIndicator(Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                 } else {
-                    Text("Saqlash", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+                    Text(strings.save, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                 }
             }
 

@@ -1,6 +1,7 @@
 package uz.coder.foottopbusiness.presentation.main.coaches.create
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,6 +35,7 @@ import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.koin.compose.koinInject
+import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.visualTransformation.AmountTransformation
 import uz.coder.foottopbusiness.presentation.main.coaches.CoachesContract
 import uz.coder.foottopbusiness.presentation.main.coaches.CoachesViewModel
@@ -45,10 +47,14 @@ class CoachCreateScreen : Screen {
         val navigator = LocalNavigator.currentOrThrow
         val viewModel = koinInject<CoachesViewModel>()
         val state by viewModel.state.collectAsState()
+        val strings = Localization.current
         val userState by koinInject<uz.coder.foottopbusiness.presentation.main.settings.SettingsViewModel>().state.collectAsState()
         val isAdmin = userState.user?.roles?.any { it.name == "ROLE_ADMIN" || it.name == "ROLE_SUPER_ADMIN" } ?: false
 
         var userId by remember { mutableStateOf("") }
+        var selectedUser by remember { mutableStateOf<uz.coder.foottopbusiness.data.network.dto.UserDto?>(null) }
+        var userExpanded by remember { mutableStateOf(false) }
+
         var specialty by remember { mutableStateOf("") }
         var expYears by remember { mutableStateOf("") }
         var hourlyRate by remember { mutableStateOf("") }
@@ -100,7 +106,7 @@ class CoachCreateScreen : Screen {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = MaterialTheme.colorScheme.onPrimary)
                         }
                         Text(
-                            "Foydalanuvchi qo'shish",
+                            strings.coachProfile,
                             color = MaterialTheme.colorScheme.onPrimary,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
@@ -135,26 +141,60 @@ class CoachCreateScreen : Screen {
                             )
                             Spacer(Modifier.width(8.dp))
                             Text(
-                                "Foydalanuvchi ma'lumotlari",
+                                strings.profile,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         }
 
-                        CoachInputField(
-                            value = userId,
-                            onValueChange = { userId = it.filter { c -> c.isDigit() } },
-                            label = "Foydalanuvchi ID",
-                            placeholder = "Masalan: 9",
-                            icon = Icons.Default.Person,
-                            keyboardType = KeyboardType.Number
-                        )
+                        // User Selection Dropdown
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(strings.user, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Box {
+                                OutlinedTextField(
+                                    value = selectedUser?.let { "${it.id} | ${it.fullName ?: it.username}" } ?: strings.chooseDistrict, // Using chooseDistrict as placeholder
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    leadingIcon = { Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)) },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = userExpanded) },
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                                    )
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .matchParentSize()
+                                        .clickable { userExpanded = true }
+                                )
+                                DropdownMenu(
+                                    expanded = userExpanded,
+                                    onDismissRequest = { userExpanded = false },
+                                    modifier = Modifier.fillMaxWidth(0.9f).background(MaterialTheme.colorScheme.surface)
+                                ) {
+                                    state.users.forEach { user ->
+                                        DropdownMenuItem(
+                                            text = { Text("${user.id} | ${user.fullName ?: user.username}") },
+                                            onClick = {
+                                                selectedUser = user
+                                                userId = user.id.toString()
+                                                userExpanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
 
                         CoachInputField(
                             value = specialty,
                             onValueChange = { specialty = it },
-                            label = "Mutaxassislik (Coach)",
+                            label = strings.specialty,
                             placeholder = "Masalan: Futbol",
                             icon = Icons.Default.Badge
                         )
@@ -179,7 +219,7 @@ class CoachCreateScreen : Screen {
                             )
                             Spacer(Modifier.width(8.dp))
                             Text(
-                                "Professional ma'lumotlar",
+                                strings.technicalInfo,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -190,7 +230,7 @@ class CoachCreateScreen : Screen {
                             CoachInputField(
                                 value = expYears,
                                 onValueChange = { expYears = it.filter { c -> c.isDigit() } },
-                                label = "Tajriba (yil)",
+                                label = strings.experience,
                                 placeholder = "5",
                                 icon = Icons.Default.History,
                                 keyboardType = KeyboardType.Number,
@@ -200,7 +240,7 @@ class CoachCreateScreen : Screen {
                             CoachInputField(
                                 value = hourlyRate,
                                 onValueChange = { hourlyRate = it.filter { c -> c.isDigit() || c == '.' } },
-                                label = "Narx (so'm)",
+                                label = strings.price,
                                 placeholder = "150 000",
                                 icon = Icons.Default.Payments,
                                 keyboardType = KeyboardType.Decimal,
@@ -213,7 +253,7 @@ class CoachCreateScreen : Screen {
                             CoachInputField(
                                 value = availability,
                                 onValueChange = { availability = it },
-                                label = "Mavjudlik",
+                                label = strings.availability,
                                 placeholder = "Masalan: Dushanba-Juma, 18:00-21:00",
                                 icon = Icons.Default.Schedule
                             )
@@ -278,7 +318,7 @@ class CoachCreateScreen : Screen {
                     } else {
                         Icon(Icons.Default.Save, null)
                         Spacer(Modifier.width(8.dp))
-                        Text("SAQLASH", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onPrimary)
+                        Text(strings.save.uppercase(), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
             }

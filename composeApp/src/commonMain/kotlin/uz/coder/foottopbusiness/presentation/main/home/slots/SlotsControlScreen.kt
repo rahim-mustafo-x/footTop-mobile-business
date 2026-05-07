@@ -57,6 +57,7 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
+import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.formatAsTime
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.presentation.main.home.HomeContract
@@ -98,7 +99,7 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
             ) {
                 DurationChip("60 min", state.selectedDuration == "SIXTY") { viewModel.handleEvent(HomeContract.Event.ChangeDuration("SIXTY")) }
                 DurationChip("90 min", state.selectedDuration == "NINETY") { viewModel.handleEvent(HomeContract.Event.ChangeDuration("NINETY")) }
-                DurationChip("120 min", state.selectedDuration == "HUNDRED_TWENTY") { viewModel.handleEvent(HomeContract.Event.ChangeDuration("HUNDRED_TWENTY")) }
+                DurationChip("120 min", state.selectedDuration == "ONE_HUNDRED_TWENTY") { viewModel.handleEvent(HomeContract.Event.ChangeDuration("ONE_HUNDRED_TWENTY")) }
             }
 
             // Days Selection
@@ -178,10 +179,11 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                 val slotsToSelect = when (state.selectedDuration) {
                     "SIXTY" -> 3
                     "NINETY" -> 4
-                    "HUNDRED_TWENTY" -> 5
+                    "ONE_HUNDRED_TWENTY" -> 5
                     else -> 1
                 }
                 val selectedIndex = if (state.selectedSlot != null) state.stadiumSlots.indexOf(state.selectedSlot) else -1
+                val strings = Localization.current
 
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
@@ -196,7 +198,7 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                         val isPartiallySelected = selectedIndex != -1 && index >= selectedIndex && index < selectedIndex + slotsToSelect
                         
                         val successColor = MaterialTheme.colorScheme.primary
-                        val errorColor = MaterialTheme.colorScheme.error
+                        val errorColor = Color(0xFFEF5350)
                         
                         val baseColor = if (!available) errorColor else if (isPartiallySelected) MaterialTheme.colorScheme.onPrimary else successColor
                         val bgColor = if (!available) errorColor.copy(alpha = 0.1f) else if (isPartiallySelected) successColor else successColor.copy(alpha = 0.1f)
@@ -239,22 +241,36 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
         }
 
         if (state.isBookingSlot && state.selectedSlot != null) {
+            val slotsToSelect = when (state.selectedDuration) {
+                "SIXTY" -> 3
+                "NINETY" -> 4
+                "ONE_HUNDRED_TWENTY" -> 5
+                else -> 1
+            }
+            val selectedIndex = state.stadiumSlots.indexOf(state.selectedSlot)
+            
             var fullName by remember { mutableStateOf("") }
-            var phone by remember { mutableStateOf("+998") }
+            var phone by remember { mutableStateOf("") }
+            val strings = Localization.current
             val durationText = when(state.selectedDuration) {
                 "SIXTY" -> "60 min"
                 "NINETY" -> "90 min"
-                "HUNDRED_TWENTY" -> "120 min"
+                "ONE_HUNDRED_TWENTY" -> "120 min"
                 else -> ""
             }
 
+            val endSlotIndex = if (selectedIndex != -1) (selectedIndex + slotsToSelect - 1) else -1
+            val endSlot = state.stadiumSlots.getOrNull(endSlotIndex)
+            val startTimeStr = state.selectedSlot.first.formatAsTime()
+            val endTimeStr = endSlot?.first?.formatAsTime() ?: ""
+
             AlertDialog(
                 onDismissRequest = { viewModel.handleEvent(HomeContract.Event.DismissBookingDialog) },
-                title = { Text("Bron qilish: ${state.selectedSlot.first.formatAsTime()}") },
+                title = { Text("${strings.bookNow}: $startTimeStr - $endTimeStr") },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            text = "Davomiyligi: $durationText",
+                            text = "${strings.duration}: $durationText",
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -262,14 +278,14 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                         OutlinedTextField(
                             value = fullName,
                             onValueChange = { fullName = it },
-                            label = { Text("F.I.SH") },
+                            label = { Text(strings.fullName) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
                         OutlinedTextField(
                             value = phone,
                             onValueChange = { phone = it },
-                            label = { Text("Telefon raqami") },
+                            label = { Text(strings.phoneNumber) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
@@ -278,14 +294,14 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                 confirmButton = {
                     Button(
                         onClick = { viewModel.handleEvent(HomeContract.Event.CreateBooking(fullName, phone)) },
-                        enabled = fullName.isNotBlank() && phone.length >= 12
+                        enabled = fullName.isNotBlank() && phone.length >= 9
                     ) {
-                        Text("Saqlash")
+                        Text(strings.save)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { viewModel.handleEvent(HomeContract.Event.DismissBookingDialog) }) {
-                        Text("Bekor qilish")
+                        Text(strings.cancel)
                     }
                 }
             )
