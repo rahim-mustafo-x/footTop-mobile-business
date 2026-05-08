@@ -214,7 +214,6 @@ interface Language {
     val nearestSlot: String
     val noSlotsToday: String
     val infoNotAvailable: String
-    val addPitch: String
     val editStadium: String
     val understand: String
     val free: String
@@ -223,6 +222,7 @@ interface Language {
     val selected: String
     val bookNow: String
     val pitchName: String
+    val field: String
 
     // Errors
     val districtScopeViolation: String
@@ -436,7 +436,6 @@ class EnLanguage : Language {
     override val nearestSlot = "Nearest available slot"
     override val noSlotsToday = "No slots for this day"
     override val infoNotAvailable = "Information not available"
-    override val addPitch = "Add Pitch"
     override val editStadium = "Edit Stadium"
     override val understand = "I understand"
     override val free = "Free"
@@ -445,6 +444,7 @@ class EnLanguage : Language {
     override val selected = "Selected"
     override val bookNow = "Book Now"
     override val pitchName = "Pitch Name"
+    override val field = "Field"
 
     override val districtScopeViolation = "You can only create stadiums in your own assigned district."
     override val dataIntegrityViolation = "Data integrity error. This information may be used by other records."
@@ -657,7 +657,6 @@ class RuLanguage : Language {
     override val nearestSlot = "Ближайшее свободное время"
     override val noSlotsToday = "На этот день слотов нет"
     override val infoNotAvailable = "Информация недоступна"
-    override val addPitch = "Добавить поле"
     override val editStadium = "Редактировать стадион"
     override val understand = "Понятно"
     override val free = "Свободно"
@@ -666,6 +665,7 @@ class RuLanguage : Language {
     override val selected = "Выбрано"
     override val bookNow = "Забронировать"
     override val pitchName = "Название поля"
+    override val field = "Поле"
 
     override val districtScopeViolation = "Вы можете создавать стадионы только в своем закрепленном районе."
     override val dataIntegrityViolation = "Ошибка целостности данных. Эта информация может использоваться другими записями."
@@ -878,7 +878,6 @@ class UzLanguage : Language {
     override val nearestSlot = "Eng yaqin bo'sh vaqt"
     override val noSlotsToday = "Bu kunda slot yo'q"
     override val infoNotAvailable = "Ma'lumot mavjud emas"
-    override val addPitch = "Pitch qo'shish"
     override val editStadium = "Stadionni tahrirlash"
     override val understand = "Tushundim"
     override val free = "Bo'sh"
@@ -887,6 +886,7 @@ class UzLanguage : Language {
     override val selected = "Tanlangan"
     override val bookNow = "Bron qilish"
     override val pitchName = "Pitch nomi"
+    override val field = "Maydon"
 
     override val districtScopeViolation = "Siz faqat o'zingizga biriktirilgan hududda stadion yarata olasiz."
     override val dataIntegrityViolation = "Ma'lumotlar yaxlitligi xatosi. Ushbu ma'lumot boshqa yozuvlar tomonidan foydalanilayotgan bo'lishi mumkin."

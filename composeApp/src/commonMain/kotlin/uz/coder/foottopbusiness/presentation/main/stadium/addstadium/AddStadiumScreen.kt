@@ -1,4 +1,4 @@
-package uz.coder.foottopbusiness.presentation.main.stadium.addpitch
+package uz.coder.foottopbusiness.presentation.main.stadium.addstadium
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -86,7 +86,7 @@ import uz.coder.foottopbusiness.core.visualTransformation.PhoneTransformation
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
+fun AddStadiumScreen(viewModel: AddStadiumViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsState()
     val hostState = remember { SnackbarHostState() }
     val strings = Localization.current
@@ -96,10 +96,10 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
-                AddPitchContract.Effect.NavigateBack -> onBack()
-                is AddPitchContract.Effect.ShowToast -> {
+                AddStadiumContract.Effect.NavigateBack -> onBack()
+                is AddStadiumContract.Effect.ShowToast -> {
                     val mappedMessage = ErrorMapper.map(effect.message, strings)
-                    log("AddPitch", "Effect message: $mappedMessage")
+                    log("AddStadium", "Effect message: $mappedMessage")
                     hostState.showSnackbar(mappedMessage)
                 }
             }
@@ -119,7 +119,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
             onDismiss = { showOpenTimePicker = !showOpenTimePicker },
             onConfirm = { hour, minute ->
                 val t = "${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}"
-                viewModel.handleEvent(AddPitchContract.Event.OpenTime(t))
+                viewModel.handleEvent(AddStadiumContract.Event.OpenTime(t))
                 showOpenTimePicker = !showOpenTimePicker
             }
         )
@@ -135,7 +135,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
             onDismiss = { showCloseTimePicker = !showCloseTimePicker },
             onConfirm = { hour, minute ->
                 val t = "${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}"
-                viewModel.handleEvent(AddPitchContract.Event.CloseTime(t))
+                viewModel.handleEvent(AddStadiumContract.Event.CloseTime(t))
                 showCloseTimePicker = !showCloseTimePicker
             }
         )
@@ -220,16 +220,12 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                         )
                     }
 
-                    Row(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Box(modifier = Modifier.weight(1f)) {
-                            RegionDropdown(state, viewModel)
-                        }
-                        Box(modifier = Modifier.weight(1f)) {
-                            DistrictDropdown(state, viewModel)
-                        }
+                        RegionDropdown(state, viewModel)
+                        DistrictDropdown(state, viewModel)
                     }
 
                     LabelAndField(
@@ -238,7 +234,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                         strings.addressPlaceholder,
                         icon = Icons.Default.Map
                     ) {
-                        viewModel.handleEvent(AddPitchContract.Event.Name(it))
+                        viewModel.handleEvent(AddStadiumContract.Event.Name(it))
                     }
 
                     LabelAndField(
@@ -250,7 +246,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                         visualTransformation = PhoneTransformation()
                     ) {
                         if (it.length <= 9) {
-                            viewModel.handleEvent(AddPitchContract.Event.Phone(it))
+                            viewModel.handleEvent(AddStadiumContract.Event.Phone(it))
                         }
                     }
                 }
@@ -319,7 +315,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                         singleLine = false,
                         icon = Icons.Default.Description
                     ) {
-                        viewModel.handleEvent(AddPitchContract.Event.Description(it))
+                        viewModel.handleEvent(AddStadiumContract.Event.Description(it))
                     }
 
                     Row(
@@ -334,7 +330,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                                 KeyboardType.Number,
                                 icon = Icons.Default.GridView
                             ) {
-                                viewModel.handleEvent(AddPitchContract.Event.Capacity(it))
+                                viewModel.handleEvent(AddStadiumContract.Event.Capacity(it))
                             }
                         }
                         Box(modifier = Modifier.weight(1f)) {
@@ -350,7 +346,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
                         icon = Icons.Default.Payments,
                         visualTransformation = AmountTransformation()
                     ) {
-                        viewModel.handleEvent(AddPitchContract.Event.PricePerHour(it))
+                        viewModel.handleEvent(AddStadiumContract.Event.PricePerHour(it))
                     }
                 }
             }
@@ -454,7 +450,7 @@ fun AddPitchScreen(viewModel: AddPitchViewModel, onBack: () -> Unit) {
             Spacer(Modifier.height(12.dp))
 
             Button(
-                onClick = { viewModel.handleEvent(AddPitchContract.Event.Save) },
+                onClick = { viewModel.handleEvent(AddStadiumContract.Event.Save) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)
@@ -531,8 +527,8 @@ private fun LabelAndField(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RegionDropdown(
-    state: AddPitchContract.State,
-    viewModel: AddPitchViewModel
+    state: AddStadiumContract.State,
+    viewModel: AddStadiumViewModel
 ) {
     val strings = Localization.current
     Column {
@@ -540,7 +536,7 @@ private fun RegionDropdown(
         Spacer(Modifier.height(8.dp))
         ExposedDropdownMenuBox(
             expanded = state.showRegionDropdown,
-            onExpandedChange = { viewModel.handleEvent(AddPitchContract.Event.ShowRegionDropdown(it)) },
+            onExpandedChange = { viewModel.handleEvent(AddStadiumContract.Event.ShowRegionDropdown(it)) },
             modifier = Modifier.fillMaxWidth()
         ) {
             OutlinedTextField(
@@ -561,14 +557,14 @@ private fun RegionDropdown(
             )
             ExposedDropdownMenu(
                 expanded = state.showRegionDropdown,
-                onDismissRequest = { viewModel.handleEvent(AddPitchContract.Event.ShowRegionDropdown(false)) },
+                onDismissRequest = { viewModel.handleEvent(AddStadiumContract.Event.ShowRegionDropdown(false)) },
                 modifier = Modifier.background(MaterialTheme.colorScheme.surface)
             ) {
                 state.regions.forEach { region ->
                     DropdownMenuItem(
                         text = { Text(region.name) },
                         onClick = {
-                            viewModel.handleEvent(AddPitchContract.Event.SelectRegion(region))
+                            viewModel.handleEvent(AddStadiumContract.Event.SelectRegion(region))
                         }
                     )
                 }
@@ -580,8 +576,8 @@ private fun RegionDropdown(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DistrictDropdown(
-    state: AddPitchContract.State,
-    viewModel: AddPitchViewModel
+    state: AddStadiumContract.State,
+    viewModel: AddStadiumViewModel
 ) {
     val strings = Localization.current
     Column {
@@ -589,7 +585,7 @@ private fun DistrictDropdown(
         Spacer(Modifier.height(8.dp))
         ExposedDropdownMenuBox(
             expanded = state.showDistrictDropdown,
-            onExpandedChange = { viewModel.handleEvent(AddPitchContract.Event.ShowDistrictDropdown(it)) },
+            onExpandedChange = { viewModel.handleEvent(AddStadiumContract.Event.ShowDistrictDropdown(it)) },
             modifier = Modifier.fillMaxWidth()
         ) {
             OutlinedTextField(
@@ -610,14 +606,14 @@ private fun DistrictDropdown(
             )
             ExposedDropdownMenu(
                 expanded = state.showDistrictDropdown,
-                onDismissRequest = { viewModel.handleEvent(AddPitchContract.Event.ShowDistrictDropdown(false)) },
+                onDismissRequest = { viewModel.handleEvent(AddStadiumContract.Event.ShowDistrictDropdown(false)) },
                 modifier = Modifier.background(MaterialTheme.colorScheme.surface)
             ) {
                 state.districts.forEach { district ->
                     DropdownMenuItem(
                         text = { Text(district.name ?: "") },
                         onClick = {
-                            viewModel.handleEvent(AddPitchContract.Event.SelectDistrict(district))
+                            viewModel.handleEvent(AddStadiumContract.Event.SelectDistrict(district))
                         }
                     )
                 }
@@ -629,8 +625,8 @@ private fun DistrictDropdown(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun OwnerDropdown(
-    state: AddPitchContract.State,
-    viewModel: AddPitchViewModel
+    state: AddStadiumContract.State,
+    viewModel: AddStadiumViewModel
 ) {
     val strings = Localization.current
     Column {
@@ -638,7 +634,7 @@ private fun OwnerDropdown(
         Spacer(Modifier.height(8.dp))
         ExposedDropdownMenuBox(
             expanded = state.showOwnerDropdown,
-            onExpandedChange = { viewModel.handleEvent(AddPitchContract.Event.ShowOwnerDropdown(it)) },
+            onExpandedChange = { viewModel.handleEvent(AddStadiumContract.Event.ShowOwnerDropdown(it)) },
             modifier = Modifier.fillMaxWidth()
         ) {
             OutlinedTextField(
@@ -659,7 +655,7 @@ private fun OwnerDropdown(
             )
             ExposedDropdownMenu(
                 expanded = state.showOwnerDropdown,
-                onDismissRequest = { viewModel.handleEvent(AddPitchContract.Event.ShowOwnerDropdown(false)) },
+                onDismissRequest = { viewModel.handleEvent(AddStadiumContract.Event.ShowOwnerDropdown(false)) },
                 modifier = Modifier.background(MaterialTheme.colorScheme.surface)
             ) {
                 state.owners.forEach { owner ->
@@ -668,7 +664,7 @@ private fun OwnerDropdown(
                             Text("${owner.id} | ${owner.fullName ?: owner.username ?: ""}") 
                         },
                         onClick = {
-                            viewModel.handleEvent(AddPitchContract.Event.SelectOwner(owner))
+                            viewModel.handleEvent(AddStadiumContract.Event.SelectOwner(owner))
                         }
                     )
                 }
@@ -680,8 +676,8 @@ private fun OwnerDropdown(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SportTypeDropdown(
-    state: AddPitchContract.State,
-    viewModel: AddPitchViewModel
+    state: AddStadiumContract.State,
+    viewModel: AddStadiumViewModel
 ) {
     val strings = Localization.current
     Column {
@@ -689,7 +685,7 @@ private fun SportTypeDropdown(
         Spacer(Modifier.height(8.dp))
         ExposedDropdownMenuBox(
             expanded = state.showTypeDropdown,
-            onExpandedChange = { viewModel.handleEvent(AddPitchContract.Event.ShowTypeDropdown(it)) },
+            onExpandedChange = { viewModel.handleEvent(AddStadiumContract.Event.ShowTypeDropdown(it)) },
             modifier = Modifier.fillMaxWidth()
         ) {
             OutlinedTextField(
@@ -710,15 +706,15 @@ private fun SportTypeDropdown(
             )
             ExposedDropdownMenu(
                 expanded = state.showTypeDropdown,
-                onDismissRequest = { viewModel.handleEvent(AddPitchContract.Event.ShowTypeDropdown(false)) },
+                onDismissRequest = { viewModel.handleEvent(AddStadiumContract.Event.ShowTypeDropdown(false)) },
                 modifier = Modifier.background(MaterialTheme.colorScheme.surface)
             ) {
                 StadiumType.entries.forEach { type ->
                     DropdownMenuItem(
                         text = { Text(type.label) },
                         onClick = {
-                            viewModel.handleEvent(AddPitchContract.Event.Type(type))
-                            viewModel.handleEvent(AddPitchContract.Event.ShowTypeDropdown(false))
+                            viewModel.handleEvent(AddStadiumContract.Event.Type(type))
+                            viewModel.handleEvent(AddStadiumContract.Event.ShowTypeDropdown(false))
                         }
                     )
                 }

@@ -69,7 +69,7 @@ import coil3.compose.AsyncImage
 import uz.coder.foottopbusiness.core.BackHandler
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.core.visualTransformation.AmountTransformation
-import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.TimePickerDialog
+import uz.coder.foottopbusiness.presentation.main.stadium.addstadium.TimePickerDialog
 
 import uz.coder.foottopbusiness.core.localization.ErrorMapper
 import uz.coder.foottopbusiness.core.localization.Localization

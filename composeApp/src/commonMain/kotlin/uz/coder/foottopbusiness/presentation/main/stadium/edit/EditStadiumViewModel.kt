@@ -14,8 +14,8 @@ import uz.coder.foottopbusiness.domain.repository.UserRepository
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetDistrictsUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetRegionsUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.UpdateStadiumUseCase
-import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.StadiumDuration
-import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.StadiumType
+import uz.coder.foottopbusiness.presentation.main.stadium.addstadium.StadiumDuration
+import uz.coder.foottopbusiness.presentation.main.stadium.addstadium.StadiumType
 
 class EditStadiumViewModel(
     stadium: StadiumResponse,

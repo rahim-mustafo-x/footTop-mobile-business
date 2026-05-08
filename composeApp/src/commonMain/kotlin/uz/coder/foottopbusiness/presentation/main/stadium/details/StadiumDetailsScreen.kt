@@ -530,7 +530,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                             color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                                         ) {
                                             Text(
-                                                text = "${strings.addPitch} ${index + 1}",
+                                                text = "${strings.field} ${index + 1}",
                                                 modifier = Modifier.padding(
                                                     horizontal = 16.dp,
                                                     vertical = 8.dp
@@ -610,48 +610,43 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                             }
                         }
 
-                        Spacer(Modifier.height(24.dp))
-                        SectionTitle(strings.description)
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = stadium.description ?: strings.noDataYet,
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            lineHeight = 20.sp
-                        )
-                        
-                        Spacer(Modifier.height(32.dp))
+                        // Details Section
+                        Column(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Text(
+                                text = strings.description,
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = stadium.description ?: strings.noDataYet,
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                lineHeight = 20.sp
+                            )
+                            
+                            Spacer(Modifier.height(16.dp))
 
-                        // Add Pitch Button
-                        if (canEdit) {
-                            Button(
-                                onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.ShowAddPitchDialog) },
-                                modifier = Modifier.fillMaxWidth().height(56.dp),
-                                shape = RoundedCornerShape(16.dp),
-                            ) {
-                                Icon(Icons.Default.Add, contentDescription = null)
-                                Spacer(Modifier.width(8.dp))
-                                Text(strings.addPitch, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                            }
-
-                            Spacer(Modifier.height(12.dp))
-
-                            OutlinedButton(
-                                onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.EditClick) },
-                                modifier = Modifier.fillMaxWidth().height(56.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                border = androidx.compose.foundation.BorderStroke(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.primary
-                                ),
-                            ) {
-                                Icon(Icons.Default.Edit, contentDescription = null)
-                                Spacer(Modifier.width(8.dp))
-                                Text(
-                                    strings.editStadium,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                            if (canEdit) {
+                                OutlinedButton(
+                                    onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.EditClick) },
+                                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                                    shape = RoundedCornerShape(16.dp),
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        1.dp,
+                                        MaterialTheme.colorScheme.primary
+                                    ),
+                                ) {
+                                    Icon(Icons.Default.Edit, contentDescription = null)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        strings.editStadium,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             }
                         }
                         Spacer(Modifier.height(80.dp))
@@ -659,92 +654,6 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                 }
             }
         }
-    }
-
-    // Add Pitch Dialog
-    if (state.showAddPitchDialog) {
-        var showStartTimePicker by remember { mutableStateOf(false) }
-        var showEndTimePicker by remember { mutableStateOf(false) }
-
-        if (showStartTimePicker) {
-            val initialHour = try { state.pitchStartTime.split(":")[0].toInt() } catch (_: Exception) { 9 }
-            val initialMinute = try { state.pitchStartTime.split(":")[1].toInt() } catch (_: Exception) { 0 }
-            uz.coder.foottopbusiness.presentation.main.stadium.addpitch.TimePickerDialog(
-                initialHour = initialHour,
-                initialMinute = initialMinute,
-                onDismiss = { showStartTimePicker = false },
-                onConfirm = { h, m ->
-                    viewModel.handleEvent(StadiumDetailsContract.Event.PitchStartTimeChanged("${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}"))
-                    showStartTimePicker = false
-                }
-            )
-        }
-
-        if (showEndTimePicker) {
-            val initialHour = try { state.pitchEndTime.split(":")[0].toInt() } catch (_: Exception) { 18 }
-            val initialMinute = try { state.pitchEndTime.split(":")[1].toInt() } catch (_: Exception) { 0 }
-            uz.coder.foottopbusiness.presentation.main.stadium.addpitch.TimePickerDialog(
-                initialHour = initialHour,
-                initialMinute = initialMinute,
-                onDismiss = { showEndTimePicker = !showEndTimePicker },
-                onConfirm = { h, m ->
-                    viewModel.handleEvent(StadiumDetailsContract.Event.PitchEndTimeChanged("${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}"))
-                    showEndTimePicker = !showEndTimePicker
-                }
-            )
-        }
-
-        AlertDialog(
-            onDismissRequest = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissAddPitchDialog) },
-            title = { Text(strings.addPitch, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(
-                        value = state.pitchName,
-                        onValueChange = { viewModel.handleEvent(StadiumDetailsContract.Event.PitchNameChanged(it)) },
-                        label = { Text(strings.pitchName) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-                    
-                    OutlinedTextField(
-                        value = state.pitchStartTime,
-                        onValueChange = { },
-                        label = { Text(strings.openTime) },
-                        modifier = Modifier.fillMaxWidth().clickable { showStartTimePicker = !showStartTimePicker },
-                        enabled = false,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                            disabledBorderColor = MaterialTheme.colorScheme.outline,
-                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    )
-
-                    OutlinedTextField(
-                        value = state.pitchEndTime,
-                        onValueChange = { },
-                        label = { Text(strings.closeTime) },
-                        modifier = Modifier.fillMaxWidth().clickable { showEndTimePicker = true },
-                        enabled = false,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                            disabledBorderColor = MaterialTheme.colorScheme.outline,
-                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.SavePitch) }) {
-                    Text(strings.save, color = MaterialTheme.colorScheme.primary)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissAddPitchDialog) }) {
-                    Text(strings.cancel)
-                }
-            }
-        )
     }
 
     // Slot Action Dialog

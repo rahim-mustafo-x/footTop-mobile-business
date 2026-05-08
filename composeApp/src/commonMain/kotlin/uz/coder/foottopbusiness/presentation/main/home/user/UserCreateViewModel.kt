@@ -38,8 +38,7 @@ class UserCreateViewModel(
     val effect = _effect.asSharedFlow()
 
     init {
-        loadRegions()
-        loadUsers()
+        // Data loading moved to Event.LoadInitialData for better screen transition performance
     }
 
     private fun loadUsers() {
@@ -96,6 +95,10 @@ class UserCreateViewModel(
             }
             UserCreateContract.Event.CreateClicked -> createUser()
             UserCreateContract.Event.GeneratePasswordClicked -> generatePassword()
+            UserCreateContract.Event.LoadInitialData -> {
+                loadRegions()
+                loadUsers()
+            }
             UserCreateContract.Event.LoadRegions -> loadRegions()
             is UserCreateContract.Event.RegionSelected -> {
                 _state.update { it.copy(selectedRegion = event.region) }

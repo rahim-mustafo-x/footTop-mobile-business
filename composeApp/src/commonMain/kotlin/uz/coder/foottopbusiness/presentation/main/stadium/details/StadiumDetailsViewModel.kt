@@ -98,31 +98,6 @@ class StadiumDetailsViewModel(
             is StadiumDetailsContract.Event.ToggleActive -> {
                 updateStatus(event.isActive)
             }
-            StadiumDetailsContract.Event.ShowAddPitchDialog -> {
-                updateState { copy(showAddPitchDialog = true) }
-            }
-            StadiumDetailsContract.Event.DismissAddPitchDialog -> {
-                updateState {
-                    copy(
-                        showAddPitchDialog = false,
-                        pitchName = "",
-                        pitchStartTime = "",
-                        pitchEndTime = ""
-                    )
-                }
-            }
-            is StadiumDetailsContract.Event.PitchNameChanged -> {
-                updateState { copy(pitchName = event.name) }
-            }
-            is StadiumDetailsContract.Event.PitchStartTimeChanged -> {
-                updateState { copy(pitchStartTime = event.time) }
-            }
-            is StadiumDetailsContract.Event.PitchEndTimeChanged -> {
-                updateState { copy(pitchEndTime = event.time) }
-            }
-            StadiumDetailsContract.Event.SavePitch -> {
-                savePitch()
-            }
             is StadiumDetailsContract.Event.SlotClick -> {
                 updateState { copy(selectedSlot = event.slot, showSlotActionDialog = true) }
             }
@@ -262,40 +237,5 @@ class StadiumDetailsViewModel(
                 sendEffect(StadiumDetailsContract.Effect.ShowToast("Xatolik: ${it.message}"))
             }
         )
-    }
-
-    private fun savePitch() {
-        val s = state.value
-        if (s.pitchName.isBlank() || s.pitchStartTime.isBlank() || s.pitchEndTime.isBlank()) {
-            sendEffect(StadiumDetailsContract.Effect.ShowToast("Barcha maydonlarni to'ldiring"))
-            return
-        }
-
-        // Validation for HH:mm format
-        val timeRegex = Regex("^([01]?[0-9]|2[0-3]):[0-5][0-9]$")
-        if (!timeRegex.matches(s.pitchStartTime) || !timeRegex.matches(s.pitchEndTime)) {
-            sendEffect(StadiumDetailsContract.Effect.ShowToast("Vaqt formati noto'g'ri (HH:mm)"))
-            return
-        }
-
-        val pitch = PitchDto(
-            name = s.pitchName,
-            startTime = s.pitchStartTime,
-            endTime = s.pitchEndTime
-        )
-
-        // TODO: API ga yuborish kerak
-        log("Pitch", "Adding pitch: name=${pitch.name}, start=${pitch.startTime}, end=${pitch.endTime}")
-
-        updateState {
-            copy(
-                pitches = pitches + pitch,
-                showAddPitchDialog = false,
-                pitchName = "",
-                pitchStartTime = "",
-                pitchEndTime = ""
-            )
-        }
-        sendEffect(StadiumDetailsContract.Effect.ShowToast("Pitch muvaffaqiyatli qo'shildi"))
     }
 }

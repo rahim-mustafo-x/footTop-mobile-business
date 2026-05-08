@@ -30,7 +30,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddPitch: () -> Unit = {}) {
+fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddStadium: () -> Unit = {}) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val strings = Localization.current
     val scope = rememberCoroutineScope()
@@ -79,7 +79,7 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddPitch: () -> Unit 
                         fontWeight = FontWeight.Bold
                     )
                     IconButton(
-                        onClick = onNavigateToAddPitch,
+                        onClick = onNavigateToAddStadium,
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f))
@@ -233,13 +233,22 @@ private fun StadiumListItem(
                     color = MaterialTheme.colorScheme.onSurface,
                     letterSpacing = (-0.5).sp
                 )
-                Text(
-                    text = "${stadium.districtName}, ${stadium.regionName}",
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Column {
+                    Text(
+                        text = stadium.districtName ?: "",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = stadium.regionName ?: "",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
                 
                 Spacer(Modifier.height(8.dp))
                 

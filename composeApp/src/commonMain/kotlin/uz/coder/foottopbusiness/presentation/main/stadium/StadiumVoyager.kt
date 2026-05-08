@@ -9,23 +9,23 @@ import org.koin.core.parameter.parametersOf
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.presentation.main.stadium.details.StadiumDetailsScreen
 import uz.coder.foottopbusiness.presentation.main.stadium.details.StadiumDetailsViewModel
-import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.AddPitchVoyager
+import uz.coder.foottopbusiness.presentation.main.stadium.addstadium.AddStadiumVoyager
 
 object StadiumVoyager : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        ContentWithNav(onNavigateToAddPitch = { navigator.push(AddPitchVoyager) })
+        ContentWithNav(onNavigateToAddStadium = { navigator.push(AddStadiumVoyager) })
     }
 
     @Composable
-    fun ContentWithNav(onNavigateToAddPitch: (() -> Unit)? = null) {
+    fun ContentWithNav(onNavigateToAddStadium: (() -> Unit)? = null) {
         val viewModel = koinInject<StadiumViewModel>()
         val navigator = LocalNavigator.currentOrThrow
 
         StadiumScreen(
             viewModel = viewModel,
-            onNavigateToAddPitch = { onNavigateToAddPitch?.invoke() }
+            onNavigateToAddStadium = { onNavigateToAddStadium?.invoke() }
         )
 
         // Observe effects for navigation

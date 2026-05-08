@@ -47,7 +47,7 @@ import uz.coder.foottopbusiness.presentation.main.settings.SettingsViewModel
 import uz.coder.foottopbusiness.presentation.main.settings.editprofile.EditProfileViewModel
 import uz.coder.foottopbusiness.presentation.main.settings.notification.SendNotificationViewModel
 import uz.coder.foottopbusiness.presentation.main.stadium.StadiumViewModel
-import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.AddPitchViewModel
+import uz.coder.foottopbusiness.presentation.main.stadium.addstadium.AddStadiumViewModel
 import uz.coder.foottopbusiness.presentation.main.stadium.details.StadiumDetailsViewModel
 import uz.coder.foottopbusiness.presentation.main.stadium.edit.EditStadiumViewModel
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsViewModel
@@ -121,7 +121,7 @@ val appModule = module {
     factory { LoginViewModel(get(), get(), get(), get()) }
     factory { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { StadiumViewModel(get(), get(), get(), get()) }
-    factory { AddPitchViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    factory { AddStadiumViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { (stadium: StadiumResponse) -> EditStadiumViewModel(stadium, get(), get(), get(), get(), get()) }
     factory { (stadium: StadiumResponse) -> StadiumDetailsViewModel(stadium, get(), get(), get()) }
     factory { CoachesViewModel(get(), get(), get()) }

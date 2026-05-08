@@ -45,6 +45,7 @@ interface UserCreateContract {
         data class RoleChanged(val role: String) : Event
         data object CreateClicked : Event
         data object GeneratePasswordClicked : Event
+        data object LoadInitialData : Event
         
         // Coach events
         data class SpecialtyChanged(val value: String) : Event

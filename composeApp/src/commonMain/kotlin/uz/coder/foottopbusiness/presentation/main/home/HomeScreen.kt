@@ -82,7 +82,7 @@ import uz.coder.foottopbusiness.presentation.main.home.history.HistoryScreen
 import uz.coder.foottopbusiness.presentation.main.reports.ReportItem
 import uz.coder.foottopbusiness.presentation.main.settings.SettingsVoyager
 import uz.coder.foottopbusiness.presentation.main.settings.notification.SendNotificationVoyager
-import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.AddPitchVoyager
+import uz.coder.foottopbusiness.presentation.main.stadium.addstadium.AddStadiumVoyager
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsVoyager
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -184,7 +184,7 @@ fun HomeScreen(
                             UserRole.DISTRICT_ADMIN, UserRole.SUPER_ADMIN -> {
                                 HomeTab(
                                     state = state,
-                                    onAddStadium = { navigator.push(AddPitchVoyager) },
+                                    onAddStadium = { navigator.push(AddStadiumVoyager) },
                                     onAddUser = { navigator.push(uz.coder.foottopbusiness.presentation.main.home.user.UserCreateScreen()) },
                                     onAddTournament = { navigator.push(TournamentsVoyager) },
                                     onProfileClick = { navigator.push(SettingsVoyager) },
@@ -195,7 +195,7 @@ fun HomeScreen(
                             UserRole.OWNER -> {
                                 OwnerHomeTab(
                                     state = state,
-                                    onAddStadium = { navigator.push(AddPitchVoyager) },
+                                    onAddStadium = { navigator.push(AddStadiumVoyager) },
                                     onAddTournament = { navigator.push(TournamentsVoyager) },
                                     onAddCoach = { navigator.push(uz.coder.foottopbusiness.presentation.main.home.user.UserCreateScreen()) },
                                     onProfileClick = { navigator.push(SettingsVoyager) },

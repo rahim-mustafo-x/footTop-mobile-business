@@ -1,4 +1,4 @@
-package uz.coder.foottopbusiness.presentation.main.stadium.addpitch
+package uz.coder.foottopbusiness.presentation.main.stadium.addstadium
 
 import uz.coder.foottopbusiness.core.mvi.MviEffect
 import uz.coder.foottopbusiness.core.mvi.MviEvent
@@ -19,7 +19,7 @@ enum class StadiumDuration(val label: String) {
     ONE_HUNDRED_TWENTY("120 min"),
 }
 
-sealed interface AddPitchContract {
+sealed interface AddStadiumContract {
     data class State(
         val name: String = "",
         val phone: String = "",

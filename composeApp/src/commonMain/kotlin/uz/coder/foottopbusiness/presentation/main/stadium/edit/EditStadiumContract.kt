@@ -7,8 +7,8 @@ import uz.coder.foottopbusiness.data.network.dto.UserDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.RegionDto
 import uz.coder.foottopbusiness.domain.model.UserRole
-import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.StadiumDuration
-import uz.coder.foottopbusiness.presentation.main.stadium.addpitch.StadiumType
+import uz.coder.foottopbusiness.presentation.main.stadium.addstadium.StadiumDuration
+import uz.coder.foottopbusiness.presentation.main.stadium.addstadium.StadiumType
 
 sealed interface EditStadiumContract {
     data class State(

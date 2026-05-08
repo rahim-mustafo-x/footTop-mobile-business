@@ -96,6 +96,7 @@ class UserCreateScreen : Screen {
         }
 
         LaunchedEffect(Unit) {
+            viewModel.onEvent(UserCreateContract.Event.LoadInitialData)
             viewModel.effect.collectLatest { effect ->
                 when (effect) {
                     is UserCreateContract.Effect.ShowError -> {
