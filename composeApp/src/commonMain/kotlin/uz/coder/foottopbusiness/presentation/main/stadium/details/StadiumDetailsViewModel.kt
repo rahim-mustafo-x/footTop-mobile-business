@@ -1,29 +1,18 @@
 package uz.coder.foottopbusiness.presentation.main.stadium.details
 
-import uz.coder.foottopbusiness.core.log
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.domain.repository.StadiumRepository
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.number
-import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.*
 import kotlinx.coroutines.flow.firstOrNull
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.domain.model.UserRole
-import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.toInstant
-
 import uz.coder.foottopbusiness.domain.usecase.booking.CreateBookingUseCase
 import uz.coder.foottopbusiness.data.network.dto.booking.BookingRequestDto
 import kotlinx.coroutines.flow.first
-
-fun durationMinutesKey(key: String): Int = when(key) {
-    "SIXTY" -> 60
-    "NINETY" -> 90
-    "ONE_HUNDRED_TWENTY" -> 120
-    else -> 60
-}
+import kotlinx.coroutines.Job
+import uz.coder.foottopbusiness.core.toLocalDateTimeSafe
+import kotlin.time.Duration.Companion.minutes
 
 fun slotsNeededForDuration(mins: Int): Int = (mins / 30) + 1
 
@@ -35,6 +24,8 @@ class StadiumDetailsViewModel(
 ) : BaseViewModel<StadiumDetailsContract.State, StadiumDetailsContract.Effect, StadiumDetailsContract.Event>(
     initialState = StadiumDetailsContract.State(stadium = stadium)
 ) {
+    private var bookingJob: Job? = null
+
     init {
         loadUserRole()
         refreshStadium()
@@ -55,7 +46,7 @@ class StadiumDetailsViewModel(
     private fun refreshStadium() {
         val currentStadium = state.value.stadium ?: return
         val now = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-        val dateStr = state.value.selectedDate ?: "${now.year}-${now.month.number.toString().padStart(2, '0')}-${now.day.toString().padStart(2, '0')}"
+        val dateStr = state.value.selectedDate ?: "${now.year}-${now.monthNumber.toString().padStart(2, '0')}-${now.dayOfMonth.toString().padStart(2, '0')}"
         val duration = state.value.selectedDurationKey
         
         executeAsync(
@@ -116,10 +107,38 @@ class StadiumDetailsViewModel(
                 refreshStadium()
             }
             is StadiumDetailsContract.Event.SelectSlotSelection -> {
-                updateState { copy(selectedPitchIndex = event.pitchIndex, selectedStartIndex = event.startIndex) }
+                val s = state.value
+                val st = s.stadiums.getOrNull(event.pitchIndex)
+                val slots = st?.slots ?: emptyList()
+                val clickedSlot = slots.getOrNull(event.startIndex)
+                
+                if (clickedSlot != null) {
+                    val durationMins = StadiumDetailsContract.durationMinutesKey(s.selectedDurationKey)
+                    val tz = TimeZone.currentSystemDefault()
+                    val startDT = clickedSlot.start.toLocalDateTimeSafe()
+                    val selectedEnd = startDT?.toInstant(tz)?.plus(durationMins.minutes)?.toLocalDateTime(tz)
+
+                    // Conflict Check
+                    val hasConflict = slots.any { slot ->
+                        val slotStart = slot.start?.toLocalDateTimeSafe()
+                        val slotEnd = slot.end?.toLocalDateTimeSafe()
+                        slot.status != "AVAILABLE" &&
+                                startDT != null && selectedEnd != null &&
+                                slotStart != null && slotEnd != null &&
+                                startDT < slotEnd && selectedEnd > slotStart
+                    }
+
+                    updateState { 
+                        copy(
+                            selectedPitchIndex = event.pitchIndex, 
+                            selectedStartIndex = event.startIndex,
+                            hasConflict = hasConflict
+                        ) 
+                    }
+                }
             }
             StadiumDetailsContract.Event.ClearSelection -> {
-                updateState { copy(selectedPitchIndex = null, selectedStartIndex = null) }
+                updateState { copy(selectedPitchIndex = null, selectedStartIndex = null, hasConflict = false) }
             }
             StadiumDetailsContract.Event.Refresh -> {
                 refreshStadium()
@@ -134,8 +153,10 @@ class StadiumDetailsViewModel(
     }
 
     private fun bookSelectedSlots(event: StadiumDetailsContract.Event.CreateBooking) {
+        if (bookingJob?.isActive == true) return
+        
         updateState { copy(isBooking = true) }
-        executeAsync(
+        bookingJob = executeAsync(
             block = {
                 val userId = preferencesManager.userId.first().toLong()
                 val request = BookingRequestDto(

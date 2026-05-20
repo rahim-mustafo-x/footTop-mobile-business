@@ -12,14 +12,21 @@ import uz.coder.foottopbusiness.data.network.dto.BaseResponse
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.data.network.dto.tournament.TournamentRequestDto
 
+import uz.coder.foottopbusiness.data.network.dto.tournament.PageTournamentResponseDto
+
 class TournamentApiService(private val client: HttpClient) {
     companion object {
         private const val TOURNAMENTS = "/v1/tournaments"
         private const val TOURNAMENTS_CREATE = "/v1/tournaments/create"
     }
 
-    suspend fun getTournaments(): BaseResponse<List<TournamentResponseDto>> =
-        client.get(TOURNAMENTS).body()
+    suspend fun getTournaments(page: Int = 0, size: Int = 10): BaseResponse<PageTournamentResponseDto> =
+        client.get(TOURNAMENTS) {
+            url {
+                parameters.append("page", page.toString())
+                parameters.append("size", size.toString())
+            }
+        }.body()
 
     suspend fun getTournamentById(id: Long): BaseResponse<TournamentResponseDto> =
         client.get(TOURNAMENTS){

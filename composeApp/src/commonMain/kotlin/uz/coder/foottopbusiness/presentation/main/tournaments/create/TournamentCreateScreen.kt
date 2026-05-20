@@ -273,7 +273,7 @@ class TournamentCreateScreen : Screen {
 
                 // Date and Time Card
                 CreateCard(title = "${strings.tournamentDate} & ${strings.tournamentTime}", icon = Icons.Default.CalendarToday) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(modifier = Modifier.weight(1f).clickable { showStartDatePicker = true }) {
                             TournamentInputField(
                                 value = startDate,
@@ -296,7 +296,7 @@ class TournamentCreateScreen : Screen {
                         }
                     }
 
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(modifier = Modifier.weight(1f).clickable { showStartTimePicker = true }) {
                             TournamentInputField(
                                 value = startTime,
@@ -455,15 +455,15 @@ class TournamentCreateScreen : Screen {
         enabled: Boolean = true,
         visualTransformation: VisualTransformation = VisualTransformation.None
     ) {
-        Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
+        Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f), maxLines = 1)
             OutlinedTextField(
                 value = value,
                 onValueChange = onValueChange,
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), fontSize = 14.sp) },
-                leadingIcon = { Icon(icon, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f), modifier = Modifier.size(20.dp)) },
-                shape = RoundedCornerShape(16.dp),
+                placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), fontSize = 12.sp) },
+                leadingIcon = { Icon(icon, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f), modifier = Modifier.size(16.dp)) },
+                shape = RoundedCornerShape(12.dp),
                 keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
                 enabled = enabled,
                 singleLine = true,

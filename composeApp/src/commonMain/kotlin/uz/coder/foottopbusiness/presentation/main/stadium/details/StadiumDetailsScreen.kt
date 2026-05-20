@@ -7,28 +7,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -37,15 +26,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -60,7 +46,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -68,9 +53,13 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.compose.AsyncImage
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Error
@@ -82,17 +71,17 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
+import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.toInstant
+import kotlinx.coroutines.launch
 import uz.coder.foottopbusiness.core.formatToTime
 import uz.coder.foottopbusiness.core.localization.ErrorMapper
 import uz.coder.foottopbusiness.core.localization.Localization
@@ -100,46 +89,12 @@ import uz.coder.foottopbusiness.core.platform.makePhoneCall
 import uz.coder.foottopbusiness.data.network.dto.stadium.SlotDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.domain.model.UserRole
+import uz.coder.foottopbusiness.core.plusMinutes
+import uz.coder.foottopbusiness.core.toLocalDateTimeSafe
+
 import uz.coder.foottopbusiness.presentation.main.stadium.edit.EditStadiumVoyager
-
-// ─── Utilities ──────────────────────────────────────────────────────────────
-
-fun String?.toLocalDateTimeSafe(): LocalDateTime? {
-    if (this == null) return null
-    return try {
-        if (this.contains("T")) {
-            LocalDateTime.parse(this)
-        } else {
-            null
-        }
-    } catch (_: Exception) {
-        null
-    }
-}
-
-fun canFitDuration(
-    slots: List<SlotDto>,
-    startIndex: Int,
-    tz: TimeZone,
-    now: kotlin.time.Instant,
-    durationMins: Int
-): Boolean {
-    val needed = slotsNeededForDuration(durationMins)
-    val endIndex = startIndex + needed
-
-    if (endIndex > slots.size) return false
-
-    val selectedSlots = (startIndex until endIndex).mapNotNull { slots.getOrNull(it) }
-
-    if (selectedSlots.size < needed) return false
-
-    // All slots except the last one must be AVAILABLE and not expired
-    return selectedSlots.dropLast(1).all { slot ->
-        val startInstant = slot.start?.toLocalDateTimeSafe()?.toInstant(tz) ?: return false
-        val isExpired = startInstant <= now
-        slot.status == "AVAILABLE" && !isExpired
-    }
-}
+import kotlinx.datetime.*
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -151,6 +106,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
     val snackbarHostState = remember { SnackbarHostState() }
     val tz = TimeZone.currentSystemDefault()
     val now = remember { kotlin.time.Clock.System.now() }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     val strings = Localization.current
 
     LaunchedEffect(Unit) {
@@ -161,18 +117,18 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     navigator.push(EditStadiumVoyager(effect.stadium))
                 }
                 is StadiumDetailsContract.Effect.ShowToast -> {
-                    snackbarHostState.showSnackbar(ErrorMapper.map(effect.message, strings))
+                    scope.launch {
+                        snackbarHostState.showSnackbar(ErrorMapper.map(effect.message, strings))
+                    }
                 }
-                is StadiumDetailsContract.Effect.ShowBookingResult -> {
-                    // This is handled by showBookingResultDialog in state
-                }
+                is StadiumDetailsContract.Effect.ShowBookingResult -> { }
             }
         }
     }
 
     // Auto-selection logic
     var hasAutoSelected by remember { mutableStateOf(false) }
-    val durationMins = durationMinutesKey(state.selectedDurationKey)
+    val durationMins = StadiumDetailsContract.durationMinutesKey(state.selectedDurationKey)
 
     LaunchedEffect(state.selectedDate, state.selectedDurationKey) {
         hasAutoSelected = false
@@ -184,9 +140,9 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                 val slots = st.slots ?: emptyList()
                 val firstValidIdx = slots.indexOfFirst { slot ->
                     val slotIdx = slots.indexOf(slot)
-                    val slotInstant = slot.start?.toLocalDateTimeSafe()?.toInstant(tz)
+                    val slotInstant = slot.start.toLocalDateTimeSafe()?.toInstant(tz)
                     val expired = slotInstant?.let { it <= now } ?: true
-                    slot.status == "AVAILABLE" && !expired && canFitDuration(slots, slotIdx, tz, now, durationMins)
+                    slot.status == "AVAILABLE" && !expired
                 }
                 if (firstValidIdx >= 0) {
                     hasAutoSelected = true
@@ -233,7 +189,6 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
         bottomBar = {
             if (stadium != null) {
                 if (isOwnerless) {
-                    // Ownerless stadium - show Call CTA
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -265,22 +220,17 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                         }
                     }
                 } else if (showSticky) {
-                    val currentStadium = stadiums.getOrNull(selectedPitchIndex) ?: stadium
+                    val currentStadium = stadiums.getOrNull(selectedPitchIndex!!) ?: stadium
                     val price = currentStadium.pricePerHour ?: 0.0
                     val totalPrice = price * (durationMins / 60.0)
                     val currentSlots = currentStadium.slots ?: emptyList()
-                    val selectedSlot = currentSlots.getOrNull(startIdx)
+                    val selectedSlot = currentSlots.getOrNull(startIdx!!)
                     val startTime = selectedSlot?.start?.toLocalDateTimeSafe()
                     
-                    // Calculate end time string based on duration
-                    val slotsNeeded = slotsNeededForDuration(durationMins)
-                    val endSlot = currentSlots.getOrNull(startIdx + slotsNeeded - 1)
-                    
                     val startTimeStr = startTime?.let { "${it.hour.toString().padStart(2, '0')}:${it.minute.toString().padStart(2, '0')}" } ?: ""
-                    val endTimeStr = selectedSlot?.let { 
-                        val endSlot = currentSlots.getOrNull(startIdx + slotsNeeded - 1)
-                        endSlot?.start?.formatToTime() 
-                    } ?: ""
+                    val selectedEnd = startTime?.plusMinutes(durationMins)
+                    val endTimeStr = selectedEnd?.let { "${it.hour.toString().padStart(2, '0')}:${it.minute.toString().padStart(2, '0')}" } ?: ""
+                    val hasConflict = state.hasConflict
 
                     Surface(
                         modifier = Modifier
@@ -289,30 +239,95 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                         shadowElevation = 8.dp,
                         color = MaterialTheme.colorScheme.surface
                     ) {
-                        Box(
+                        Column(
                             modifier = Modifier
                                 .padding(horizontal = 16.dp, vertical = 12.dp)
                         ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Vaqt",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = "$startTimeStr – $endTimeStr",
+                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+
+                                Box(modifier = Modifier.width(1.dp).height(24.dp).background(MaterialTheme.colorScheme.outlineVariant))
+
+                                Column(modifier = Modifier.weight(0.6f)) {
+                                    Text(
+                                        text = "Davomiyligi",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = "$durationMins min",
+                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+
+                            if (hasConflict) {
+                                Spacer(Modifier.height(10.dp))
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.Error,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        text = "Tanlangan vaqtda band joylar bor",
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            }
+
+                            Spacer(Modifier.height(12.dp))
+
                             Button(
                                 onClick = {
-                                    val endSlot = currentSlots.getOrNull(startIdx + slotsNeeded - 1)
-                                    viewModel.handleEvent(
-                                        StadiumDetailsContract.Event.CreateBooking(
-                                            stadiumId = currentStadium.id ?: 0,
-                                            startTime = selectedSlot?.start ?: "",
-                                            endTime = endSlot?.start ?: "",
-                                            price = totalPrice
+                                    if (selectedEnd != null && !hasConflict) {
+                                        viewModel.handleEvent(
+                                            StadiumDetailsContract.Event.CreateBooking(
+                                                stadiumId = currentStadium.id ?: 0,
+                                                startTime = selectedSlot?.start ?: "",
+                                                endTime = selectedEnd.toString(),
+                                                price = totalPrice
+                                            )
                                         )
-                                    )
+                                    }
                                 },
+                                enabled = !hasConflict,
                                 shape = RoundedCornerShape(20.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    disabledContainerColor = MaterialTheme.colorScheme.outlineVariant
+                                ),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(60.dp)
+                                    .height(56.dp)
                             ) {
                                 Text(
-                                    text = "${strings.bookNow} $startTimeStr – $endTimeStr",
+                                    text = strings.bookNow,
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                                 )
                             }
@@ -335,7 +350,6 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     .background(MaterialTheme.colorScheme.surface)
             ) {
                 item {
-                    // Image Header
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -455,64 +469,9 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                                 }
                             } else if (stadiums.isNotEmpty()) {
-                                // Find earliest available slot across all pitches
-                                val earliestSlot = stadiums
-                                    .flatMap { it.slots ?: emptyList() }
-                                    .filter {
-                                        state.selectedDate == null || it.start?.startsWith(state.selectedDate!!) == true
-                                    }
-                                    .let { allSlots ->
-                                        allSlots.firstOrNull { slot ->
-                                            val slotIdx = allSlots.indexOf(slot)
-                                            val slotInstant =
-                                                slot.start?.toLocalDateTimeSafe()?.toInstant(tz)
-                                            val expired = slotInstant?.let { it <= now } ?: true
-                                            slot.status == "AVAILABLE" && !expired && canFitDuration(
-                                                allSlots,
-                                                slotIdx,
-                                                tz,
-                                                now,
-                                                durationMins
-                                            )
-                                        }
-                                    }
-
-                                if (earliestSlot != null) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Schedule,
-                                            null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                        Spacer(Modifier.width(8.dp))
-                                        Text(
-                                            text = "${strings.nearestSlot}: ",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                        Text(
-                                            text = earliestSlot.start.formatToTime(),
-                                            style = MaterialTheme.typography.bodyMedium.copy(
-                                                fontWeight = FontWeight.Bold
-                                            ),
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                    HorizontalDivider(
-                                        modifier = Modifier.padding(vertical = 8.dp),
-                                        color = MaterialTheme.colorScheme.outlineVariant
-                                    )
-                                }
-
-                                // Pitch selector (tabs)
                                 var selectedTabIndex by remember { mutableStateOf(0) }
                                 LaunchedEffect(selectedPitchIndex) {
-                                    if (selectedPitchIndex != null) selectedTabIndex =
-                                        selectedPitchIndex
+                                    if (selectedPitchIndex != null) selectedTabIndex = selectedPitchIndex
                                 }
 
                                 LazyRow(
@@ -546,21 +505,18 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
 
                                 Spacer(Modifier.height(12.dp))
 
-                                val currentPitchSlots =
-                                    stadiums.getOrNull(selectedTabIndex)?.slots ?: emptyList()
+                                val currentPitchSlots = stadiums.getOrNull(selectedTabIndex)?.slots ?: emptyList()
                                 if (currentPitchSlots.isEmpty()) {
                                     Text(
                                         strings.noSlotsToday,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 } else {
-                                    val slotsNeeded = slotsNeededForDuration(durationMins)
                                     SlotRow(
                                         slots = currentPitchSlots,
                                         pitchIndex = selectedTabIndex,
                                         selectedPitchIndex = state.selectedPitchIndex,
                                         selectedStartIndex = state.selectedStartIndex,
-                                        slotsPerBooking = slotsNeeded,
                                         durationMins = durationMins,
                                         now = now,
                                         tz = tz,
@@ -577,49 +533,14 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                         }
                                     )
                                 }
-                            } else {
-                                Text(
-                                    strings.infoNotAvailable,
-                                    fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        } else {
-                            Spacer(Modifier.height(12.dp))
-                            Surface(
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        Icons.Default.Info,
-                                        null,
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                    Spacer(Modifier.width(12.dp))
-                                    Text(
-                                        strings.noAccount + strings.contactAdmin, // Placeholder for "online booking not available"
-                                        fontSize = 14.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
                             }
                         }
 
-                        // Details Section
                         Column(
-                            modifier = Modifier.padding(horizontal = 16.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Text(
-                                text = strings.description,
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                            Spacer(Modifier.height(24.dp))
+                            SectionTitle(strings.description)
                             Text(
                                 text = stadium.description ?: strings.noDataYet,
                                 fontSize = 14.sp,
@@ -656,8 +577,6 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
         }
     }
 
-    // Slot Action Dialog
-    // Booking Result Dialog
     if (state.showBookingResultDialog) {
         BookingResultDialog(
             message = state.bookingResultMessage,
@@ -665,6 +584,215 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
             onDismiss = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissBookingResultDialog) }
         )
     }
+}
+
+@Composable
+fun SlotRow(
+    slots: List<SlotDto>,
+    pitchIndex: Int,
+    selectedPitchIndex: Int?,
+    selectedStartIndex: Int?,
+    durationMins: Int,
+    now: Instant,
+    tz: TimeZone,
+    onSelectStart: (Int) -> Unit,
+    onClear: () -> Unit
+) {
+    val strings = Localization.current
+    val slotsNeeded = when(durationMins) {
+        60 -> 3
+        90 -> 4
+        120 -> 5
+        else -> 3
+    }
+    
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            LegendDot(MaterialTheme.colorScheme.outlineVariant, strings.free)
+            LegendDot(MaterialTheme.colorScheme.primary, strings.selected)
+            LegendDot(MaterialTheme.colorScheme.error, strings.booked)
+            LegendDot(MaterialTheme.colorScheme.outline, strings.past)
+        }
+
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(4),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.heightIn(max = 1000.dp),
+            contentPadding = PaddingValues(bottom = 16.dp)
+        ) {
+            items(slots.size) { idx ->
+                val slot = slots[idx]
+                val slotStart = slot.start?.toLocalDateTimeSafe()
+                val startInstant = slotStart?.toInstant(tz)
+                val isExpired = startInstant?.let { it <= now } ?: true
+
+                val isSelected = selectedPitchIndex == pitchIndex && 
+                                 selectedStartIndex != null && 
+                                 idx >= selectedStartIndex && 
+                                 idx < selectedStartIndex + slotsNeeded
+                
+                val isBooked = slot.status == "BOOKED"
+
+                val cardColor = when {
+                    isSelected -> MaterialTheme.colorScheme.primary
+                    isBooked -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f)
+                    isExpired -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                    else -> MaterialTheme.colorScheme.surface
+                }
+
+                val contentColor = when {
+                    isSelected -> MaterialTheme.colorScheme.onPrimary
+                    isBooked -> MaterialTheme.colorScheme.error
+                    isExpired -> MaterialTheme.colorScheme.outline
+                    else -> MaterialTheme.colorScheme.onSurface
+                }
+
+                val borderStroke = when {
+                    isSelected -> null
+                    isBooked -> androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f))
+                    else -> androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                }
+
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable {
+                            if (isBooked || isExpired) return@clickable
+                            if (isSelected && selectedStartIndex == idx) onClear() else onSelectStart(idx)
+                        },
+                    color = cardColor,
+                    shape = RoundedCornerShape(12.dp),
+                    border = borderStroke
+                ) {
+                    Column(
+                        modifier = Modifier.padding(vertical = 12.dp, horizontal = 4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = slot.start.formatToTime(),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp),
+                            color = contentColor
+                        )
+                        val statusLabel = when {
+                            isSelected && selectedStartIndex == idx -> "Start"
+                            isSelected -> strings.selected
+                            isBooked -> strings.booked
+                            isExpired -> strings.past
+                            else -> strings.free
+                        }
+                        Text(
+                            text = statusLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = contentColor.copy(alpha = 0.8f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LegendDot(color: Color, label: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(10.dp).background(color, RoundedCornerShape(3.dp)))
+        Spacer(Modifier.width(4.dp))
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+fun InfoCard(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
+) {
+    Surface(
+        modifier = modifier.clickable(enabled = onClick != null) { onClick?.invoke() },
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(10.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(8.dp), 
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(subtitle, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Spacer(Modifier.width(4.dp))
+            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+        }
+    }
+}
+
+@Composable
+fun DaySelector(selectedDate: String?, onSelect: (String) -> Unit) {
+    val now = remember { 
+        kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+    }
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(end = 16.dp)) {
+        items(7) { i ->
+            val date = now.date.plus(i, DateTimeUnit.DAY)
+            val dateStr = date.toString()
+            val isSelected = selectedDate == dateStr
+            Surface(
+                modifier = Modifier.clickable { onSelect(dateStr) },
+                shape = RoundedCornerShape(12.dp),
+                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(date.dayOfWeek.name.take(3), color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+                    Text(date.dayOfMonth.toString(), color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DurationSelector(selectedKey: String, onSelect: (String) -> Unit) {
+    val options = listOf("60" to "SIXTY", "90" to "NINETY", "120" to "ONE_HUNDRED_TWENTY")
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        options.forEach { (label, key) ->
+            val isSelected = selectedKey == key
+            Surface(
+                modifier = Modifier.weight(1f).clickable { onSelect(key) },
+                shape = RoundedCornerShape(10.dp),
+                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+            ) {
+                Text(
+                    "$label min",
+                    modifier = Modifier.padding(vertical = 10.dp),
+                    textAlign = TextAlign.Center,
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SectionTitle(text: String) {
+    Text(text = text, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold), color = MaterialTheme.colorScheme.onSurface)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -729,208 +857,4 @@ fun BookingResultDialog(message: String, isSuccess: Boolean, onDismiss: () -> Un
             }
         }
     }
-}
-
-@Composable
-fun SlotRow(
-    slots: List<SlotDto>,
-    pitchIndex: Int,
-    selectedPitchIndex: Int?,
-    selectedStartIndex: Int?,
-    slotsPerBooking: Int,
-    durationMins: Int,
-    now: Instant,
-    tz: TimeZone,
-    onSelectStart: (Int) -> Unit,
-    onClear: () -> Unit
-) {
-    val isSelectedPitch = selectedPitchIndex == pitchIndex
-    val strings = Localization.current
-
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            LegendDot(MaterialTheme.colorScheme.primary, strings.free)
-            LegendDot(MaterialTheme.colorScheme.error, strings.booked)
-            LegendDot(MaterialTheme.colorScheme.outline, strings.past)
-        }
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.heightIn(max = 600.dp)
-        ) {
-            items(slots.size) { idx ->
-                val slot = slots[idx]
-                val startInstant = slot.start?.toLocalDateTimeSafe()?.toInstant(tz)
-                val isExpired = startInstant?.let { it <= now } ?: true
-
-                val isStart = isSelectedPitch && selectedStartIndex == idx
-                val isInRange = if (isSelectedPitch && selectedStartIndex != null) {
-                    val end = selectedStartIndex + slotsPerBooking - 1
-                    idx in (selectedStartIndex + 1)..end
-                } else false
-
-                val isBooked = slot.status == "BOOKED"
-
-                val cardColor = when {
-                    isStart || isInRange -> MaterialTheme.colorScheme.primary
-                    isBooked -> Color(0xFFEF5350)
-                    isExpired -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                    else -> MaterialTheme.colorScheme.surface
-                }
-
-                val contentColor = when {
-                    isStart || isInRange -> MaterialTheme.colorScheme.onPrimary
-                    isBooked -> MaterialTheme.colorScheme.error
-                    isExpired -> MaterialTheme.colorScheme.outline
-                    else -> MaterialTheme.colorScheme.onSurface
-                }
-
-                val borderStroke = when {
-                    isStart || isInRange -> null
-                    isBooked -> androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f))
-                    else -> androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                }
-
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable {
-                            if (isBooked || isExpired) return@clickable
-                            
-                            if (isStart || isInRange) {
-                                onClear()
-                            } else {
-                                if (canFitDuration(slots, idx, tz, now, durationMins)) {
-                                    onSelectStart(idx)
-                                }
-                            }
-                        },
-                    color = cardColor,
-                    shape = RoundedCornerShape(12.dp),
-                    border = borderStroke
-                ) {
-                    Column(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = slot.start.formatToTime(),
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = contentColor
-                        )
-                        val statusLabel = when {
-                            isStart -> "Start"
-                            isInRange -> strings.selected
-                            isBooked -> strings.booked
-                            isExpired -> strings.past
-                            else -> strings.free
-                        }
-                        Text(
-                            text = statusLabel,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = contentColor.copy(alpha = 0.8f)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun LegendDot(color: Color, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(10.dp).background(color, RoundedCornerShape(3.dp)))
-        Spacer(Modifier.width(4.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
-fun InfoCard(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null
-) {
-    Surface(
-        modifier = modifier.clickable(enabled = onClick != null) { onClick?.invoke() },
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = RoundedCornerShape(10.dp)
-    ) {
-        Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(8.dp))
-            Column {
-                Text(title, style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(subtitle, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-        }
-    }
-}
-
-@Composable
-fun DaySelector(selectedDate: String?, onSelect: (String) -> Unit) {
-    val now = remember { 
-        kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-    }
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(end = 16.dp)) {
-        items(7) { i ->
-            val date = now.date.plus(i, DateTimeUnit.DAY)
-            val dateStr = date.toString()
-            val isSelected = selectedDate == dateStr
-            Surface(
-                modifier = Modifier.clickable { onSelect(dateStr) },
-                shape = RoundedCornerShape(12.dp),
-                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(date.dayOfWeek.name.take(3), color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
-                    Text(date.dayOfMonth.toString(), color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun DurationSelector(selectedKey: String, onSelect: (String) -> Unit) {
-    val options = listOf("60" to "SIXTY", "90" to "NINETY", "120" to "ONE_HUNDRED_TWENTY")
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        options.forEach { (label, key) ->
-            val isSelected = selectedKey == key
-            Surface(
-                modifier = Modifier.weight(1f).clickable { onSelect(key) },
-                shape = RoundedCornerShape(10.dp),
-                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-            ) {
-                Text(
-                    "$label min",
-                    modifier = Modifier.padding(vertical = 10.dp),
-                    textAlign = TextAlign.Center,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun SectionTitle(text: String) {
-    Text(text = text, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold), color = MaterialTheme.colorScheme.onSurface)
 }

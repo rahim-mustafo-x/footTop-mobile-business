@@ -227,6 +227,7 @@ interface Language {
     // Errors
     val districtScopeViolation: String
     val dataIntegrityViolation: String
+    val bookingTimeAlreadyTaken: String
 
     val coachInfo: String
     val experienceYears: String
@@ -448,6 +449,7 @@ class EnLanguage : Language {
 
     override val districtScopeViolation = "You can only create stadiums in your own assigned district."
     override val dataIntegrityViolation = "Data integrity error. This information may be used by other records."
+    override val bookingTimeAlreadyTaken = "This time slot is already booked. Please choose another time."
 
     override val coachInfo = "Coach Information"
     override val experienceYears = "years"
@@ -669,6 +671,7 @@ class RuLanguage : Language {
 
     override val districtScopeViolation = "Вы можете создавать стадионы только в своем закрепленном районе."
     override val dataIntegrityViolation = "Ошибка целостности данных. Эта информация может использоваться другими записями."
+    override val bookingTimeAlreadyTaken = "Это время уже занято. Пожалуйста, выберите другое время."
 
     override val coachInfo = "Информация о тренере"
     override val experienceYears = "лет"
@@ -890,6 +893,7 @@ class UzLanguage : Language {
 
     override val districtScopeViolation = "Siz faqat o'zingizga biriktirilgan hududda stadion yarata olasiz."
     override val dataIntegrityViolation = "Ma'lumotlar yaxlitligi xatosi. Ushbu ma'lumot boshqa yozuvlar tomonidan foydalanilayotgan bo'lishi mumkin."
+    override val bookingTimeAlreadyTaken = "Ushbu vaqt allaqachon band qilingan. Iltimos, boshqa vaqtni tanlang."
 
     override val coachInfo = "Murabbiy ma'lumotlari"
     override val experienceYears = "yil"

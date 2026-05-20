@@ -19,6 +19,7 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,12 +60,20 @@ class UserCreateScreen : Screen {
         val snackbarHostState = remember { SnackbarHostState() }
         val strings = Localization.current
 
-        val currentUserRole = userState.user?.roles?.firstOrNull()?.name ?: ""
-        val isSuperAdmin = currentUserRole == "ROLE_SUPER_ADMIN"
-        val isDistrictAdmin = currentUserRole == "ROLE_DISTRICT_ADMIN"
+        // Persist current user role to avoid flickering
+        var persistedCurrentUserRole by rememberSaveable { mutableStateOf("") }
+        LaunchedEffect(userState.user) {
+            userState.user?.roles?.firstOrNull()?.name?.let {
+                persistedCurrentUserRole = it
+            }
+        }
+
+        val isSuperAdmin = persistedCurrentUserRole == "ROLE_SUPER_ADMIN"
+        val isDistrictAdmin = persistedCurrentUserRole == "ROLE_DISTRICT_ADMIN"
         val isPrivileged = isSuperAdmin || isDistrictAdmin
 
-        val availableRoles = remember(isSuperAdmin, isDistrictAdmin, currentUserRole) {
+        val availableRoles = remember(isSuperAdmin, isDistrictAdmin, persistedCurrentUserRole) {
+            if (persistedCurrentUserRole.isEmpty()) return@remember emptyList()
             val roles = mutableListOf<Triple<String, String, String>>()
             
             if (isSuperAdmin) {
@@ -75,7 +84,7 @@ class UserCreateScreen : Screen {
                 roles.add(Triple("ROLE_OWNER", "Stadion egasi", "Maydonlarni nazorat"))
             }
 
-            if (isPrivileged || currentUserRole == "ROLE_OWNER") {
+            if (isPrivileged || persistedCurrentUserRole == "ROLE_OWNER") {
                 roles.add(Triple("ROLE_COACH", "Coach", "Murabbiy kabineti"))
             }
 
@@ -86,8 +95,9 @@ class UserCreateScreen : Screen {
         }
 
         LaunchedEffect(userState.isLoadingUser) {
-            if (!userState.isLoadingUser && !isPrivileged && currentUserRole != "ROLE_OWNER") {
-                navigator.pop()
+            if (!userState.isLoadingUser && persistedCurrentUserRole.isEmpty() && userState.user == null) {
+                // If everything loaded and still no user, maybe session expired
+                // but let's wait for actual role
             }
         }
 
@@ -244,13 +254,30 @@ class UserCreateScreen : Screen {
                     viewModel.onEvent(UserCreateContract.Event.FullNameChanged(it))
                 }
 
-                LabelAndField(strings.loginEmail, state.login, strings.loginEmailPlaceholder) {
-                    viewModel.onEvent(UserCreateContract.Event.LoginChanged(it))
-                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    LabelAndField(
+                        strings.loginEmail, 
+                        state.login, 
+                        strings.loginEmailPlaceholder, 
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        viewModel.onEvent(UserCreateContract.Event.LoginChanged(it))
+                    }
 
-                LabelAndField(strings.phoneNumber, state.phone, "901234567", KeyboardType.Phone, visualTransformation = PhoneTransformation()) {
-                    if (it.length <= 9) {
-                        viewModel.onEvent(UserCreateContract.Event.PhoneChanged(it))
+                    LabelAndField(
+                        strings.phoneNumber, 
+                        state.phone, 
+                        "901234567", 
+                        KeyboardType.Phone, 
+                        visualTransformation = PhoneTransformation(),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        if (it.length <= 9) {
+                            viewModel.onEvent(UserCreateContract.Event.PhoneChanged(it))
+                        }
                     }
                 }
 

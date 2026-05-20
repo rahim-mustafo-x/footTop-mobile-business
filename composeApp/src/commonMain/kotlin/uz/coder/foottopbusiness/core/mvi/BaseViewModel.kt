@@ -2,6 +2,7 @@ package uz.coder.foottopbusiness.core.mvi
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,8 +26,8 @@ abstract class BaseViewModel <S: MviState, E: MviEffect, A: MviEvent>(initialSta
         onError: (Throwable) -> Unit = {},
         onSuccess: suspend (T) -> Unit = {},
         block: suspend () -> T
-    ) {
-        viewModelScope.launch {
+    ): Job {
+        return viewModelScope.launch {
             try {
                 onLoading()
                 val result = block()

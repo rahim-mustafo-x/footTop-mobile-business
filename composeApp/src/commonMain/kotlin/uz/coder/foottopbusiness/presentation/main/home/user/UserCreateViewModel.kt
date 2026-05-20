@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 import uz.coder.foottopbusiness.data.network.dto.UserRequestDto
 import uz.coder.foottopbusiness.data.network.dto.admin.CreateStaffUserDto
 import uz.coder.foottopbusiness.data.network.dto.coach.CoachRequestDto
@@ -36,6 +37,8 @@ class UserCreateViewModel(
 
     private val _effect = MutableSharedFlow<UserCreateContract.Effect>()
     val effect = _effect.asSharedFlow()
+
+    private var createJob: Job? = null
 
     init {
         // Data loading moved to Event.LoadInitialData for better screen transition performance
@@ -152,6 +155,8 @@ class UserCreateViewModel(
     private fun createUser() {
         val currentState = _state.value
         
+        if (createJob?.isActive == true) return
+        
         // If an existing user is selected, just call createCoach for ROLE_COACH
         if (currentState.role == "ROLE_COACH" && currentState.selectedUser != null) {
             promoteToCoach(currentState.selectedUser.id ?: 0L)
@@ -183,7 +188,7 @@ class UserCreateViewModel(
             districtId = currentState.selectedDistrict?.id?.toLong()
         )
 
-        createStaffUseCase(staffDto)
+        createJob = createStaffUseCase(staffDto)
             .onStart { _state.update { it.copy(isLoading = true) } }
             .onEach { userDto ->
                 if (currentState.role == "ROLE_COACH") {
@@ -201,6 +206,10 @@ class UserCreateViewModel(
     }
 
     private fun promoteToCoach(userId: Long) {
+        if (createJob?.isActive == true && _state.value.isLoading) {
+            // Already processing something
+        }
+
         val currentState = _state.value
         val coachDto = CoachRequestDto(
             userId = userId,
@@ -209,7 +218,7 @@ class UserCreateViewModel(
             hourlyRate = currentState.hourlyRate.toDoubleOrNull() ?: 0.0,
             availability = currentState.availability
         )
-        createCoachUseCase(coachDto)
+        createJob = createCoachUseCase(coachDto)
             .onStart { _state.update { it.copy(isLoading = true) } }
             .onEach {
                 _state.update { it.copy(isLoading = false, isSuccess = true) }

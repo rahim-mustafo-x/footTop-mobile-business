@@ -81,7 +81,16 @@ class AddStadiumViewModel(
             is AddStadiumContract.Event.ImageUrl -> updateState { copy(imageUrl = event.value) }
             is AddStadiumContract.Event.SelectRegion -> onRegionSelected(event.region)
             is AddStadiumContract.Event.SelectDistrict -> onDistrictSelected(event.district)
-            is AddStadiumContract.Event.SelectOwner -> updateState { copy(selectedOwner = event.owner, showOwnerDropdown = false) }
+            is AddStadiumContract.Event.SelectOwner -> {
+                val owner = event.owner
+                updateState { 
+                    copy(
+                        selectedOwner = owner, 
+                        showOwnerDropdown = false,
+                        phone = if (phone.isBlank()) owner.phone?.filter { it.isDigit() }?.takeLast(9) ?: phone else phone
+                    ) 
+                }
+            }
             is AddStadiumContract.Event.ShowRegionDropdown -> updateState { copy(showRegionDropdown = event.show) }
             is AddStadiumContract.Event.ShowDistrictDropdown -> updateState { copy(showDistrictDropdown = event.show) }
             is AddStadiumContract.Event.ShowOwnerDropdown -> updateState { copy(showOwnerDropdown = event.show) }

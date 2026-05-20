@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -57,11 +58,31 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
-import uz.coder.foottopbusiness.core.localization.Localization
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.toInstant
 import uz.coder.foottopbusiness.core.formatAsTime
+import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.presentation.main.home.HomeContract
 import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
+
+// ─── Utilities ──────────────────────────────────────────────────────────────
+
+fun isOverlap(s1: LocalDateTime, e1: LocalDateTime, s2: LocalDateTime, e2: LocalDateTime): Boolean {
+    return s1 < e2 && e1 > s2
+}
+
+fun LocalDateTime.plusMinutes(minutes: Int): LocalDateTime {
+    val tz = TimeZone.currentSystemDefault()
+    return this.toInstant(tz).plus(minutes, DateTimeUnit.MINUTE).toLocalDateTime(tz)
+}
+
+fun durationMinutes(key: String): Int = when(key) {
+    "SIXTY" -> 60
+    "NINETY" -> 90
+    "ONE_HUNDRED_TWENTY" -> 120
+    else -> 60
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -176,13 +197,9 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                     }
                 }
             } else {
-                val slotsToSelect = when (state.selectedDuration) {
-                    "SIXTY" -> 3
-                    "NINETY" -> 4
-                    "ONE_HUNDRED_TWENTY" -> 5
-                    else -> 1
-                }
-                val selectedIndex = if (state.selectedSlot != null) state.stadiumSlots.indexOf(state.selectedSlot) else -1
+                val durationMins = durationMinutes(state.selectedDuration)
+                val selectedStart = state.selectedSlot?.first
+                val selectedEnd = selectedStart?.plusMinutes(durationMins)
                 val strings = Localization.current
 
                 LazyVerticalGrid(
@@ -194,8 +211,10 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                 ) {
                     items(state.stadiumSlots.size) { index ->
                         val slot = state.stadiumSlots[index]
-                        val (start, _, available) = slot
-                        val isPartiallySelected = selectedIndex != -1 && index >= selectedIndex && index < selectedIndex + slotsToSelect
+                        val (start, end, available) = slot
+                        
+                        val isPartiallySelected = selectedStart != null && selectedEnd != null &&
+                                                 isOverlap(selectedStart, selectedEnd, start, end)
                         
                         val successColor = MaterialTheme.colorScheme.primary
                         val errorColor = Color(0xFFEF5350)
@@ -215,6 +234,17 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                                 .padding(vertical = 12.dp),
                             contentAlignment = Alignment.Center
                         ) {
+                            if (isPartiallySelected) {
+                                Icon(
+                                    imageVector = Icons.Default.Done,
+                                    contentDescription = null,
+                                    tint = baseColor.copy(alpha = 0.5f),
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(4.dp)
+                                        .size(12.dp)
+                                )
+                            }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(start.formatAsTime(), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = baseColor)
                                 Text(if (available) "Bo'sh" else "Band", fontSize = 12.sp, color = baseColor.copy(alpha = 0.8f))
@@ -241,13 +271,9 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
         }
 
         if (state.isBookingSlot && state.selectedSlot != null) {
-            val slotsToSelect = when (state.selectedDuration) {
-                "SIXTY" -> 3
-                "NINETY" -> 4
-                "ONE_HUNDRED_TWENTY" -> 5
-                else -> 1
-            }
-            val selectedIndex = state.stadiumSlots.indexOf(state.selectedSlot)
+            val durationMins = durationMinutes(state.selectedDuration)
+            val selectedStart = state.selectedSlot.first
+            val selectedEnd = selectedStart.plusMinutes(durationMins)
             
             var fullName by remember { mutableStateOf("") }
             var phone by remember { mutableStateOf("") }
@@ -259,10 +285,8 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                 else -> ""
             }
 
-            val endSlotIndex = if (selectedIndex != -1) (selectedIndex + slotsToSelect - 1) else -1
-            val endSlot = state.stadiumSlots.getOrNull(endSlotIndex)
-            val startTimeStr = state.selectedSlot.first.formatAsTime()
-            val endTimeStr = endSlot?.first?.formatAsTime() ?: ""
+            val startTimeStr = selectedStart.formatAsTime()
+            val endTimeStr = selectedEnd.formatAsTime()
 
             AlertDialog(
                 onDismissRequest = { viewModel.handleEvent(HomeContract.Event.DismissBookingDialog) },

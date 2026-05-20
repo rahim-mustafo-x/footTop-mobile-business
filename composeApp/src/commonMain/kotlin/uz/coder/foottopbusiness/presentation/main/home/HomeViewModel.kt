@@ -149,10 +149,11 @@ class HomeViewModel(
             }
 
             is HomeContract.Event.SelectSlot -> {
-                val duration = state.value.selectedDuration
-                val slotIndex = state.value.stadiumSlots.indexOf(event.slot)
+                val availableSlots = state.value.stadiumSlots
+                val slotIndex = availableSlots.indexOf(event.slot)
                 if (slotIndex == -1) return
 
+                val duration = state.value.selectedDuration
                 val slotsToSelect = when (duration) {
                     "SIXTY" -> 3
                     "NINETY" -> 4
@@ -160,9 +161,9 @@ class HomeViewModel(
                     else -> 1
                 }
 
-                val availableSlots = state.value.stadiumSlots
+                // Check only slots within the range, excluding the boundary end point
                 val canBook = if (slotIndex + slotsToSelect <= availableSlots.size) {
-                    (slotIndex until slotIndex + slotsToSelect - 1).all { availableSlots[it].third }
+                    (slotIndex until (slotIndex + slotsToSelect - 1)).all { availableSlots[it].third }
                 } else {
                     false
                 }
@@ -446,8 +447,8 @@ class HomeViewModel(
     private fun loadTournaments() {
         updateState { copy(isLoadingTournaments = true) }
         executeAsync {
-            getTournamentsUseCase().collect { tournaments ->
-                updateState { copy(tournaments = tournaments, isLoadingTournaments = false) }
+            getTournamentsUseCase().collect { pageData ->
+                updateState { copy(tournaments = pageData.content ?: emptyList(), isLoadingTournaments = false) }
                 updateLocalStats()
             }
         }

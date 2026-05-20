@@ -8,6 +8,14 @@ import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.domain.model.UserRole
 
 sealed interface StadiumDetailsContract {
+    companion object {
+        fun durationMinutesKey(key: String): Int = when(key) {
+            "SIXTY" -> 60
+            "NINETY" -> 90
+            "ONE_HUNDRED_TWENTY" -> 120
+            else -> 60
+        }
+    }
     data class State(
         val stadium: StadiumResponse? = null,
         val stadiums: List<StadiumResponse> = emptyList(), // Support for multiple pitches
@@ -29,7 +37,8 @@ sealed interface StadiumDetailsContract {
         val isSubmittingRating: Boolean = false,
         val showBookingResultDialog: Boolean = false,
         val bookingResultMessage: String = "",
-        val isBookingSuccess: Boolean = false
+        val isBookingSuccess: Boolean = false,
+        val hasConflict: Boolean = false
     ) : MviState
 
     sealed interface Effect : MviEffect {

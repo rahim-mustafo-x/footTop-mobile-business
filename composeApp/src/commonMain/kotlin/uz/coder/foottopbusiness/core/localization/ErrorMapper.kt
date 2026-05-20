@@ -5,6 +5,7 @@ object ErrorMapper {
         return when {
             error.contains("DISTRICT_SCOPE_VIOLATION") -> strings.districtScopeViolation
             error.contains("DATA_INTEGRITY_VIOLATION") -> strings.dataIntegrityViolation
+            error.contains("BOOKING_TIME_ALREADY_TAKEN") -> strings.bookingTimeAlreadyTaken
             else -> error
         }
     }

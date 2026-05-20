@@ -5,16 +5,17 @@ import kotlinx.coroutines.flow.flow
 import uz.coder.foottopbusiness.core.log
 import uz.coder.foottopbusiness.data.network.TournamentApiService
 import uz.coder.foottopbusiness.data.network.dto.tournament.TournamentRequestDto
+import uz.coder.foottopbusiness.data.network.dto.tournament.PageTournamentResponseDto
 import uz.coder.foottopbusiness.domain.repository.TournamentRepository
 
 class TournamentRepositoryImpl(
     private val api: TournamentApiService,
 ) : TournamentRepository {
 
-    override fun getTournaments() = flow {
-        val response = api.getTournaments()
+    override fun getTournaments(page: Int, size: Int) = flow {
+        val response = api.getTournaments(page, size)
         if (response.success == true) {
-            emit(response.data ?: emptyList())
+            emit(response.data ?: PageTournamentResponseDto())
         } else {
             throw Exception(response.message ?: "Turnirlarni yuklashda xatolik")
         }

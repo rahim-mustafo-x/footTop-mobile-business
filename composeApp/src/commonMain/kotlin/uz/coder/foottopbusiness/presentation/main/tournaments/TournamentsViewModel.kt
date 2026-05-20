@@ -20,12 +20,14 @@ class TournamentsViewModel(
     override fun handleEvent(event: TournamentsContract.Event) {
         when (event) {
             TournamentsContract.Event.Load -> {
-                updateState { copy(isLoading = true, error = null) }
-                executeAsync(
-                    block = { var r = emptyList<TournamentResponseDto>(); getTournamentsUseCase().collect { r = it }; r },
-                    onSuccess = { updateState { copy(tournaments = it, isLoading = false) } },
-                    onError = { updateState { copy(error = it.message, isLoading = false) } }
-                )
+                updateState { copy(isLoading = true, error = null, page = 0, tournaments = emptyList(), isLastPage = false) }
+                loadTournaments(0)
+            }
+            TournamentsContract.Event.LoadMore -> {
+                val s = state.value
+                if (!s.isLastPage && !s.isLoading && !s.isMoreLoading) {
+                    loadTournaments(s.page + 1)
+                }
             }
             is TournamentsContract.Event.Select -> updateState { copy(selectedTournament = event.tournament) }
             TournamentsContract.Event.ClearDetail -> updateState { copy(selectedTournament = null) }
@@ -63,5 +65,34 @@ class TournamentsViewModel(
                 )
             }
         }
+    }
+
+    private fun loadTournaments(page: Int) {
+        executeAsync(
+            onLoading = { 
+                if (page == 0) updateState { copy(isLoading = true) }
+                else updateState { copy(isMoreLoading = true) }
+            },
+            block = {
+                var result: uz.coder.foottopbusiness.data.network.dto.tournament.PageTournamentResponseDto? = null
+                getTournamentsUseCase(page = page).collect { result = it }
+                result!!
+            },
+            onSuccess = { pageData ->
+                val newItems = pageData.content ?: emptyList()
+                updateState {
+                    copy(
+                        tournaments = if (page == 0) newItems else tournaments + newItems,
+                        page = page,
+                        isLastPage = pageData.last ?: true,
+                        isLoading = false,
+                        isMoreLoading = false
+                    )
+                }
+            },
+            onError = {
+                updateState { copy(error = it.message, isLoading = false, isMoreLoading = false) }
+            }
+        )
     }
 }
