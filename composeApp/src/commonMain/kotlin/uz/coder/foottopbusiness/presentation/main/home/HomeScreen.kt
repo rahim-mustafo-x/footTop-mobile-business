@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Event
 import androidx.compose.foundation.layout.offset
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.AttachMoney
@@ -84,6 +85,7 @@ import uz.coder.foottopbusiness.presentation.main.settings.SettingsVoyager
 import uz.coder.foottopbusiness.presentation.main.settings.notification.SendNotificationVoyager
 import uz.coder.foottopbusiness.presentation.main.stadium.addstadium.AddStadiumVoyager
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsVoyager
+import uz.coder.foottopbusiness.presentation.main.booking.list.BookingListVoyager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -188,7 +190,8 @@ fun HomeScreen(
                                     onAddUser = { navigator.push(uz.coder.foottopbusiness.presentation.main.home.user.UserCreateScreen()) },
                                     onAddTournament = { navigator.push(TournamentsVoyager) },
                                     onProfileClick = { navigator.push(SettingsVoyager) },
-                                    onNotificationClick = { navigator.push(SendNotificationVoyager) }
+                                    onNotificationClick = { navigator.push(SendNotificationVoyager) },
+                                    onShowBookings = { navigator.push(BookingListVoyager()) }
                                 )
                             }
 
@@ -199,7 +202,8 @@ fun HomeScreen(
                                     onAddTournament = { navigator.push(TournamentsVoyager) },
                                     onAddCoach = { navigator.push(uz.coder.foottopbusiness.presentation.main.home.user.UserCreateScreen()) },
                                     onProfileClick = { navigator.push(SettingsVoyager) },
-                                    onNotificationClick = { navigator.push(SendNotificationVoyager) }
+                                    onNotificationClick = { navigator.push(SendNotificationVoyager) },
+                                    onShowBookings = { navigator.push(BookingListVoyager()) }
                                 )
                             }
 
@@ -228,7 +232,8 @@ private fun HomeTab(
     onAddUser: () -> Unit,
     onAddTournament: () -> Unit,
     onProfileClick: () -> Unit,
-    onNotificationClick: () -> Unit
+    onNotificationClick: () -> Unit,
+    onShowBookings: () -> Unit
 ) {
     val strings = Localization.current
     LazyColumn(
@@ -258,7 +263,8 @@ private fun HomeTab(
                     onAddStadium = onAddStadium,
                     onAddUser = onAddUser,
                     onAddCoach = null,
-                    onAddTournament = onAddTournament
+                    onAddTournament = onAddTournament,
+                    onShowBookings = onShowBookings
                 )
 
                 Spacer(Modifier.height(40.dp))
@@ -341,7 +347,8 @@ private fun OwnerHomeTab(
     onAddTournament: () -> Unit,
     onAddCoach: () -> Unit,
     onProfileClick: () -> Unit,
-    onNotificationClick: () -> Unit
+    onNotificationClick: () -> Unit,
+    onShowBookings: () -> Unit
 ) {
     val strings = Localization.current
     LazyColumn(
@@ -371,7 +378,8 @@ private fun OwnerHomeTab(
                     onAddStadium = onAddStadium,
                     onAddUser = null,
                     onAddCoach = onAddCoach,
-                    onAddTournament = onAddTournament
+                    onAddTournament = onAddTournament,
+                    onShowBookings = onShowBookings
                 )
 
                 Spacer(Modifier.height(24.dp))
@@ -605,13 +613,17 @@ private fun QuickActionsGrid(
     onAddStadium: () -> Unit,
     onAddUser: (() -> Unit)?,
     onAddCoach: (() -> Unit)?,
-    onAddTournament: () -> Unit
+    onAddTournament: () -> Unit,
+    onShowBookings: () -> Unit
 ) {
     val primary = MaterialTheme.colorScheme.primary
     val strings = Localization.current
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             QuickActionItem(strings.addStadium, Icons.Default.Home, primary, Modifier.weight(1f), onAddStadium)
+            QuickActionItem("Bronlar", Icons.Default.Event, primary, Modifier.weight(1f), onShowBookings)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             if (onAddUser != null) {
                 QuickActionItem(strings.addEmployee, Icons.Default.AddCircle, primary, Modifier.weight(1f), onAddUser)
             } else if (onAddCoach != null) {
@@ -619,10 +631,10 @@ private fun QuickActionsGrid(
             } else {
                 QuickActionItem(strings.createTournament, Icons.Default.Add, primary, Modifier.weight(1f), onAddTournament)
             }
-        }
-        if (onAddUser != null || onAddCoach != null) {
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            
+            if (onAddUser != null || onAddCoach != null) {
                 QuickActionItem(strings.createTournament, Icons.Default.Add, primary, Modifier.weight(1f), onAddTournament)
+            } else {
                 Spacer(Modifier.weight(1f))
             }
         }

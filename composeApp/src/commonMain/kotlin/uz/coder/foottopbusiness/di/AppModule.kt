@@ -10,7 +10,10 @@ import uz.coder.foottopbusiness.domain.repository.*
 import uz.coder.foottopbusiness.domain.usecase.admin.CreateStaffUseCase
 import uz.coder.foottopbusiness.domain.usecase.admin.DashboardUseCase
 import uz.coder.foottopbusiness.domain.usecase.admin.WeeklyReportUseCase
+import uz.coder.foottopbusiness.domain.usecase.booking.CancelBookingUseCase
 import uz.coder.foottopbusiness.domain.usecase.booking.CreateBookingUseCase
+import uz.coder.foottopbusiness.domain.usecase.booking.GetBookingsByStadiumIdUseCase
+import uz.coder.foottopbusiness.domain.usecase.booking.GetBookingsUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.ChangePasswordUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.IsLoginInUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.LoginUseCase
@@ -40,6 +43,7 @@ import uz.coder.foottopbusiness.domain.usecase.user.GeneratePasswordUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.UserIdUseCase
 import uz.coder.foottopbusiness.presentation.auth.login.LoginViewModel
+import uz.coder.foottopbusiness.presentation.main.booking.list.BookingListViewModel
 import uz.coder.foottopbusiness.presentation.main.coaches.CoachesViewModel
 import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
 import uz.coder.foottopbusiness.presentation.main.home.user.UserCreateViewModel
@@ -114,6 +118,9 @@ val appModule = module {
     factory { WeeklyReportUseCase(get()) }
     factory { CreateStaffUseCase(get()) }
     factory { CreateBookingUseCase(get()) }
+    factory { CancelBookingUseCase(get()) }
+    factory { GetBookingsByStadiumIdUseCase(get()) }
+    factory { GetBookingsUseCase(get()) }
 
 
     // viewModels
@@ -123,7 +130,8 @@ val appModule = module {
     factory { StadiumViewModel(get(), get(), get(), get()) }
     factory { AddStadiumViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { (stadium: StadiumResponse) -> EditStadiumViewModel(stadium, get(), get(), get(), get(), get()) }
-    factory { (stadium: StadiumResponse) -> StadiumDetailsViewModel(stadium, get(), get(), get()) }
+    factory { (stadium: StadiumResponse) -> StadiumDetailsViewModel(stadium, get(), get(), get(), get(), get()) }
+    factory { BookingListViewModel(get(), get()) }
     factory { CoachesViewModel(get(), get(), get()) }
     factory { TournamentsViewModel(get(), get(), get()) }
     factory { SettingsViewModel(get(), get(), get()) }

@@ -38,7 +38,12 @@ sealed interface StadiumDetailsContract {
         val showBookingResultDialog: Boolean = false,
         val bookingResultMessage: String = "",
         val isBookingSuccess: Boolean = false,
-        val hasConflict: Boolean = false
+        val hasConflict: Boolean = false,
+        val bookerName: String = "",
+        val bookerPhone: String = "",
+        val showCancelDialog: Boolean = false,
+        val cancelReason: String = "",
+        val bookingToCancel: Long? = null
     ) : MviState
 
     sealed interface Effect : MviEffect {
@@ -67,7 +72,15 @@ sealed interface StadiumDetailsContract {
             val stadiumId: Int,
             val startTime: String,
             val endTime: String,
-            val price: Double
+            val price: Double,
+            val name: String? = null,
+            val phone: String? = null
         ) : Event
+        data class UpdateBookerName(val name: String) : Event
+        data class UpdateBookerPhone(val phone: String) : Event
+        data class OpenCancelDialog(val bookingId: Long) : Event
+        object DismissCancelDialog : Event
+        data class UpdateCancelReason(val reason: String) : Event
+        data class ConfirmCancelBooking(val bookingId: Long, val reason: String) : Event
     }
 }

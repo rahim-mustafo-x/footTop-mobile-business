@@ -158,11 +158,12 @@ fun AboutAppScreen() {
             Spacer(Modifier.height(48.dp))
 
             Text(
-                "© 2026 FootTop Team.\n${strings.allRightsReserved}",
+                "© Developed by Mustafo Rahim",
                 textAlign = TextAlign.Center,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                modifier = Modifier.padding(bottom = 32.dp)
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                modifier = Modifier.padding(bottom = 40.dp)
             )
         }
     }

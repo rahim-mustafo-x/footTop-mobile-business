@@ -1,100 +1,61 @@
+@file:Suppress("DEPRECATION")
+
 package uz.coder.foottopbusiness.presentation.main.stadium.details
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.compose.AsyncImage
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Surface
-import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.layout.offset
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
+import kotlinx.coroutines.launch
 import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.plus
-import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
-import kotlinx.coroutines.launch
-import uz.coder.foottopbusiness.core.formatToTime
+import kotlinx.datetime.toLocalDateTime
 import uz.coder.foottopbusiness.core.localization.ErrorMapper
 import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.platform.makePhoneCall
-import uz.coder.foottopbusiness.data.network.dto.stadium.SlotDto
-import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
-import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.core.plusMinutes
 import uz.coder.foottopbusiness.core.toLocalDateTimeSafe
-
+import uz.coder.foottopbusiness.core.visualTransformation.PhoneTransformation
+import uz.coder.foottopbusiness.data.network.dto.stadium.SlotDto
+import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.stadium.edit.EditStadiumVoyager
-import kotlinx.datetime.*
-import kotlinx.coroutines.launch
+import kotlin.time.Clock
+
+// --- Slot state enum ---
+private enum class SlotRowState {
+    AVAILABLE, SELECTED, IN_RANGE, CONFLICT_RANGE, BOOKED, PAST
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,8 +66,8 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
     val navigator = LocalNavigator.currentOrThrow
     val snackbarHostState = remember { SnackbarHostState() }
     val tz = TimeZone.currentSystemDefault()
-    val now = remember { kotlin.time.Clock.System.now() }
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val now: Instant = remember { Clock.System.now() }
+    val scope = rememberCoroutineScope()
     val strings = Localization.current
 
     LaunchedEffect(Unit) {
@@ -126,7 +87,6 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
         }
     }
 
-    // Auto-selection logic
     var hasAutoSelected by remember { mutableStateOf(false) }
     val durationMins = StadiumDetailsContract.durationMinutesKey(state.selectedDurationKey)
 
@@ -139,7 +99,6 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
             stadiums.forEachIndexed { pitchIdx, st ->
                 val slots = st.slots ?: emptyList()
                 val firstValidIdx = slots.indexOfFirst { slot ->
-                    val slotIdx = slots.indexOf(slot)
                     val slotInstant = slot.start.toLocalDateTimeSafe()?.toInstant(tz)
                     val expired = slotInstant?.let { it <= now } ?: true
                     slot.status == "AVAILABLE" && !expired
@@ -163,52 +122,20 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text(stadium?.name ?: strings.stadiumInfo, fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.BackClick) }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    if (stadium != null && canEdit) {
-                        IconButton(onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.EditClick) }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Edit")
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
-        },
         bottomBar = {
             if (stadium != null) {
                 if (isOwnerless) {
                     Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .navigationBarsPadding(),
+                        modifier = Modifier.fillMaxWidth().navigationBarsPadding(),
                         shadowElevation = 8.dp,
                         color = MaterialTheme.colorScheme.surface
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp, vertical = 12.dp)
-                        ) {
+                        Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                             Button(
-                                onClick = {
-                                    stadium.phone?.let { makePhoneCall(it) }
-                                },
+                                onClick = { stadium.phone?.let { makePhoneCall(it) } },
                                 shape = RoundedCornerShape(20.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(60.dp)
+                                modifier = Modifier.fillMaxWidth().height(60.dp)
                             ) {
                                 Icon(Icons.Default.Phone, null)
                                 Spacer(Modifier.width(8.dp))
@@ -220,141 +147,93 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                         }
                     }
                 } else if (showSticky) {
-                    val currentStadium = stadiums.getOrNull(selectedPitchIndex!!) ?: stadium
+                    val currentStadium = stadiums.getOrNull(selectedPitchIndex) ?: stadium
                     val price = currentStadium.pricePerHour ?: 0.0
                     val totalPrice = price * (durationMins / 60.0)
                     val currentSlots = currentStadium.slots ?: emptyList()
-                    val selectedSlot = currentSlots.getOrNull(startIdx!!)
-                    val startTime = selectedSlot?.start?.toLocalDateTimeSafe()
-                    
-                    val startTimeStr = startTime?.let { "${it.hour.toString().padStart(2, '0')}:${it.minute.toString().padStart(2, '0')}" } ?: ""
+                    val selectedSlot = currentSlots.getOrNull(startIdx)
+                    val startTime = selectedSlot?.start.toLocalDateTimeSafe()
+                    val startTimeStr = startTime?.let { formatTimeFromDateTime(it) } ?: ""
                     val selectedEnd = startTime?.plusMinutes(durationMins)
-                    val endTimeStr = selectedEnd?.let { "${it.hour.toString().padStart(2, '0')}:${it.minute.toString().padStart(2, '0')}" } ?: ""
+                    val endTimeStr = selectedEnd?.let { formatTimeFromDateTime(it) } ?: ""
                     val hasConflict = state.hasConflict
 
                     Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .navigationBarsPadding(),
+                        modifier = Modifier.fillMaxWidth().navigationBarsPadding(),
                         shadowElevation = 8.dp,
                         color = MaterialTheme.colorScheme.surface
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp, vertical = 12.dp)
-                        ) {
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = "Vaqt",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Text(
-                                        text = "$startTimeStr – $endTimeStr",
-                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
+                                    Text("Vaqt", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("$startTimeStr – $endTimeStr", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
                                 }
-
                                 Box(modifier = Modifier.width(1.dp).height(24.dp).background(MaterialTheme.colorScheme.outlineVariant))
-
                                 Column(modifier = Modifier.weight(0.6f)) {
-                                    Text(
-                                        text = "Davomiyligi",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Text(
-                                        text = "$durationMins min",
-                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
+                                    Text("Davomiylik", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("$durationMins min", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
+                                }
+                                Column(modifier = Modifier.weight(0.8f)) {
+                                    Text("Narx", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("${totalPrice.toInt()} so'm", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
                                 }
                             }
 
                             if (hasConflict) {
-                                Spacer(Modifier.height(10.dp))
+                                Spacer(Modifier.height(8.dp))
                                 Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
-                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f), RoundedCornerShape(8.dp)).padding(8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(
-                                        Icons.Default.Error,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.size(16.dp)
-                                    )
+                                    Icon(Icons.Default.Error, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(8.dp))
-                                    Text(
-                                        text = "Tanlangan vaqtda band joylar bor",
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                                        color = MaterialTheme.colorScheme.error
-                                    )
+                                    Text("Tanlangan vaqtda band joylar bor", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error)
                                 }
                             }
 
                             Spacer(Modifier.height(12.dp))
 
-                            Button(
-                                onClick = {
+                            SwipeToConfirmButton(
+                                text = strings.bookNow,
+                                enabled = !hasConflict,
+                                onConfirm = {
                                     if (selectedEnd != null && !hasConflict) {
                                         viewModel.handleEvent(
                                             StadiumDetailsContract.Event.CreateBooking(
                                                 stadiumId = currentStadium.id ?: 0,
                                                 startTime = selectedSlot?.start ?: "",
                                                 endTime = selectedEnd.toString(),
-                                                price = totalPrice
+                                                price = totalPrice,
+                                                name = state.bookerName.takeIf { it.isNotBlank() },
+                                                phone = if (state.bookerPhone.isNotBlank()) "998${state.bookerPhone}" else null
                                             )
                                         )
                                     }
                                 },
-                                enabled = !hasConflict,
-                                shape = RoundedCornerShape(20.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                    disabledContainerColor = MaterialTheme.colorScheme.outlineVariant
-                                ),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp)
-                            ) {
-                                Text(
-                                    text = strings.bookNow,
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                                )
-                            }
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
                     }
                 }
             }
         }
-    )
-{ paddingValues ->
+    ) { paddingValues ->
         if (stadium == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .background(MaterialTheme.colorScheme.surface)
+                modifier = Modifier.fillMaxSize().padding(paddingValues).background(MaterialTheme.colorScheme.surface)
             ) {
+                // Hero Image
                 item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(250.dp)
-                    ) {
+                    Box(modifier = Modifier.fillMaxWidth().height(250.dp)) {
                         AsyncImage(
                             model = "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=1000",
                             contentDescription = null,
@@ -362,64 +241,39 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                             contentScale = ContentScale.Crop
                         )
                         Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(
-                                    androidx.compose.ui.graphics.Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color.Transparent,
-                                            Color.Black.copy(alpha = 0.5f)
-                                        )
-                                    )
-                                )
+                            modifier = Modifier.fillMaxSize().background(
+                                Brush.verticalGradient(colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.5f)))
+                            )
                         )
+                        IconButton(
+                            onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.BackClick) },
+                            modifier = Modifier.statusBarsPadding().padding(8.dp).align(Alignment.TopStart).background(Color.Black.copy(0.3f), CircleShape)
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White)
+                        }
                     }
                 }
 
                 item {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .offset(y = (-24).dp)
-                            .background(
-                                MaterialTheme.colorScheme.surface,
-                                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-                            )
-                            .padding(16.dp)
+                        modifier = Modifier.fillMaxWidth().offset(y = (-24).dp).background(MaterialTheme.colorScheme.surface, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).padding(16.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stadium.name ?: "",
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
+                                Text(text = stadium.name ?: "", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.LocationOn, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(text = stadium.regionName ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                                }
                             }
                             
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                val statusColor = if (stadium.isActive == true) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurfaceVariant
-                                Text(
-                                    text = if (stadium.isActive == true) strings.active else strings.inactive,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = statusColor
-                                )
-                                Spacer(Modifier.width(8.dp))
                                 Switch(
                                     checked = stadium.isActive == true,
                                     onCheckedChange = { viewModel.handleEvent(StadiumDetailsContract.Event.ToggleActive(it)) },
                                     enabled = !state.isUpdatingStatus,
-                                    colors = SwitchDefaults.colors(
-                                        checkedThumbColor = Color.White,
-                                        checkedTrackColor = Color(0xFF4CAF50),
-                                        uncheckedThumbColor = Color.White,
-                                        uncheckedTrackColor = MaterialTheme.colorScheme.outline
-                                    )
+                                    colors = SwitchDefaults.colors(checkedTrackColor = Color(0xFF4CAF50))
                                 )
                             }
                         }
@@ -427,27 +281,15 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                         Spacer(Modifier.height(16.dp))
                         
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            InfoCard(
-                                icon = Icons.Default.Schedule,
-                                title = strings.workingHours,
-                                subtitle = "${stadium.openTime.formatToTime()} - ${stadium.closeTime.formatToTime()}",
-                                modifier = Modifier.weight(1f)
-                            )
-                            InfoCard(
-                                icon = Icons.Default.Payments,
-                                title = strings.price,
-                                subtitle = "${stadium.pricePerHour?.toInt() ?: 0} ${strings.uzsPerHour}",
-                                modifier = Modifier.weight(1f)
-                            )
+                            InfoCard(icon = Icons.Default.Schedule, title = strings.workingHours, subtitle = "${stadium.openTime.toLocalDateTimeSafe()?.let { formatTimeFromDateTime(it) } ?: "08:00"} - ${stadium.closeTime.toLocalDateTimeSafe()?.let { formatTimeFromDateTime(it) } ?: "23:00"}", modifier = Modifier.weight(1f))
+                            InfoCard(icon = Icons.Default.Payments, title = strings.price, subtitle = "${stadium.pricePerHour?.toInt() ?: 0} ${strings.uzsPerHour}", modifier = Modifier.weight(1f))
                         }
 
                         if (!isOwnerless) {
                             Spacer(Modifier.height(24.dp))
                             SectionTitle(strings.selectDay)
                             Spacer(Modifier.height(10.dp))
-                            DaySelector(state.selectedDate) { newDate ->
-                                viewModel.handleEvent(StadiumDetailsContract.Event.SelectDate(newDate))
-                            }
+                            DaySelector(state.selectedDate) { viewModel.handleEvent(StadiumDetailsContract.Event.SelectDate(it)) }
 
                             Spacer(Modifier.height(24.dp))
                             SectionTitle(strings.duration)
@@ -462,115 +304,115 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                             Spacer(Modifier.height(12.dp))
 
                             if (state.isSlotsLoading) {
-                                Box(
-                                    modifier = Modifier.fillMaxWidth().height(100.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
+                                Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
                                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                                 }
                             } else if (stadiums.isNotEmpty()) {
-                                var selectedTabIndex by remember { mutableStateOf(0) }
-                                LaunchedEffect(selectedPitchIndex) {
-                                    if (selectedPitchIndex != null) selectedTabIndex = selectedPitchIndex
-                                }
+                                var selectedTabIndex by remember { mutableIntStateOf(0) }
+                                LaunchedEffect(selectedPitchIndex) { if (selectedPitchIndex != null) selectedTabIndex = selectedPitchIndex }
 
-                                LazyRow(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    contentPadding = PaddingValues(end = 16.dp)
-                                ) {
+                                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(end = 16.dp)) {
                                     items(stadiums.size) { index ->
                                         val isActive = selectedTabIndex == index
                                         Surface(
-                                            modifier = Modifier.clickable {
-                                                selectedTabIndex = index
-                                                viewModel.handleEvent(StadiumDetailsContract.Event.ClearSelection)
-                                            },
+                                            modifier = Modifier.clickable { selectedTabIndex = index; viewModel.handleEvent(StadiumDetailsContract.Event.ClearSelection) },
                                             shape = RoundedCornerShape(10.dp),
                                             color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                                         ) {
-                                            Text(
-                                                text = "${strings.field} ${index + 1}",
-                                                modifier = Modifier.padding(
-                                                    horizontal = 16.dp,
-                                                    vertical = 8.dp
-                                                ),
-                                                color = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                style = MaterialTheme.typography.labelLarge.copy(
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            )
+                                            Text(text = "${strings.field} ${index + 1}", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), color = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
                                         }
                                     }
                                 }
-
                                 Spacer(Modifier.height(12.dp))
-
-                                val currentPitchSlots = stadiums.getOrNull(selectedTabIndex)?.slots ?: emptyList()
-                                if (currentPitchSlots.isEmpty()) {
-                                    Text(
-                                        strings.noSlotsToday,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                
+                                val currentStadium = stadiums[selectedTabIndex]
+                                val slots = currentStadium.slots ?: emptyList()
+                                
+                                SlotListHeader(earliestSlot = currentStadium.earliestAvailable?.toLocalDateTimeSafe()?.let { formatTimeFromDateTime(it) })
+                                
+                                val nowInstant = Clock.System.now()
+                                val slotsWithIndices = slots.mapIndexed { i, s -> i to s }
+                                    .filter { state.selectedDate == null || it.second.start.toLocalDateTimeSafe()?.date.toString() == state.selectedDate }
+                                
+                                if (slotsWithIndices.isEmpty()) {
+                                    Text(strings.noSlotsToday, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(16.dp))
                                 } else {
-                                    SlotRow(
-                                        slots = currentPitchSlots,
-                                        pitchIndex = selectedTabIndex,
-                                        selectedPitchIndex = state.selectedPitchIndex,
-                                        selectedStartIndex = state.selectedStartIndex,
-                                        durationMins = durationMins,
-                                        now = now,
-                                        tz = tz,
-                                        onSelectStart = { idx ->
-                                            viewModel.handleEvent(
-                                                StadiumDetailsContract.Event.SelectSlotSelection(
-                                                    selectedTabIndex,
-                                                    idx
-                                                )
-                                            )
-                                        },
-                                        onClear = {
-                                            viewModel.handleEvent(StadiumDetailsContract.Event.ClearSelection)
-                                        }
-                                    )
+                                    val earliestIdx = slotsWithIndices.indexOfFirst { (_, s) ->
+                                        val start = s.start.toLocalDateTimeSafe()?.toInstant(tz)
+                                        start != null && start > nowInstant && s.status == "AVAILABLE"
+                                    }
+                                    
+                                    slotsWithIndices.forEachIndexed { listIdx, (origIdx, slot) ->
+                                        val rowState = resolveSlotStateFixed(
+                                            slot = slot,
+                                            currentIndex = origIdx,
+                                            selectedStartIndex = state.selectedStartIndex,
+                                            selectedPitchIndex = state.selectedPitchIndex,
+                                            pitchIndex = selectedTabIndex,
+                                            durationMins = durationMins,
+                                            tz = tz,
+                                            nowInstant = nowInstant
+                                        )
+                                        SlotListItem(
+                                            slot = slot,
+                                            rowState = rowState,
+                                            durationMins = durationMins,
+                                            isEarliest = listIdx == earliestIdx,
+                                            pricePerHour = currentStadium.pricePerHour ?: 0.0,
+                                            onClick = {
+                                                if (rowState == SlotRowState.AVAILABLE || rowState == SlotRowState.SELECTED || rowState == SlotRowState.IN_RANGE) {
+                                                    if (rowState == SlotRowState.SELECTED) viewModel.handleEvent(StadiumDetailsContract.Event.ClearSelection)
+                                                    else viewModel.handleEvent(StadiumDetailsContract.Event.SelectSlotSelection(selectedTabIndex, origIdx))
+                                                }
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
 
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
+                        // Booker Info (If selected)
+                        if (showSticky) {
                             Spacer(Modifier.height(24.dp))
-                            SectionTitle(strings.description)
-                            Text(
-                                text = stadium.description ?: strings.noDataYet,
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                lineHeight = 20.sp
+                            SectionTitle("Bron qiluvchi ma'lumotlari")
+                            Spacer(Modifier.height(12.dp))
+                            OutlinedTextField(
+                                value = state.bookerName,
+                                onValueChange = { viewModel.handleEvent(StadiumDetailsContract.Event.UpdateBookerName(it)) },
+                                label = { Text("Ism (ixtiyoriy)") },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
                             )
-                            
-                            Spacer(Modifier.height(16.dp))
+                            Spacer(Modifier.height(8.dp))
+                            OutlinedTextField(
+                                value = state.bookerPhone,
+                                onValueChange = { if (it.length <= 9) viewModel.handleEvent(StadiumDetailsContract.Event.UpdateBookerPhone(it)) },
+                                label = { Text("Telefon (ixtiyoriy)") },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                visualTransformation = PhoneTransformation(),
+                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
+                            )
+                        }
 
-                            if (canEdit) {
-                                OutlinedButton(
-                                    onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.EditClick) },
-                                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                                    shape = RoundedCornerShape(16.dp),
-                                    border = androidx.compose.foundation.BorderStroke(
-                                        1.dp,
-                                        MaterialTheme.colorScheme.primary
-                                    ),
-                                ) {
-                                    Icon(Icons.Default.Edit, contentDescription = null)
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(
-                                        strings.editStadium,
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
+                        Spacer(Modifier.height(24.dp))
+                        SectionTitle(strings.description)
+                        Text(text = stadium.description ?: strings.noDataYet, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 20.sp)
+                        
+                        if (canEdit) {
+                            Spacer(Modifier.height(16.dp))
+                            OutlinedButton(
+                                onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.EditClick) },
+                                modifier = Modifier.fillMaxWidth().height(56.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                            ) {
+                                Icon(Icons.Default.Edit, null)
+                                Spacer(Modifier.width(8.dp))
+                                Text(strings.editStadium, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                             }
                         }
-                        Spacer(Modifier.height(80.dp))
+                        Spacer(Modifier.height(32.dp))
                     }
                 }
             }
@@ -578,124 +420,32 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
     }
 
     if (state.showBookingResultDialog) {
-        BookingResultDialog(
-            message = state.bookingResultMessage,
-            isSuccess = state.isBookingSuccess,
-            onDismiss = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissBookingResultDialog) }
-        )
+        BookingResultDialog(message = state.bookingResultMessage, isSuccess = state.isBookingSuccess, onDismiss = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissBookingResultDialog) })
     }
 }
 
+// --- Helpers and Sub-composables ---
+
+private fun formatTimeFromDateTime(dateTime: LocalDateTime): String {
+    val hour = dateTime.hour.toString().padStart(2, '0')
+    val minute = dateTime.minute.toString().padStart(2, '0')
+    return "$hour:$minute"
+}
+
 @Composable
-fun SlotRow(
-    slots: List<SlotDto>,
-    pitchIndex: Int,
-    selectedPitchIndex: Int?,
-    selectedStartIndex: Int?,
-    durationMins: Int,
-    now: Instant,
-    tz: TimeZone,
-    onSelectStart: (Int) -> Unit,
-    onClear: () -> Unit
-) {
-    val strings = Localization.current
-    val slotsNeeded = when(durationMins) {
-        60 -> 3
-        90 -> 4
-        120 -> 5
-        else -> 3
-    }
-    
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            LegendDot(MaterialTheme.colorScheme.outlineVariant, strings.free)
-            LegendDot(MaterialTheme.colorScheme.primary, strings.selected)
-            LegendDot(MaterialTheme.colorScheme.error, strings.booked)
-            LegendDot(MaterialTheme.colorScheme.outline, strings.past)
+private fun SlotListHeader(earliestSlot: String?) {
+    Column {
+        Box(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)).padding(horizontal = 16.dp, vertical = 8.dp)) {
+            Text(text = "MAVJUD SLOTLAR", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.heightIn(max = 1000.dp),
-            contentPadding = PaddingValues(bottom = 16.dp)
-        ) {
-            items(slots.size) { idx ->
-                val slot = slots[idx]
-                val slotStart = slot.start?.toLocalDateTimeSafe()
-                val startInstant = slotStart?.toInstant(tz)
-                val isExpired = startInstant?.let { it <= now } ?: true
-
-                val isSelected = selectedPitchIndex == pitchIndex && 
-                                 selectedStartIndex != null && 
-                                 idx >= selectedStartIndex && 
-                                 idx < selectedStartIndex + slotsNeeded
-                
-                val isBooked = slot.status == "BOOKED"
-
-                val cardColor = when {
-                    isSelected -> MaterialTheme.colorScheme.primary
-                    isBooked -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f)
-                    isExpired -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                    else -> MaterialTheme.colorScheme.surface
-                }
-
-                val contentColor = when {
-                    isSelected -> MaterialTheme.colorScheme.onPrimary
-                    isBooked -> MaterialTheme.colorScheme.error
-                    isExpired -> MaterialTheme.colorScheme.outline
-                    else -> MaterialTheme.colorScheme.onSurface
-                }
-
-                val borderStroke = when {
-                    isSelected -> null
-                    isBooked -> androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f))
-                    else -> androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                }
-
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable {
-                            if (isBooked || isExpired) return@clickable
-                            if (isSelected && selectedStartIndex == idx) onClear() else onSelectStart(idx)
-                        },
-                    color = cardColor,
-                    shape = RoundedCornerShape(12.dp),
-                    border = borderStroke
-                ) {
-                    Column(
-                        modifier = Modifier.padding(vertical = 12.dp, horizontal = 4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = slot.start.formatToTime(),
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp),
-                            color = contentColor
-                        )
-                        val statusLabel = when {
-                            isSelected && selectedStartIndex == idx -> "Start"
-                            isSelected -> strings.selected
-                            isBooked -> strings.booked
-                            isExpired -> strings.past
-                            else -> strings.free
-                        }
-                        Text(
-                            text = statusLabel,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = contentColor.copy(alpha = 0.8f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+        if (!earliestSlot.isNullOrBlank()) {
+            Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD)), shape = RoundedCornerShape(12.dp)) {
+                Row(modifier = Modifier.padding(14.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.AccessTime, null, tint = Color(0xFF1976D2), modifier = Modifier.size(22.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text("Eng erta mavjud slot", style = MaterialTheme.typography.labelMedium, color = Color(0xFF1976D2))
+                        Text(earliestSlot, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = Color(0xFF1976D2))
                     }
                 }
             }
@@ -704,47 +454,204 @@ fun SlotRow(
 }
 
 @Composable
-private fun LegendDot(color: Color, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(10.dp).background(color, RoundedCornerShape(3.dp)))
-        Spacer(Modifier.width(4.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun SlotListItem(
+    slot: SlotDto,
+    rowState: SlotRowState,
+    durationMins: Int,
+    isEarliest: Boolean = false,
+    pricePerHour: Double = 0.0,
+    onClick: () -> Unit
+) {
+    val startDt = slot.start.toLocalDateTimeSafe()
+    val startStr = startDt?.let { formatTimeFromDateTime(it) } ?: "--:--"
+    val endDt = startDt?.plusMinutes(30)
+    val endStr = endDt?.let { formatTimeFromDateTime(it) } ?: "--:--"
+    val slotPrice = pricePerHour * (durationMins / 60.0)
+
+    val bgColor = when {
+        isEarliest && rowState == SlotRowState.AVAILABLE -> Color(0xFF1D9E75).copy(alpha = 0.08f)
+        rowState == SlotRowState.SELECTED -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.30f)
+        rowState == SlotRowState.IN_RANGE -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.10f)
+        rowState == SlotRowState.CONFLICT_RANGE -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.15f)
+        else -> MaterialTheme.colorScheme.surface
     }
+
+    val accentColor = when {
+        isEarliest && rowState == SlotRowState.AVAILABLE -> Color(0xFF1D9E75)
+        rowState == SlotRowState.SELECTED -> MaterialTheme.colorScheme.primary
+        rowState == SlotRowState.IN_RANGE -> MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+        rowState == SlotRowState.CONFLICT_RANGE -> MaterialTheme.colorScheme.error.copy(alpha = 0.6f)
+        else -> Color.Transparent
+    }
+
+    val timeColor = when (rowState) {
+        SlotRowState.PAST -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.30f)
+        SlotRowState.BOOKED -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
+        SlotRowState.SELECTED -> MaterialTheme.colorScheme.primary
+        SlotRowState.IN_RANGE -> MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+        SlotRowState.CONFLICT_RANGE -> MaterialTheme.colorScheme.error.copy(alpha = 0.85f)
+        else -> if (isEarliest) Color(0xFF0F6E56) else MaterialTheme.colorScheme.onSurface
+    }
+
+    val subtitleText = when {
+        isEarliest && rowState == SlotRowState.AVAILABLE -> "Eng yaqin mavjud vaqt"
+        rowState == SlotRowState.SELECTED -> "Boshlanish vaqti"
+        rowState == SlotRowState.IN_RANGE -> "Bron oynasida"
+        rowState == SlotRowState.CONFLICT_RANGE -> "Oraliqda to'qnashuv"
+        rowState == SlotRowState.BOOKED -> "Bron qilingan"
+        rowState == SlotRowState.PAST -> "O'tib ketgan"
+        else -> "Bo'sh"
+    }
+
+    val subtitleColor = when {
+        isEarliest && rowState == SlotRowState.AVAILABLE -> Color(0xFF0F6E56)
+        rowState == SlotRowState.SELECTED -> MaterialTheme.colorScheme.primary
+        rowState == SlotRowState.IN_RANGE -> MaterialTheme.colorScheme.primary.copy(alpha = 0.65f)
+        rowState == SlotRowState.CONFLICT_RANGE -> MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+        rowState == SlotRowState.PAST || rowState == SlotRowState.BOOKED -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Row(modifier = Modifier.fillMaxWidth().background(bgColor).clickable { onClick() }, verticalAlignment = Alignment.CenterVertically) {
+        Box(modifier = Modifier.width(4.dp).height(56.dp).background(accentColor))
+        Row(modifier = Modifier.weight(1f).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(text = "$startStr – $endStr", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = if (rowState == SlotRowState.SELECTED || isEarliest) FontWeight.Bold else FontWeight.Normal), color = timeColor)
+                Text(text = subtitleText, style = MaterialTheme.typography.labelSmall, color = subtitleColor)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if ((rowState == SlotRowState.AVAILABLE || rowState == SlotRowState.SELECTED) && slotPrice > 0) {
+                    Text(text = "${slotPrice.toInt()} so'm", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium), color = if (isEarliest) Color(0xFF0F6E56) else MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Surface(shape = RoundedCornerShape(20.dp), color = when(rowState) {
+                    SlotRowState.SELECTED -> MaterialTheme.colorScheme.primary
+                    SlotRowState.BOOKED -> MaterialTheme.colorScheme.errorContainer
+                    else -> MaterialTheme.colorScheme.primaryContainer
+                }) {
+                    Text(
+                        text = when(rowState) {
+                            SlotRowState.SELECTED -> "Tanlangan"
+                            SlotRowState.BOOKED -> "Band"
+                            SlotRowState.PAST -> "O'tgan"
+                            else -> "Mavjud"
+                        },
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = when(rowState) {
+                            SlotRowState.SELECTED -> MaterialTheme.colorScheme.onPrimary
+                            SlotRowState.BOOKED -> MaterialTheme.colorScheme.error
+                            else -> MaterialTheme.colorScheme.primary
+                        }
+                    )
+                }
+            }
+        }
+    }
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 }
 
 @Composable
-fun InfoCard(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
+fun SwipeToConfirmButton(
+    text: String,
+    onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null
+    enabled: Boolean = true
 ) {
-    Surface(
-        modifier = modifier.clickable(enabled = onClick != null) { onClick?.invoke() },
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = RoundedCornerShape(10.dp)
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val trackWidth = 280.dp
+    val thumbSize = 48.dp
+    val maxPx = with(density) { (trackWidth - thumbSize).toPx() }
+    
+    var thumbOffset by remember { mutableFloatStateOf(0f) }
+    
+    Box(
+        modifier = modifier
+            .width(trackWidth)
+            .height(thumbSize)
+            .background(if (enabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.1f), CircleShape)
+            .clip(CircleShape),
+        contentAlignment = Alignment.CenterStart
     ) {
-        Row(
-            modifier = Modifier.padding(8.dp), 
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+        Text(
+            text = text,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+            color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+        )
+        
+        Box(
+            modifier = Modifier
+                .offset { androidx.compose.ui.unit.IntOffset(thumbOffset.toInt(), 0) }
+                .size(thumbSize)
+                .padding(4.dp)
+                .background(if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline, CircleShape)
+                .pointerInput(enabled) {
+                    if (!enabled) return@pointerInput
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            if (thumbOffset >= maxPx * 0.9f) {
+                                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                                onConfirm()
+                            }
+                            thumbOffset = 0f
+                        },
+                        onHorizontalDrag = { _, dragAmount ->
+                            thumbOffset = (thumbOffset + dragAmount).coerceIn(0f, maxPx)
+                        }
+                    )
+                },
+            contentAlignment = Alignment.Center
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(subtitle, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
+        }
+    }
+}
+
+private fun resolveSlotStateFixed(
+    slot: SlotDto,
+    currentIndex: Int,
+    selectedStartIndex: Int?,
+    selectedPitchIndex: Int?,
+    pitchIndex: Int,
+    durationMins: Int,
+    tz: TimeZone,
+    nowInstant: Instant
+): SlotRowState {
+    val startDt = slot.start.toLocalDateTimeSafe() ?: return SlotRowState.PAST
+    val startInstant = startDt.toInstant(tz)
+    val isExpired = startInstant <= nowInstant
+
+    if (isExpired) return SlotRowState.PAST
+    if (slot.status == "BOOKED") return SlotRowState.BOOKED
+
+    if (selectedPitchIndex != pitchIndex || selectedStartIndex == null) return SlotRowState.AVAILABLE
+    
+    val slotsNeeded = durationMins / 30
+    if (currentIndex == selectedStartIndex) return SlotRowState.SELECTED
+    if (currentIndex > selectedStartIndex && currentIndex < selectedStartIndex + slotsNeeded) return SlotRowState.IN_RANGE
+    
+    return SlotRowState.AVAILABLE
+}
+
+@Composable
+fun InfoCard(icon: ImageVector, title: String, subtitle: String, modifier: Modifier = Modifier) {
+    Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(12.dp), modifier = modifier) {
+        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Column {
+                Text(title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            Spacer(Modifier.width(4.dp))
-            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
         }
     }
 }
 
 @Composable
 fun DaySelector(selectedDate: String?, onSelect: (String) -> Unit) {
-    val now = remember { 
-        kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-    }
+    val now: LocalDateTime = remember { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()) }
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(end = 16.dp)) {
         items(7) { i ->
             val date = now.date.plus(i, DateTimeUnit.DAY)
@@ -755,12 +662,9 @@ fun DaySelector(selectedDate: String?, onSelect: (String) -> Unit) {
                 shape = RoundedCornerShape(12.dp),
                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
             ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+                Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(date.dayOfWeek.name.take(3), color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
-                    Text(date.dayOfMonth.toString(), color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold))
+                    Text(date.dayOfMonth.toString(), color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                 }
             }
         }
@@ -775,16 +679,10 @@ fun DurationSelector(selectedKey: String, onSelect: (String) -> Unit) {
             val isSelected = selectedKey == key
             Surface(
                 modifier = Modifier.weight(1f).clickable { onSelect(key) },
-                shape = RoundedCornerShape(10.dp),
+                shape = RoundedCornerShape(12.dp),
                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
             ) {
-                Text(
-                    "$label min",
-                    modifier = Modifier.padding(vertical = 10.dp),
-                    textAlign = TextAlign.Center,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
-                )
+                Text("$label min", modifier = Modifier.padding(vertical = 12.dp), textAlign = TextAlign.Center, color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
             }
         }
     }
@@ -792,69 +690,20 @@ fun DurationSelector(selectedKey: String, onSelect: (String) -> Unit) {
 
 @Composable
 fun SectionTitle(text: String) {
-    Text(text = text, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold), color = MaterialTheme.colorScheme.onSurface)
+    Text(text = text, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookingResultDialog(message: String, isSuccess: Boolean, onDismiss: () -> Unit) {
-    val iconBgColor = if (isSuccess) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
-    val iconColor = if (isSuccess) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-    val buttonColor = if (isSuccess) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
     val strings = Localization.current
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-    ) {
-        Column(
-            Modifier
-                .padding(horizontal = 24.dp)
-                .navigationBarsPadding()
-                .padding(bottom = 32.dp, top = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .background(iconBgColor, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = if (isSuccess) Icons.Default.Done else Icons.Default.Close,
-                    contentDescription = null,
-                    tint = iconColor,
-                    modifier = Modifier.size(48.dp)
-                )
-            }
-            Spacer(Modifier.height(20.dp))
-            Text(
-                text = if (isSuccess) strings.success + "!" else strings.error,
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                color = iconColor
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = message,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium,
-                lineHeight = 22.sp
-            )
-            Spacer(Modifier.height(32.dp))
-            Button(
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth().height(54.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
-            ) {
-                Text(
-                    if (isSuccess) strings.understand else strings.back,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                )
-            }
+    ModalBottomSheet(onDismissRequest = onDismiss, shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)) {
+        Column(Modifier.padding(24.dp).navigationBarsPadding().padding(bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(if (isSuccess) Icons.Default.CheckCircle else Icons.Default.Error, null, tint = if (isSuccess) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error, modifier = Modifier.size(64.dp))
+            Spacer(Modifier.height(16.dp))
+            Text(if (isSuccess) strings.success else strings.error, style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
+            Text(message, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 16.dp))
+            Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(12.dp)) { Text(strings.understand) }
         }
     }
 }

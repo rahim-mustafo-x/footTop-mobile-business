@@ -2,12 +2,15 @@ package uz.coder.foottopbusiness.presentation.main.stadium.details
 
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
+import uz.coder.foottopbusiness.data.network.dto.stadium.SlotDto
 import uz.coder.foottopbusiness.domain.repository.StadiumRepository
 import kotlinx.datetime.*
 import kotlinx.coroutines.flow.firstOrNull
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.domain.usecase.booking.CreateBookingUseCase
+import uz.coder.foottopbusiness.domain.usecase.booking.CancelBookingUseCase
+import uz.coder.foottopbusiness.domain.usecase.booking.GetBookingsByStadiumIdUseCase
 import uz.coder.foottopbusiness.data.network.dto.booking.BookingRequestDto
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.Job
@@ -20,7 +23,9 @@ class StadiumDetailsViewModel(
     stadium: StadiumResponse,
     private val stadiumRepository: StadiumRepository,
     private val preferencesManager: PreferencesManager,
-    private val createBookingUseCase: CreateBookingUseCase
+    private val createBookingUseCase: CreateBookingUseCase,
+    private val cancelBookingUseCase: CancelBookingUseCase,
+    private val getBookingsByStadiumIdUseCase: GetBookingsByStadiumIdUseCase
 ) : BaseViewModel<StadiumDetailsContract.State, StadiumDetailsContract.Effect, StadiumDetailsContract.Event>(
     initialState = StadiumDetailsContract.State(stadium = stadium)
 ) {
@@ -90,7 +95,13 @@ class StadiumDetailsViewModel(
                 updateStatus(event.isActive)
             }
             is StadiumDetailsContract.Event.SlotClick -> {
-                updateState { copy(selectedSlot = event.slot, showSlotActionDialog = true) }
+                val s = state.value
+                val isStaff = s.userRole == UserRole.SUPER_ADMIN || s.userRole == UserRole.DISTRICT_ADMIN || s.userRole == UserRole.OWNER
+                if (event.slot.status == "BOOKED" && isStaff) {
+                    fetchBookingDetails(event.slot)
+                } else {
+                    updateState { copy(selectedSlot = event.slot, showSlotActionDialog = true) }
+                }
             }
             StadiumDetailsContract.Event.DismissSlotDialog -> {
                 updateState { copy(showSlotActionDialog = false, selectedSlot = null) }
@@ -149,7 +160,73 @@ class StadiumDetailsViewModel(
             StadiumDetailsContract.Event.DismissBookingResultDialog -> {
                 updateState { copy(showBookingResultDialog = false) }
             }
+            is StadiumDetailsContract.Event.UpdateBookerName -> {
+                updateState { copy(bookerName = event.name) }
+            }
+            is StadiumDetailsContract.Event.UpdateBookerPhone -> {
+                updateState { copy(bookerPhone = event.phone) }
+            }
+            is StadiumDetailsContract.Event.OpenCancelDialog -> {
+                updateState { copy(showCancelDialog = true, bookingToCancel = event.bookingId, cancelReason = "") }
+            }
+            StadiumDetailsContract.Event.DismissCancelDialog -> {
+                updateState { copy(showCancelDialog = false, bookingToCancel = null) }
+            }
+            is StadiumDetailsContract.Event.UpdateCancelReason -> {
+                updateState { copy(cancelReason = event.reason) }
+            }
+            is StadiumDetailsContract.Event.ConfirmCancelBooking -> {
+                cancelBooking(event.bookingId, event.reason)
+            }
         }
+    }
+
+    private fun fetchBookingDetails(slot: SlotDto) {
+        // Since we don't have a direct "get booking by slot id" we might need to fetch all bookings for this stadium and date
+        val s = state.value
+        val stadiumId = s.stadium?.id?.toLong() ?: return
+        val date = s.selectedDate ?: return
+
+        executeAsync(
+            onLoading = { updateState { copy(isLoading = true) } },
+            block = {
+                getBookingsByStadiumIdUseCase(stadiumId, date).first()
+            },
+            onSuccess = { bookings ->
+                updateState { copy(isLoading = false) }
+                // Match the booking by start time since SlotDto doesn't have an ID
+                val booking = bookings.firstOrNull { it.startTime == slot.start }
+                if (booking != null) {
+                     sendEffect(StadiumDetailsContract.Effect.ShowToast("Band qilingan: ${booking.name ?: "Noma'lum"} (${booking.phone ?: "-"})"))
+                } else {
+                     sendEffect(StadiumDetailsContract.Effect.ShowToast("Bron ma'lumotlari topilmadi"))
+                }
+            },
+            onError = {
+                updateState { copy(isLoading = false) }
+                sendEffect(StadiumDetailsContract.Effect.ShowToast("Bron ma'lumotlarini yuklashda xatolik"))
+            }
+        )
+    }
+
+    private fun cancelBooking(id: Long, reason: String) {
+        if (reason.isBlank()) {
+            sendEffect(StadiumDetailsContract.Effect.ShowToast("Sababini kiriting"))
+            return
+        }
+        executeAsync(
+            onLoading = { updateState { copy(isLoading = true) } },
+            block = { cancelBookingUseCase(id, reason).first() },
+            onSuccess = {
+                updateState { copy(isLoading = false, showCancelDialog = false) }
+                sendEffect(StadiumDetailsContract.Effect.ShowToast("Bron bekor qilindi"))
+                refreshStadium()
+            },
+            onError = {
+                updateState { copy(isLoading = false) }
+                sendEffect(StadiumDetailsContract.Effect.ShowToast("Xatolik: ${it.message}"))
+            }
+        )
     }
 
     private fun bookSelectedSlots(event: StadiumDetailsContract.Event.CreateBooking) {
@@ -166,7 +243,9 @@ class StadiumDetailsViewModel(
                     endTime = event.endTime,
                     totalPrice = event.price,
                     status = "PENDING",
-                    paymentMethod = "CASH"
+                    paymentMethod = "CASH",
+                    name = event.name,
+                    phone = event.phone
                 )
                 createBookingUseCase(request).first()
             },
@@ -178,7 +257,9 @@ class StadiumDetailsViewModel(
                         bookingResultMessage = "Stadion muvaffaqiyatli band qilindi!",
                         isBookingSuccess = true,
                         selectedPitchIndex = null,
-                        selectedStartIndex = null
+                        selectedStartIndex = null,
+                        bookerName = "",
+                        bookerPhone = ""
                     ) 
                 }
                 refreshStadium()

@@ -13,5 +13,7 @@ data class BookingResponseDto(
     @SerialName("endTime") val endTime: String? = null,
     @SerialName("totalPrice") val totalPrice: Double? = null,
     @SerialName("status") val status: String? = null,
-    @SerialName("paymentMethod") val paymentMethod: String? = null
+    @SerialName("paymentMethod") val paymentMethod: String? = null,
+    @SerialName("name") val name: String? = null,
+    @SerialName("phone") val phone: String? = null
 )
