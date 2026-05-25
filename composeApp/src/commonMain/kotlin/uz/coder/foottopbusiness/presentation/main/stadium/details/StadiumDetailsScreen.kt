@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -46,7 +47,6 @@ import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.platform.makePhoneCall
 import uz.coder.foottopbusiness.core.plusMinutes
 import uz.coder.foottopbusiness.core.toLocalDateTimeSafe
-import uz.coder.foottopbusiness.core.visualTransformation.PhoneTransformation
 import uz.coder.foottopbusiness.data.network.dto.stadium.SlotDto
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.stadium.edit.EditStadiumVoyager
@@ -156,8 +156,6 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     val startTimeStr = startTime?.let { formatTimeFromDateTime(it) } ?: ""
                     val selectedEnd = startTime?.plusMinutes(durationMins)
                     val endTimeStr = selectedEnd?.let { formatTimeFromDateTime(it) } ?: ""
-                    val hasConflict = state.hasConflict
-
                     Surface(
                         modifier = Modifier.fillMaxWidth().navigationBarsPadding(),
                         shadowElevation = 8.dp,
@@ -184,25 +182,13 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                 }
                             }
 
-                            if (hasConflict) {
-                                Spacer(Modifier.height(8.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f), RoundedCornerShape(8.dp)).padding(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(Icons.Default.Error, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Tanlangan vaqtda band joylar bor", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error)
-                                }
-                            }
-
                             Spacer(Modifier.height(12.dp))
 
                             SwipeToConfirmButton(
                                 text = strings.bookNow,
-                                enabled = !hasConflict,
+                                enabled = true,
                                 onConfirm = {
-                                    if (selectedEnd != null && !hasConflict) {
+                                    if (selectedEnd != null) {
                                         viewModel.handleEvent(
                                             StadiumDetailsContract.Event.CreateBooking(
                                                 stadiumId = currentStadium.id ?: 0,
@@ -247,7 +233,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                         )
                         IconButton(
                             onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.BackClick) },
-                            modifier = Modifier.statusBarsPadding().padding(8.dp).align(Alignment.TopStart).background(Color.Black.copy(0.3f), CircleShape)
+                            modifier = Modifier.statusBarsPadding().padding(8.dp).align(Alignment.TopEnd).background(Color.Black.copy(0.3f), CircleShape)
                         ) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White)
                         }
@@ -390,8 +376,8 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                 label = { Text("Telefon (ixtiyoriy)") },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
-                                visualTransformation = PhoneTransformation(),
-                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)
+                                prefix = { Text("+998 ") },
+                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number)
                             )
                         }
 

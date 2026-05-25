@@ -69,6 +69,7 @@ import coil3.compose.AsyncImage
 import uz.coder.foottopbusiness.core.BackHandler
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.core.visualTransformation.AmountTransformation
+import uz.coder.foottopbusiness.core.visualTransformation.PhoneTransformation
 import uz.coder.foottopbusiness.presentation.main.stadium.addstadium.TimePickerDialog
 
 import uz.coder.foottopbusiness.core.localization.ErrorMapper
@@ -256,11 +257,12 @@ fun EditStadiumScreen(viewModel: EditStadiumViewModel, onBack: () -> Unit) {
 
             OutlinedTextField(
                 value = state.phone,
-                onValueChange = { viewModel.handleEvent(EditStadiumContract.Event.Phone(it)) },
+                onValueChange = { if (it.length <= 9) viewModel.handleEvent(EditStadiumContract.Event.Phone(it)) },
                 label = { Text("Telefon raqami") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
+                visualTransformation = PhoneTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
             )
             Spacer(Modifier.height(12.dp))

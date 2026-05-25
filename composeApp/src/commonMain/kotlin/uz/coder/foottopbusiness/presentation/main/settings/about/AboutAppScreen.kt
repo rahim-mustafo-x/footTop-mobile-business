@@ -1,6 +1,5 @@
 package uz.coder.foottopbusiness.presentation.main.settings.about
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -35,19 +33,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import uz.coder.foottopbusiness.core.localization.Localization
-import uz.coder.foottopbusiness.core.platform.getPlatform
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import uz.coder.foottopbusiness.core.images.appIcon
+import uz.coder.foottopbusiness.core.localization.Localization
+import uz.coder.foottopbusiness.core.platform.getPlatform
+import uz.coder.foottopbusiness.core.ui.Base64Image
 
 object AboutAppVoyager : Screen {
     @Composable
@@ -59,7 +57,6 @@ object AboutAppVoyager : Screen {
 @Composable
 fun AboutAppScreen() {
     val navigator = LocalNavigator.currentOrThrow
-    val primary = MaterialTheme.colorScheme.primary
     val platform = getPlatform()
     val strings = Localization.current
 
@@ -88,23 +85,17 @@ fun AboutAppScreen() {
         ) {
             Spacer(Modifier.height(40.dp))
 
-            // App Logo / Icon Placeholder
-            Box(
+            // App Logo / Icon
+            Surface(
                 modifier = Modifier
-                    .size(120.dp)
-                    .clip(RoundedCornerShape(32.dp))
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(primary, primary.copy(alpha = 0.7f))
-                        )
-                    ),
-                contentAlignment = Alignment.Center
+                    .size(120.dp),
+                shape = RoundedCornerShape(32.dp),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 8.dp
             ) {
-                Icon(
-                    Icons.Default.SportsSoccer,
-                    null,
-                    tint = Color.White,
-                    modifier = Modifier.size(64.dp)
+                Base64Image(
+                    base64 = appIcon,
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
 

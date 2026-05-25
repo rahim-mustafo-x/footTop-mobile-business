@@ -48,7 +48,7 @@ class AdminRepositoryImpl(private val apiService: AdminApiService) : AdminReposi
                         dr?.let {
                             uz.coder.foottopbusiness.domain.model.DailyRevenue(
                                 date = it.date ?: "",
-                                revenue = it.revenue ?: 0
+                                revenue = it.revenue ?: 0.0
                             )
                         }
                     } ?: emptyList(),

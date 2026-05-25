@@ -9,5 +9,5 @@ data class DailyRevenue(
     @SerialName("date")
     val date: String? = null,
     @SerialName("revenue")
-    val revenue: Int? = null
+    val revenue: Double? = null
 )

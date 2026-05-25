@@ -10,6 +10,13 @@ plugins {
     alias(libs.plugins.kotlin.serilization)
 }
 
+compose {
+    resources {
+        publicResClass = true
+        packageOfResClass = "uz.coder.foottopbusiness"
+    }
+}
+
 kotlin {
     android {
         namespace = "uz.coder.foottopbusiness"
@@ -25,6 +32,8 @@ kotlin {
                 excludes += "/META-INF/{AL2.0,LGPL2.1}"
             }
         }
+
+        withHostTest {}
     }
 
     listOf(
@@ -48,6 +57,11 @@ kotlin {
             implementation(libs.firebase.analytics)
             implementation(libs.firebase.messaging)
             implementation(libs.kotlinx.coroutines.play.services)
+        }
+        iosMain.dependencies{
+            implementation(compose.ui)
+            implementation(compose.foundation)
+            implementation(libs.ktor.client.darwin)
         }
         commonMain.dependencies {
             //icon
