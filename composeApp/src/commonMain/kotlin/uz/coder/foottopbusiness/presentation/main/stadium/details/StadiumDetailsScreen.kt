@@ -51,6 +51,7 @@ import uz.coder.foottopbusiness.data.network.dto.stadium.SlotDto
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.stadium.edit.EditStadiumVoyager
 import kotlin.time.Clock
+import uz.coder.foottopbusiness.core.platform.NotificationPermissionLauncher
 
 // --- Slot state enum ---
 private enum class SlotRowState {
@@ -411,61 +412,92 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
             onDismiss = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissPermanentlyDeniedDialog) }
         )
     }
+
+    NotificationPermissionLauncher(
+        trigger = state.triggerNotificationRequest,
+        onResult = { status ->
+            viewModel.handleEvent(StadiumDetailsContract.Event.OnNotificationPermissionResult(status))
+        }
+    )
 }
 
 @Composable
 private fun NotificationPermissionExplanationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    val strings = Localization.current
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Bildirishnomalarga ruxsat bering") },
+        title = { Text(strings.notificationRationaleTitle) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Quyidagi qulayliklardan foydalanish uchun bildirishnomalarni yoqing:")
-                BenefitItem("O'yin eslatmalari")
-                BenefitItem("Bron qilish holati o'zgarishi")
-                BenefitItem("Turnir yangiliklari")
-                BenefitItem("Muhim xabarlar")
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(strings.notificationRationaleDesc)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    BenefitItem(strings.notificationBenefit1)
+                    BenefitItem(strings.notificationBenefit2)
+                    BenefitItem(strings.notificationBenefit3)
+                    BenefitItem(strings.notificationBenefit4)
+                }
+                Text(
+                    text = "${strings.enableNotifications}?",
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
             }
         },
         confirmButton = {
-            Button(onClick = onConfirm) {
-                Text("Bildirishnomalarni yoqish")
+            Button(
+                onClick = onConfirm,
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(strings.enableNotifications)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Keyinroq")
+                Text(strings.maybeLater)
             }
         },
-        shape = RoundedCornerShape(24.dp)
+        shape = RoundedCornerShape(28.dp)
     )
 }
 
 @Composable
 private fun BenefitItem(text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Icon(Icons.Default.Check, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
+    Row(
+        verticalAlignment = Alignment.CenterVertically, 
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Icon(
+            Icons.Default.Check, 
+            null, 
+            tint = Color(0xFF4CAF50), 
+            modifier = Modifier.size(20.dp)
+        )
         Text(text, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
 @Composable
 private fun PermanentlyDeniedDialog(onOpenSettings: () -> Unit, onDismiss: () -> Unit) {
+    val strings = Localization.current
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Bildirishnomalar o'chirilgan") },
-        text = { Text("Siz bildirishnomalarni taqiqlab qo'ygansiz. Turnir va bronlar haqida xabardor bo'lish uchun sozlamalardan ruxsat berishingiz kerak.") },
+        title = { Text(strings.notificationsDeniedTitle) },
+        text = { Text(strings.notificationsDeniedDesc) },
         confirmButton = {
-            Button(onClick = onOpenSettings) {
-                Text("Sozlamalarni ochish")
+            Button(
+                onClick = onOpenSettings,
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(strings.openSettings)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Yopish")
+                Text(strings.cancel)
             }
         },
-        shape = RoundedCornerShape(24.dp)
+        shape = RoundedCornerShape(28.dp)
     )
 }
 

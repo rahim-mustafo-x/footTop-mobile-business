@@ -1,5 +1,7 @@
 package uz.coder.foottopbusiness.core.platform
 
+import androidx.compose.runtime.Composable
+
 interface Platform {
     val name: String
     val version: String
@@ -26,3 +28,9 @@ enum class PermissionStatus {
 expect suspend fun checkNotificationPermissionStatus(): PermissionStatus
 
 expect suspend fun requestNotificationPermission(): PermissionStatus
+
+@Composable
+expect fun NotificationPermissionLauncher(
+    trigger: Boolean,
+    onResult: (PermissionStatus) -> Unit
+)

@@ -4,6 +4,10 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.core.app.NotificationManagerCompat
 import uz.coder.foottopbusiness.core.context.ContextProvider
 
@@ -104,4 +108,30 @@ actual suspend fun requestNotificationPermission(): PermissionStatus {
     // On Android, this usually needs an Activity to show the dialog.
     // We will handle the actual request in the UI layer using ActivityResult.
     return checkNotificationPermissionStatus()
+}
+
+@Composable
+actual fun NotificationPermissionLauncher(
+    trigger: Boolean,
+    onResult: (PermissionStatus) -> Unit
+) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val launcher = rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted ->
+            onResult(if (isGranted) PermissionStatus.GRANTED else PermissionStatus.DENIED)
+        }
+
+        LaunchedEffect(trigger) {
+            if (trigger) {
+                launcher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    } else {
+        LaunchedEffect(trigger) {
+            if (trigger) {
+                onResult(PermissionStatus.GRANTED)
+            }
+        }
+    }
 }

@@ -20,7 +20,7 @@ class TournamentRepositoryImpl(
     ) = flow {
         val response = api.getTournaments(page, size, filters)
         if (response.success == true) {
-            emit(response.data ?: PageTournamentResponseDto())
+            emit(PageTournamentResponseDto(content = response.data))
         } else {
             throw Exception(response.message ?: "Turnirlarni yuklashda xatolik")
         }

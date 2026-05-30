@@ -8,9 +8,9 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.appendPathSegments
 import io.ktor.http.contentType
+import uz.coder.foottopbusiness.data.network.dto.BaseListResponse
 import uz.coder.foottopbusiness.data.network.dto.BaseResponse
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
-import uz.coder.foottopbusiness.data.network.dto.tournament.PageTournamentResponseDto
 import uz.coder.foottopbusiness.data.network.dto.tournament.TournamentFilterDto
 import uz.coder.foottopbusiness.data.network.dto.tournament.TournamentRequestDto
 
@@ -24,7 +24,7 @@ class TournamentApiService(private val client: HttpClient) {
         page: Int = 0,
         size: Int = 10,
         filters: TournamentFilterDto? = null
-    ): BaseResponse<PageTournamentResponseDto> =
+    ): BaseListResponse<TournamentResponseDto> =
         client.get(TOURNAMENTS) {
             url {
                 parameters.append("page", page.toString())

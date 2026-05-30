@@ -63,6 +63,7 @@ interface Language {
     val switchAccount: String
     val refresh: String
     val noBookingsToday: String
+    val latestMatches: String
     
     // Notifications
     val notifications: String
@@ -78,6 +79,17 @@ interface Language {
     val pushHint: String
     val titleHint: String
     val bodyHint: String
+    val notificationRationaleTitle: String
+    val notificationRationaleDesc: String
+    val notificationBenefit1: String
+    val notificationBenefit2: String
+    val notificationBenefit3: String
+    val notificationBenefit4: String
+    val enableNotifications: String
+    val maybeLater: String
+    val notificationsDeniedTitle: String
+    val notificationsDeniedDesc: String
+    val openSettings: String
 
     // Settings & Profile
     val profileAndSettings: String
@@ -296,6 +308,7 @@ class EnLanguage : Language {
     override val switchAccount = "Switch account"
     override val refresh = "Refresh"
     override val noBookingsToday = "No bookings for today"
+    override val latestMatches = "Upcoming Matches"
     
     override val notifications = "Notifications"
     override val notifyUsers = "Notify users"
@@ -310,6 +323,17 @@ class EnLanguage : Language {
     override val pushHint = "All users will receive a push notification."
     override val titleHint = "e.g.: New tournament announcement"
     override val bodyHint = "Write your message in detail..."
+    override val notificationRationaleTitle = "Stay Updated"
+    override val notificationRationaleDesc = "We use notifications to remind you about important updates like:"
+    override val notificationBenefit1 = "Match reminders"
+    override val notificationBenefit2 = "Booking status changes"
+    override val notificationBenefit3 = "Tournament updates"
+    override val notificationBenefit4 = "Important announcements"
+    override val enableNotifications = "Enable Notifications"
+    override val maybeLater = "Maybe Later"
+    override val notificationsDeniedTitle = "Notifications Disabled"
+    override val notificationsDeniedDesc = "You've disabled notifications. To stay updated on tournaments and bookings, please enable them in settings."
+    override val openSettings = "Open Settings"
 
     override val tabPanel = "Panel"
     override val tabHome = "Home"
@@ -518,6 +542,7 @@ class RuLanguage : Language {
     override val switchAccount = "Сменить аккаунт"
     override val refresh = "Обновить"
     override val noBookingsToday = "На сегодня бронирований нет"
+    override val latestMatches = "Ближайшие матчи"
     
     override val notifications = "Уведомления"
     override val notifyUsers = "Уведомить пользователей"
@@ -532,6 +557,17 @@ class RuLanguage : Language {
     override val pushHint = "Все пользователи получат пуш-уведомление."
     override val titleHint = "Напр.: Объявление о новом турнире"
     override val bodyHint = "Напишите сообщение подробно..."
+    override val notificationRationaleTitle = "Будьте в курсе"
+    override val notificationRationaleDesc = "Мы используем уведомления, чтобы напоминать вам о важных обновлениях, таких как:"
+    override val notificationBenefit1 = "Напоминания о матчах"
+    override val notificationBenefit2 = "Изменения статуса бронирования"
+    override val notificationBenefit3 = "Обновления турниров"
+    override val notificationBenefit4 = "Важные объявления"
+    override val enableNotifications = "Включить уведомления"
+    override val maybeLater = "Может позже"
+    override val notificationsDeniedTitle = "Уведомления отключены"
+    override val notificationsDeniedDesc = "Вы отключили уведомления. Чтобы быть в курсе турниров и бронирований, пожалуйста, включите их в настройках."
+    override val openSettings = "Открыть настройки"
 
     override val tabPanel = "Панель"
     override val tabHome = "Главная"
@@ -740,6 +776,7 @@ class UzLanguage : Language {
     override val switchAccount = "Boshqa hisobga o'tish"
     override val refresh = "Yangilash"
     override val noBookingsToday = "Bugun uchun bandlar yo'q"
+    override val latestMatches = "Yaqin oradagi o'yinlar"
     
     override val notifications = "Xabarnoma"
     override val notifyUsers = "Foydalanuvchilarni xabardor qiling"
@@ -754,6 +791,17 @@ class UzLanguage : Language {
     override val pushHint = "Xabar yuborilganda barcha foydalanuvchilarga push-xabarnoma boradi."
     override val titleHint = "Masalan: Yangi turnir e'loni"
     override val bodyHint = "Xabaringizni batafsil yozing..."
+    override val notificationRationaleTitle = "Xabardor bo'ling"
+    override val notificationRationaleDesc = "Muhim yangilanishlar haqida eslatib turish uchun bildirishnomalardan foydalanamiz:"
+    override val notificationBenefit1 = "O'yin eslatmalari"
+    override val notificationBenefit2 = "Bron holati o'zgarishi"
+    override val notificationBenefit3 = "Turnir yangiliklari"
+    override val notificationBenefit4 = "Muhim e'lonlar"
+    override val enableNotifications = "Bildirishnomalarni yoqish"
+    override val maybeLater = "Keyinroq"
+    override val notificationsDeniedTitle = "Bildirishnomalar o'chirilgan"
+    override val notificationsDeniedDesc = "Siz bildirishnomalarni taqiqlab qo'ygansiz. Turnir va bronlar haqida xabardor bo'lish uchun sozlamalardan ruxsat berishingiz kerak."
+    override val openSettings = "Sozlamalarni ochish"
 
     override val tabPanel = "Panel"
     override val tabHome = "Bosh"

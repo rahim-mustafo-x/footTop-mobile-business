@@ -10,6 +10,8 @@ import uz.coder.foottopbusiness.core.platform.PermissionStatus
 import uz.coder.foottopbusiness.core.platform.openAppSettings
 import kotlinx.datetime.*
 import kotlinx.coroutines.flow.firstOrNull
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.domain.usecase.booking.CreateBookingUseCase
@@ -187,7 +189,11 @@ class StadiumDetailsViewModel(
                 updateState { copy(showNotificationPermissionDialog = event.show) }
             }
             StadiumDetailsContract.Event.RequestNotificationPermission -> {
-                requestPermission()
+                updateState { copy(showNotificationPermissionDialog = false, triggerNotificationRequest = true) }
+            }
+            is StadiumDetailsContract.Event.OnNotificationPermissionResult -> {
+                updateState { copy(triggerNotificationRequest = false) }
+                handlePermissionResult(event.status)
             }
             StadiumDetailsContract.Event.DismissPermanentlyDeniedDialog -> {
                 updateState { copy(showPermanentlyDeniedDialog = false) }
@@ -199,22 +205,19 @@ class StadiumDetailsViewModel(
         }
     }
 
-    private fun requestPermission() {
-        updateState { copy(showNotificationPermissionDialog = false) }
-        executeAsync(
-            block = {
-                val status = requestNotificationPermission()
-                if (status == PermissionStatus.GRANTED) {
-                    preferencesManager.setNotificationPermission(true)
-                }
-                status
-            },
-            onSuccess = { status ->
-                if (status == PermissionStatus.PERMANENTLY_DENIED) {
+    private fun handlePermissionResult(status: PermissionStatus) {
+        viewModelScope.launch {
+            val currentCount = preferencesManager.notificationRequestCount.first()
+            preferencesManager.setNotificationRequestCount(currentCount + 1)
+
+            if (status == PermissionStatus.GRANTED) {
+                preferencesManager.setNotificationPermission(true)
+            } else {
+                if (currentCount >= 2) {
                     updateState { copy(showPermanentlyDeniedDialog = true) }
                 }
             }
-        )
+        }
     }
 
     private fun checkNotificationPermission() {
@@ -223,7 +226,12 @@ class StadiumDetailsViewModel(
             if (!grantedInPrefs) {
                 val status = checkNotificationPermissionStatus()
                 if (status != PermissionStatus.GRANTED) {
-                    updateState { copy(showNotificationPermissionDialog = true) }
+                    val requestCount = preferencesManager.notificationRequestCount.first()
+                    if (requestCount <= 2) {
+                        updateState { copy(showNotificationPermissionDialog = true) }
+                    } else {
+                        updateState { copy(showPermanentlyDeniedDialog = true) }
+                    }
                 } else {
                     preferencesManager.setNotificationPermission(true)
                 }

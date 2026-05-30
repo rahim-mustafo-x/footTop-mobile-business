@@ -26,6 +26,7 @@ actual class PreferencesManager(private val context: Context) {
         private val REFRESH_TOKEN_EXPIRATION = longPreferencesKey("refresh_token_expiration")
         private val NOTIFICATION_PERMISSION = booleanPreferencesKey("notification_permission")
         private val NOTIFICATION_PERMISSION_DATE = longPreferencesKey("notification_permission_date")
+        private val NOTIFICATION_REQUEST_COUNT = intPreferencesKey("notification_request_count")
     }
 
     actual val token: Flow<String?> = context.dataStore.data.map { preferences ->
@@ -70,6 +71,10 @@ actual class PreferencesManager(private val context: Context) {
 
     actual val notificationPermissionDate: Flow<Long> = context.dataStore.data.map { preferences ->
         preferences[NOTIFICATION_PERMISSION_DATE] ?: 0L
+    }
+
+    actual val notificationRequestCount: Flow<Int> = context.dataStore.data.map { preferences ->
+        preferences[NOTIFICATION_REQUEST_COUNT] ?: 0
     }
 
     actual suspend fun setToken(token: String) {
@@ -145,6 +150,12 @@ actual class PreferencesManager(private val context: Context) {
     actual suspend fun setNotificationPermissionDate(timestamp: Long) {
         context.dataStore.edit { preferences ->
             preferences[NOTIFICATION_PERMISSION_DATE] = timestamp
+        }
+    }
+
+    actual suspend fun setNotificationRequestCount(count: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[NOTIFICATION_REQUEST_COUNT] = count
         }
     }
 

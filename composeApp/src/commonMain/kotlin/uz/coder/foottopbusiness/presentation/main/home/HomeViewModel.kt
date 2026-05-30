@@ -206,6 +206,8 @@ class HomeViewModel(
                     onSuccess = {
                         sendEffect(ShowToast("Muvaffaqiyatli band qilindi: ${event.name}"))
                         loadSlots(stadium.id ?: return@executeAsync, s.selectedDate, s.selectedDuration)
+                        // Check for notification permission after successful booking
+                        handleEvent(HomeContract.Event.CheckNotificationPermission)
                     },
                     onError = {
                         sendEffect(ShowToast("Xatolik: ${it.message}"))
@@ -266,7 +268,11 @@ class HomeViewModel(
 
             is HomeContract.Event.SetShowNotificationPermissionDialog -> updateState { copy(showNotificationPermissionDialog = event.show) }
             HomeContract.Event.RequestNotificationPermission -> {
-                requestPermission()
+                updateState { copy(showNotificationPermissionDialog = false, triggerNotificationRequest = true) }
+            }
+            is HomeContract.Event.OnNotificationPermissionResult -> {
+                updateState { copy(triggerNotificationRequest = false) }
+                handlePermissionResult(event.status)
             }
             HomeContract.Event.CheckNotificationPermission -> {
                 checkPermission()
@@ -281,22 +287,22 @@ class HomeViewModel(
         }
     }
 
-    private fun requestPermission() {
-        updateState { copy(showNotificationPermissionDialog = false) }
-        executeAsync(
-            block = {
-                val status = requestNotificationPermission()
-                if (status == PermissionStatus.GRANTED) {
-                    preferencesManager.setNotificationPermission(true)
-                }
-                status
-            },
-            onSuccess = { status ->
-                if (status == PermissionStatus.PERMANENTLY_DENIED) {
+    private fun handlePermissionResult(status: PermissionStatus) {
+        viewModelScope.launch {
+            val currentCount = preferencesManager.notificationRequestCount.first()
+            preferencesManager.setNotificationRequestCount(currentCount + 1)
+
+            if (status == PermissionStatus.GRANTED) {
+                preferencesManager.setNotificationPermission(true)
+            } else if (status == PermissionStatus.DENIED) {
+                // If denied, we check if it was permanently denied by the OS
+                // In a real app, you might want to check shouldShowRequestPermissionRationale here
+                // but we rely on the count as well.
+                if (currentCount >= 2) {
                     updateState { copy(showPermanentlyDeniedDialog = true) }
                 }
             }
-        )
+        }
     }
 
     private fun checkPermission() {
@@ -305,7 +311,16 @@ class HomeViewModel(
             if (!grantedInPrefs) {
                 val status = checkNotificationPermissionStatus()
                 if (status != PermissionStatus.GRANTED) {
-                    updateState { copy(showNotificationPermissionDialog = true) }
+                    val requestCount = preferencesManager.notificationRequestCount.first()
+                    if (requestCount < 2) {
+                        updateState { copy(showNotificationPermissionDialog = true) }
+                    } else if (requestCount == 2) {
+                        // 3rd time - show explanation that leads to settings
+                        updateState { copy(showNotificationPermissionDialog = true) }
+                    } else {
+                        // More than 3 requests or permanently denied - show settings dialog
+                        updateState { copy(showPermanentlyDeniedDialog = true) }
+                    }
                 } else {
                     preferencesManager.setNotificationPermission(true)
                 }
@@ -471,7 +486,8 @@ class HomeViewModel(
         updateState { copy(isLoadingMatches = true) }
         executeAsync {
             getMatchesUseCase().collect { matches ->
-                updateState { copy(matches = matches, isLoadingMatches = false) }
+                val latest = matches.sortedByDescending { it.dateTime }.take(10)
+                updateState { copy(matches = matches, latestMatches = latest, isLoadingMatches = false) }
                 updateLocalStats()
             }
         }

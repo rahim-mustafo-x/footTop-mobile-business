@@ -93,6 +93,7 @@ import uz.coder.foottopbusiness.presentation.main.settings.notification.SendNoti
 import uz.coder.foottopbusiness.presentation.main.stadium.addstadium.AddStadiumVoyager
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsVoyager
 import uz.coder.foottopbusiness.presentation.main.booking.list.BookingListVoyager
+import uz.coder.foottopbusiness.core.platform.NotificationPermissionLauncher
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -161,6 +162,13 @@ fun HomeScreen(
         )
     }
 
+    NotificationPermissionLauncher(
+        trigger = state.triggerNotificationRequest,
+        onResult = { status ->
+            viewModel.handleEvent(HomeContract.Event.OnNotificationPermissionResult(status))
+        }
+    )
+
     LaunchedEffect(state.selectedStadiumForTime) {
         state.selectedStadiumForTime?.let {
             navigateToSlotsControl(it)
@@ -220,11 +228,14 @@ fun HomeScreen(
                             }
 
                             else -> {
-                                // For other roles like COACH or USER, show a restricted view
-                                RestrictedAccessView(
-                                    role = state.userRole,
-                                    onRefresh = { viewModel.handleEvent(HomeContract.Event.Load) },
-                                    onLogout = { viewModel.handleEvent(HomeContract.Event.Logout) }
+                                UserHomeTab(
+                                    state = state,
+                                    onProfileClick = { navigator.push(SettingsVoyager) },
+                                    onNotificationClick = {
+                                        viewModel.handleEvent(HomeContract.Event.CheckNotificationPermission)
+                                        navigator.push(SendNotificationVoyager)
+                                    },
+                                    onRefresh = { viewModel.handleEvent(HomeContract.Event.Load) }
                                 )
                             }
                         }
@@ -238,58 +249,203 @@ fun HomeScreen(
 }
 
 @Composable
+private fun UserHomeTab(
+    state: HomeContract.State,
+    onProfileClick: () -> Unit,
+    onNotificationClick: () -> Unit,
+    onRefresh: () -> Unit
+) {
+    val strings = Localization.current
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        contentPadding = PaddingValues(bottom = 16.dp),
+    ) {
+        item {
+            MalaebHeader(state, onProfileClick, onNotificationClick)
+        }
+
+        item {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    strings.tournaments,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                
+                Spacer(Modifier.height(16.dp))
+                
+                if (state.isLoadingTournaments) {
+                    repeat(2) {
+                        Box(modifier = Modifier.fillMaxWidth().height(100.dp).clip(RoundedCornerShape(12.dp)).shimmer().padding(bottom = 8.dp))
+                    }
+                } else if (state.tournaments.isEmpty()) {
+                    Text(strings.noTournaments, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+                } else {
+                    state.tournaments.take(3).forEach { tournament ->
+                        TournamentCard(tournament)
+                        Spacer(Modifier.height(8.dp))
+                    }
+                }
+                
+                Spacer(Modifier.height(32.dp))
+                
+                Button(
+                    onClick = onRefresh,
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(Icons.Default.Refresh, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(strings.refresh)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TournamentCard(tournament: TournamentResponseDto) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                modifier = Modifier.size(48.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.EmojiEvents, null, tint = MaterialTheme.colorScheme.primary)
+                }
+            }
+            Spacer(Modifier.width(16.dp))
+            Column {
+                Text(tournament.name ?: "", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(tournament.address ?: "", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+@Composable
+private fun MatchItem(match: uz.coder.foottopbusiness.data.network.dto.MatchResponseDto) {
+    val time = match.dateTime?.split("T")?.lastOrNull()?.take(5) ?: "00:00"
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = Color(0xFFE8F5E9),
+                modifier = Modifier.size(40.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.SportsSoccer, null, tint = Color(0xFF2E7D32), modifier = Modifier.size(20.dp))
+                }
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(match.title ?: "O'yin", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
+                Text("Maydon #${match.stadiumId}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(time, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 14.sp)
+                Text("${match.pricePerPlayer ?: 0.0} UZS", fontSize = 11.sp, fontWeight = FontWeight.Medium)
+            }
+        }
+    }
+}
+
+@Composable
 private fun NotificationPermissionExplanationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    val strings = Localization.current
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Bildirishnomalarga ruxsat bering") },
+        title = { Text(strings.notificationRationaleTitle) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Quyidagi qulayliklardan foydalanish uchun bildirishnomalarni yoqing:")
-                BenefitItem("O'yin eslatmalari")
-                BenefitItem("Bron qilish holati o'zgarishi")
-                BenefitItem("Turnir yangiliklari")
-                BenefitItem("Muhim xabarlar")
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(strings.notificationRationaleDesc)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    BenefitItem(strings.notificationBenefit1)
+                    BenefitItem(strings.notificationBenefit2)
+                    BenefitItem(strings.notificationBenefit3)
+                    BenefitItem(strings.notificationBenefit4)
+                }
+                Text(
+                    text = "${strings.enableNotifications}?",
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
             }
         },
         confirmButton = {
-            Button(onClick = onConfirm) {
-                Text("Bildirishnomalarni yoqish")
+            Button(
+                onClick = onConfirm,
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(strings.enableNotifications)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Keyinroq")
+                Text(strings.maybeLater)
             }
         },
-        shape = RoundedCornerShape(24.dp)
+        shape = RoundedCornerShape(28.dp)
     )
 }
 
 @Composable
 private fun BenefitItem(text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Icon(Icons.Default.SportsSoccer, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
+    Row(
+        verticalAlignment = Alignment.CenterVertically, 
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Icon(
+            Icons.Default.Check, 
+            null, 
+            tint = Color(0xFF4CAF50), 
+            modifier = Modifier.size(20.dp)
+        )
         Text(text, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
 @Composable
 private fun PermanentlyDeniedDialog(onOpenSettings: () -> Unit, onDismiss: () -> Unit) {
+    val strings = Localization.current
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Bildirishnomalar o'chirilgan") },
-        text = { Text("Siz bildirishnomalarni taqiqlab qo'ygansiz. Turnir va bronlar haqida xabardor bo'lish uchun sozlamalardan ruxsat berishingiz kerak.") },
+        title = { Text(strings.notificationsDeniedTitle) },
+        text = { Text(strings.notificationsDeniedDesc) },
         confirmButton = {
-            Button(onClick = onOpenSettings) {
-                Text("Sozlamalarni ochish")
+            Button(
+                onClick = onOpenSettings,
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(strings.openSettings)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Yopish")
+                Text(strings.cancel)
             }
         },
-        shape = RoundedCornerShape(24.dp)
+        shape = RoundedCornerShape(28.dp)
     )
 }
 
@@ -746,70 +902,6 @@ private fun QuickActionItem(title: String, icon: ImageVector, color: Color, modi
                 color = MaterialTheme.colorScheme.onSurface,
                 lineHeight = 18.sp
             )
-        }
-    }
-}
-
-@Composable
-private fun RestrictedAccessView(role: UserRole, onRefresh: () -> Unit, onLogout: () -> Unit) {
-    val strings = Localization.current
-    Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Box(
-            modifier = Modifier
-                .size(120.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                Icons.Default.Lock,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-        }
-        
-        Spacer(Modifier.height(32.dp))
-        
-        Text(
-            strings.accessRestricted,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        
-        Spacer(Modifier.height(8.dp))
-        
-        Text(
-            if (role == UserRole.UNKNOWN) 
-                strings.loading 
-            else 
-                "${strings.accessRestricted} (${role.name})",
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-        
-        Spacer(Modifier.height(48.dp))
-        
-        Button(
-            onClick = onRefresh,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Icon(Icons.Default.Refresh, null)
-            Spacer(Modifier.width(8.dp))
-            Text(strings.refresh)
-        }
-        
-        Spacer(Modifier.height(16.dp))
-        
-        TextButton(onClick = onLogout) {
-            Text(strings.switchAccount, color = MaterialTheme.colorScheme.error)
         }
     }
 }

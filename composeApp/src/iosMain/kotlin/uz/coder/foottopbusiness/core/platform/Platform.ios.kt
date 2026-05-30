@@ -10,6 +10,8 @@ import platform.Foundation.NSBundle
 import platform.UIKit.UIApplicationOpenSettingsURLString
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 
 class IOSPlatform: Platform {
     override val name: String = UIDevice.currentDevice.systemName() + " " + UIDevice.currentDevice.systemVersion
@@ -78,6 +80,18 @@ actual suspend fun requestNotificationPermission(): PermissionStatus = suspendCa
             continuation.resume(PermissionStatus.GRANTED)
         } else {
             continuation.resume(PermissionStatus.DENIED)
+        }
+    }
+}
+
+@Composable
+actual fun NotificationPermissionLauncher(
+    trigger: Boolean,
+    onResult: (PermissionStatus) -> Unit
+) {
+    LaunchedEffect(trigger) {
+        if (trigger) {
+            onResult(requestNotificationPermission())
         }
     }
 }

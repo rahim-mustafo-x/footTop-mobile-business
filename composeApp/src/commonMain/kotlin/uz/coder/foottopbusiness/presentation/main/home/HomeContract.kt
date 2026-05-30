@@ -73,6 +73,7 @@ sealed interface HomeContract {
         
         // matches
         val matches: List<MatchResponseDto> = emptyList(),
+        val latestMatches: List<MatchResponseDto> = emptyList(),
         val isLoadingMatches: Boolean = false,
         val selectedMatch: MatchResponseDto? = null,
         
@@ -83,6 +84,7 @@ sealed interface HomeContract {
         // Notification permission
         val showNotificationPermissionDialog: Boolean = false,
         val showPermanentlyDeniedDialog: Boolean = false,
+        val triggerNotificationRequest: Boolean = false,
     ) : MviState
 
     sealed interface Effect : MviEffect {
@@ -134,5 +136,6 @@ sealed interface HomeContract {
         object CheckNotificationPermission : Event
         object DismissPermanentlyDeniedDialog : Event
         object OpenSettings : Event
+        data class OnNotificationPermissionResult(val status: uz.coder.foottopbusiness.core.platform.PermissionStatus) : Event
     }
 }

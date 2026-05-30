@@ -21,6 +21,7 @@ actual class PreferencesManager {
         private const val REFRESH_TOKEN_EXPIRATION = "refresh_token_expiration"
         private const val NOTIFICATION_PERMISSION = "notification_permission"
         private const val NOTIFICATION_PERMISSION_DATE = "notification_permission_date"
+        private const val NOTIFICATION_REQUEST_COUNT = "notification_request_count"
     }
     private val _token = MutableStateFlow(normalizeBearerToken(userDefaults.stringForKey(TOKEN)))
     private val _refreshToken = MutableStateFlow(normalizeBearerToken(userDefaults.stringForKey(REFRESH_TOKEN)))
@@ -33,6 +34,7 @@ actual class PreferencesManager {
     private val _refreshTokenExpiration = MutableStateFlow(userDefaults.objectForKey(REFRESH_TOKEN_EXPIRATION) as? Long ?: 0L)
     private val _notificationPermission = MutableStateFlow(userDefaults.boolForKey(NOTIFICATION_PERMISSION))
     private val _notificationPermissionDate = MutableStateFlow(userDefaults.objectForKey(NOTIFICATION_PERMISSION_DATE) as? Long ?: 0L)
+    private val _notificationRequestCount = MutableStateFlow(userDefaults.integerForKey(NOTIFICATION_REQUEST_COUNT).toInt())
 
     actual val token: Flow<String?> get() = _token
     actual val refreshToken: Flow<String?> get() = _refreshToken
@@ -45,6 +47,7 @@ actual class PreferencesManager {
     actual val refreshTokenExpiration: Flow<Long> get() = _refreshTokenExpiration
     actual val notificationPermission: Flow<Boolean> get() = _notificationPermission
     actual val notificationPermissionDate: Flow<Long> get() = _notificationPermissionDate
+    actual val notificationRequestCount: Flow<Int> get() = _notificationRequestCount
 
     actual suspend fun setToken(token: String) {
         val cleaned = normalizeBearerToken(token)
@@ -120,6 +123,12 @@ actual class PreferencesManager {
         userDefaults.setObject(timestamp, NOTIFICATION_PERMISSION_DATE)
         userDefaults.synchronize()
         _notificationPermissionDate.emit(timestamp)
+    }
+
+    actual suspend fun setNotificationRequestCount(count: Int) {
+        userDefaults.setInteger(count.toLong(), NOTIFICATION_REQUEST_COUNT)
+        userDefaults.synchronize()
+        _notificationRequestCount.emit(count)
     }
 
     actual suspend fun logout() {

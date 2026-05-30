@@ -45,7 +45,8 @@ sealed interface StadiumDetailsContract {
         val cancelReason: String = "",
         val bookingToCancel: Long? = null,
         val showNotificationPermissionDialog: Boolean = false,
-        val showPermanentlyDeniedDialog: Boolean = false
+        val showPermanentlyDeniedDialog: Boolean = false,
+        val triggerNotificationRequest: Boolean = false
     ) : MviState
 
     sealed interface Effect : MviEffect {
@@ -88,5 +89,6 @@ sealed interface StadiumDetailsContract {
         object RequestNotificationPermission : Event
         object DismissPermanentlyDeniedDialog : Event
         object OpenSettings : Event
+        data class OnNotificationPermissionResult(val status: uz.coder.foottopbusiness.core.platform.PermissionStatus) : Event
     }
 }

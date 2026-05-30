@@ -16,6 +16,7 @@ expect class PreferencesManager {
     val refreshTokenExpiration: Flow<Long>
     val notificationPermission: Flow<Boolean>
     val notificationPermissionDate: Flow<Long>
+    val notificationRequestCount: Flow<Int>
     suspend fun setToken(token: String)
     suspend fun setRefreshToken(token: String)
     suspend fun setAuthorised(value: Boolean)
@@ -27,5 +28,6 @@ expect class PreferencesManager {
     suspend fun setRefreshTokenExpiration(timestamp: Long)
     suspend fun setNotificationPermission(value: Boolean)
     suspend fun setNotificationPermissionDate(timestamp: Long)
+    suspend fun setNotificationRequestCount(count: Int)
     suspend fun logout()
 }
