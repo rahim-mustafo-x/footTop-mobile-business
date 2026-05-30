@@ -4,6 +4,8 @@ import kotlinx.coroutines.flow.firstOrNull
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
+import uz.coder.foottopbusiness.data.network.dto.tournament.PageTournamentResponseDto
+import uz.coder.foottopbusiness.data.network.dto.tournament.TournamentFilterDto
 import uz.coder.foottopbusiness.data.network.dto.tournament.TournamentRequestDto
 import uz.coder.foottopbusiness.domain.usecase.tournament.CreateTournamentUseCase
 import uz.coder.foottopbusiness.domain.usecase.tournament.GetTournamentsUseCase
@@ -33,6 +35,10 @@ class TournamentsViewModel(
             TournamentsContract.Event.ClearDetail -> updateState { copy(selectedTournament = null) }
             TournamentsContract.Event.ShowCreateDialog -> updateState { copy(showCreateDialog = true) }
             TournamentsContract.Event.HideCreateDialog -> updateState { copy(showCreateDialog = false) }
+            is TournamentsContract.Event.UpdateFilters -> {
+                updateState { copy(filters = event.filters, page = 0, tournaments = emptyList(), isLastPage = false) }
+                loadTournaments(0)
+            }
             is TournamentsContract.Event.Create -> {
                 updateState { copy(isCreating = true, showCreateDialog = false) }
                 executeAsync(
@@ -74,8 +80,8 @@ class TournamentsViewModel(
                 else updateState { copy(isMoreLoading = true) }
             },
             block = {
-                var result: uz.coder.foottopbusiness.data.network.dto.tournament.PageTournamentResponseDto? = null
-                getTournamentsUseCase(page = page).collect { result = it }
+                var result: PageTournamentResponseDto? = null
+                getTournamentsUseCase(page = page, filters = state.value.filters).collect { result = it }
                 result!!
             },
             onSuccess = { pageData ->

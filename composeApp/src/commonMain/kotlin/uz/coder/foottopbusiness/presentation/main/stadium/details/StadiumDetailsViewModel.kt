@@ -4,6 +4,10 @@ import uz.coder.foottopbusiness.core.mvi.BaseViewModel
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.data.network.dto.stadium.SlotDto
 import uz.coder.foottopbusiness.domain.repository.StadiumRepository
+import uz.coder.foottopbusiness.core.platform.checkNotificationPermissionStatus
+import uz.coder.foottopbusiness.core.platform.requestNotificationPermission
+import uz.coder.foottopbusiness.core.platform.PermissionStatus
+import uz.coder.foottopbusiness.core.platform.openAppSettings
 import kotlinx.datetime.*
 import kotlinx.coroutines.flow.firstOrNull
 import uz.coder.foottopbusiness.data.local.PreferencesManager
@@ -15,6 +19,7 @@ import uz.coder.foottopbusiness.data.network.dto.booking.BookingRequestDto
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.Job
 import uz.coder.foottopbusiness.core.toLocalDateTimeSafe
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 
 fun slotsNeededForDuration(mins: Int): Int = (mins / 30) + 1
@@ -178,6 +183,51 @@ class StadiumDetailsViewModel(
             is StadiumDetailsContract.Event.ConfirmCancelBooking -> {
                 cancelBooking(event.bookingId, event.reason)
             }
+            is StadiumDetailsContract.Event.SetShowNotificationPermissionDialog -> {
+                updateState { copy(showNotificationPermissionDialog = event.show) }
+            }
+            StadiumDetailsContract.Event.RequestNotificationPermission -> {
+                requestPermission()
+            }
+            StadiumDetailsContract.Event.DismissPermanentlyDeniedDialog -> {
+                updateState { copy(showPermanentlyDeniedDialog = false) }
+            }
+            StadiumDetailsContract.Event.OpenSettings -> {
+                updateState { copy(showPermanentlyDeniedDialog = false) }
+                openAppSettings()
+            }
+        }
+    }
+
+    private fun requestPermission() {
+        updateState { copy(showNotificationPermissionDialog = false) }
+        executeAsync(
+            block = {
+                val status = requestNotificationPermission()
+                if (status == PermissionStatus.GRANTED) {
+                    preferencesManager.setNotificationPermission(true)
+                }
+                status
+            },
+            onSuccess = { status ->
+                if (status == PermissionStatus.PERMANENTLY_DENIED) {
+                    updateState { copy(showPermanentlyDeniedDialog = true) }
+                }
+            }
+        )
+    }
+
+    private fun checkNotificationPermission() {
+        executeAsync {
+            val grantedInPrefs = preferencesManager.notificationPermission.first()
+            if (!grantedInPrefs) {
+                val status = checkNotificationPermissionStatus()
+                if (status != PermissionStatus.GRANTED) {
+                    updateState { copy(showNotificationPermissionDialog = true) }
+                } else {
+                    preferencesManager.setNotificationPermission(true)
+                }
+            }
         }
     }
 
@@ -262,6 +312,7 @@ class StadiumDetailsViewModel(
                         bookerPhone = ""
                     ) 
                 }
+                checkNotificationPermission()
                 refreshStadium()
             },
             onError = {

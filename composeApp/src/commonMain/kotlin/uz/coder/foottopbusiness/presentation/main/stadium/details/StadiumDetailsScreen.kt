@@ -54,7 +54,7 @@ import kotlin.time.Clock
 
 // --- Slot state enum ---
 private enum class SlotRowState {
-    AVAILABLE, SELECTED, IN_RANGE, CONFLICT_RANGE, BOOKED, PAST
+    AVAILABLE, SELECTED, BOOKED, PAST
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -314,8 +314,6 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                 val currentStadium = stadiums[selectedTabIndex]
                                 val slots = currentStadium.slots ?: emptyList()
                                 
-                                SlotListHeader(earliestSlot = currentStadium.earliestAvailable?.toLocalDateTimeSafe()?.let { formatTimeFromDateTime(it) })
-                                
                                 val nowInstant = Clock.System.now()
                                 val slotsWithIndices = slots.mapIndexed { i, s -> i to s }
                                     .filter { state.selectedDate == null || it.second.start.toLocalDateTimeSafe()?.date.toString() == state.selectedDate }
@@ -323,30 +321,21 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                 if (slotsWithIndices.isEmpty()) {
                                     Text(strings.noSlotsToday, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(16.dp))
                                 } else {
-                                    val earliestIdx = slotsWithIndices.indexOfFirst { (_, s) ->
-                                        val start = s.start.toLocalDateTimeSafe()?.toInstant(tz)
-                                        start != null && start > nowInstant && s.status == "AVAILABLE"
-                                    }
-                                    
-                                    slotsWithIndices.forEachIndexed { listIdx, (origIdx, slot) ->
+                                    slotsWithIndices.forEachIndexed { _, (origIdx, slot) ->
                                         val rowState = resolveSlotStateFixed(
                                             slot = slot,
                                             currentIndex = origIdx,
                                             selectedStartIndex = state.selectedStartIndex,
                                             selectedPitchIndex = state.selectedPitchIndex,
                                             pitchIndex = selectedTabIndex,
-                                            durationMins = durationMins,
                                             tz = tz,
                                             nowInstant = nowInstant
                                         )
                                         SlotListItem(
                                             slot = slot,
                                             rowState = rowState,
-                                            durationMins = durationMins,
-                                            isEarliest = listIdx == earliestIdx,
-                                            pricePerHour = currentStadium.pricePerHour ?: 0.0,
                                             onClick = {
-                                                if (rowState == SlotRowState.AVAILABLE || rowState == SlotRowState.SELECTED || rowState == SlotRowState.IN_RANGE) {
+                                                if (rowState == SlotRowState.AVAILABLE || rowState == SlotRowState.SELECTED) {
                                                     if (rowState == SlotRowState.SELECTED) viewModel.handleEvent(StadiumDetailsContract.Event.ClearSelection)
                                                     else viewModel.handleEvent(StadiumDetailsContract.Event.SelectSlotSelection(selectedTabIndex, origIdx))
                                                 }
@@ -408,6 +397,76 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
     if (state.showBookingResultDialog) {
         BookingResultDialog(message = state.bookingResultMessage, isSuccess = state.isBookingSuccess, onDismiss = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissBookingResultDialog) })
     }
+
+    if (state.showNotificationPermissionDialog) {
+        NotificationPermissionExplanationDialog(
+            onConfirm = { viewModel.handleEvent(StadiumDetailsContract.Event.RequestNotificationPermission) },
+            onDismiss = { viewModel.handleEvent(StadiumDetailsContract.Event.SetShowNotificationPermissionDialog(false)) }
+        )
+    }
+
+    if (state.showPermanentlyDeniedDialog) {
+        PermanentlyDeniedDialog(
+            onOpenSettings = { viewModel.handleEvent(StadiumDetailsContract.Event.OpenSettings) },
+            onDismiss = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissPermanentlyDeniedDialog) }
+        )
+    }
+}
+
+@Composable
+private fun NotificationPermissionExplanationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Bildirishnomalarga ruxsat bering") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Quyidagi qulayliklardan foydalanish uchun bildirishnomalarni yoqing:")
+                BenefitItem("O'yin eslatmalari")
+                BenefitItem("Bron qilish holati o'zgarishi")
+                BenefitItem("Turnir yangiliklari")
+                BenefitItem("Muhim xabarlar")
+            }
+        },
+        confirmButton = {
+            Button(onClick = onConfirm) {
+                Text("Bildirishnomalarni yoqish")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Keyinroq")
+            }
+        },
+        shape = RoundedCornerShape(24.dp)
+    )
+}
+
+@Composable
+private fun BenefitItem(text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Icon(Icons.Default.Check, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
+        Text(text, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+private fun PermanentlyDeniedDialog(onOpenSettings: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Bildirishnomalar o'chirilgan") },
+        text = { Text("Siz bildirishnomalarni taqiqlab qo'ygansiz. Turnir va bronlar haqida xabardor bo'lish uchun sozlamalardan ruxsat berishingiz kerak.") },
+        confirmButton = {
+            Button(onClick = onOpenSettings) {
+                Text("Sozlamalarni ochish")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Yopish")
+            }
+        },
+        shape = RoundedCornerShape(24.dp)
+    )
 }
 
 // --- Helpers and Sub-composables ---
@@ -419,54 +478,23 @@ private fun formatTimeFromDateTime(dateTime: LocalDateTime): String {
 }
 
 @Composable
-private fun SlotListHeader(earliestSlot: String?) {
-    Column {
-        Box(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)).padding(horizontal = 16.dp, vertical = 8.dp)) {
-            Text(text = "MAVJUD SLOTLAR", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        if (!earliestSlot.isNullOrBlank()) {
-            Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD)), shape = RoundedCornerShape(12.dp)) {
-                Row(modifier = Modifier.padding(14.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.AccessTime, null, tint = Color(0xFF1976D2), modifier = Modifier.size(22.dp))
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text("Eng erta mavjud slot", style = MaterialTheme.typography.labelMedium, color = Color(0xFF1976D2))
-                        Text(earliestSlot, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = Color(0xFF1976D2))
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun SlotListItem(
     slot: SlotDto,
     rowState: SlotRowState,
-    durationMins: Int,
-    isEarliest: Boolean = false,
-    pricePerHour: Double = 0.0,
     onClick: () -> Unit
 ) {
     val startDt = slot.start.toLocalDateTimeSafe()
     val startStr = startDt?.let { formatTimeFromDateTime(it) } ?: "--:--"
-    val endDt = startDt?.plusMinutes(30)
+    val endDt = slot.end.toLocalDateTimeSafe()
     val endStr = endDt?.let { formatTimeFromDateTime(it) } ?: "--:--"
-    val slotPrice = pricePerHour * (durationMins / 60.0)
 
     val bgColor = when {
-        isEarliest && rowState == SlotRowState.AVAILABLE -> Color(0xFF1D9E75).copy(alpha = 0.08f)
         rowState == SlotRowState.SELECTED -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.30f)
-        rowState == SlotRowState.IN_RANGE -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.10f)
-        rowState == SlotRowState.CONFLICT_RANGE -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.15f)
         else -> MaterialTheme.colorScheme.surface
     }
 
     val accentColor = when {
-        isEarliest && rowState == SlotRowState.AVAILABLE -> Color(0xFF1D9E75)
         rowState == SlotRowState.SELECTED -> MaterialTheme.colorScheme.primary
-        rowState == SlotRowState.IN_RANGE -> MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-        rowState == SlotRowState.CONFLICT_RANGE -> MaterialTheme.colorScheme.error.copy(alpha = 0.6f)
         else -> Color.Transparent
     }
 
@@ -474,41 +502,30 @@ private fun SlotListItem(
         SlotRowState.PAST -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.30f)
         SlotRowState.BOOKED -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
         SlotRowState.SELECTED -> MaterialTheme.colorScheme.primary
-        SlotRowState.IN_RANGE -> MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
-        SlotRowState.CONFLICT_RANGE -> MaterialTheme.colorScheme.error.copy(alpha = 0.85f)
-        else -> if (isEarliest) Color(0xFF0F6E56) else MaterialTheme.colorScheme.onSurface
+        else -> MaterialTheme.colorScheme.onSurface
     }
 
     val subtitleText = when {
-        isEarliest && rowState == SlotRowState.AVAILABLE -> "Eng yaqin mavjud vaqt"
-        rowState == SlotRowState.SELECTED -> "Boshlanish vaqti"
-        rowState == SlotRowState.IN_RANGE -> "Bron oynasida"
-        rowState == SlotRowState.CONFLICT_RANGE -> "Oraliqda to'qnashuv"
+        rowState == SlotRowState.SELECTED -> "Tanlangan"
         rowState == SlotRowState.BOOKED -> "Bron qilingan"
         rowState == SlotRowState.PAST -> "O'tib ketgan"
         else -> "Bo'sh"
     }
 
     val subtitleColor = when {
-        isEarliest && rowState == SlotRowState.AVAILABLE -> Color(0xFF0F6E56)
         rowState == SlotRowState.SELECTED -> MaterialTheme.colorScheme.primary
-        rowState == SlotRowState.IN_RANGE -> MaterialTheme.colorScheme.primary.copy(alpha = 0.65f)
-        rowState == SlotRowState.CONFLICT_RANGE -> MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
         rowState == SlotRowState.PAST || rowState == SlotRowState.BOOKED -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    Row(modifier = Modifier.fillMaxWidth().background(bgColor).clickable { onClick() }, verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier = Modifier.fillMaxWidth().background(bgColor).clickable(enabled = rowState != SlotRowState.PAST && rowState != SlotRowState.BOOKED) { onClick() }, verticalAlignment = Alignment.CenterVertically) {
         Box(modifier = Modifier.width(4.dp).height(56.dp).background(accentColor))
         Row(modifier = Modifier.weight(1f).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(text = "$startStr – $endStr", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = if (rowState == SlotRowState.SELECTED || isEarliest) FontWeight.Bold else FontWeight.Normal), color = timeColor)
+                Text(text = "$startStr – $endStr", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = if (rowState == SlotRowState.SELECTED) FontWeight.Bold else FontWeight.Normal), color = timeColor)
                 Text(text = subtitleText, style = MaterialTheme.typography.labelSmall, color = subtitleColor)
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if ((rowState == SlotRowState.AVAILABLE || rowState == SlotRowState.SELECTED) && slotPrice > 0) {
-                    Text(text = "${slotPrice.toInt()} so'm", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium), color = if (isEarliest) Color(0xFF0F6E56) else MaterialTheme.colorScheme.onSurfaceVariant)
-                }
                 Surface(shape = RoundedCornerShape(20.dp), color = when(rowState) {
                     SlotRowState.SELECTED -> MaterialTheme.colorScheme.primary
                     SlotRowState.BOOKED -> MaterialTheme.colorScheme.errorContainer
@@ -601,7 +618,6 @@ private fun resolveSlotStateFixed(
     selectedStartIndex: Int?,
     selectedPitchIndex: Int?,
     pitchIndex: Int,
-    durationMins: Int,
     tz: TimeZone,
     nowInstant: Instant
 ): SlotRowState {
@@ -612,11 +628,7 @@ private fun resolveSlotStateFixed(
     if (isExpired) return SlotRowState.PAST
     if (slot.status == "BOOKED") return SlotRowState.BOOKED
 
-    if (selectedPitchIndex != pitchIndex || selectedStartIndex == null) return SlotRowState.AVAILABLE
-    
-    val slotsNeeded = durationMins / 30
-    if (currentIndex == selectedStartIndex) return SlotRowState.SELECTED
-    if (currentIndex > selectedStartIndex && currentIndex < selectedStartIndex + slotsNeeded) return SlotRowState.IN_RANGE
+    if (selectedPitchIndex == pitchIndex && selectedStartIndex == currentIndex) return SlotRowState.SELECTED
     
     return SlotRowState.AVAILABLE
 }

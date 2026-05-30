@@ -16,3 +16,13 @@ expect fun rateApp()
 expect fun openFile(path: String)
 
 expect fun makePhoneCall(phoneNumber: String)
+
+expect fun openAppSettings()
+
+enum class PermissionStatus {
+    GRANTED, DENIED, PERMANENTLY_DENIED
+}
+
+expect suspend fun checkNotificationPermissionStatus(): PermissionStatus
+
+expect suspend fun requestNotificationPermission(): PermissionStatus

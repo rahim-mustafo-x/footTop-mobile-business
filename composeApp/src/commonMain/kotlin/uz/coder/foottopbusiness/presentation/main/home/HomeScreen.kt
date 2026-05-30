@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Event
 import androidx.compose.foundation.layout.offset
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Lock
@@ -54,6 +55,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,6 +64,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -79,6 +85,7 @@ import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.core.localization.Localization
+import uz.coder.foottopbusiness.core.ui.shimmer
 import uz.coder.foottopbusiness.presentation.main.home.history.HistoryScreen
 import uz.coder.foottopbusiness.presentation.main.reports.ReportItem
 import uz.coder.foottopbusiness.presentation.main.settings.SettingsVoyager
@@ -127,29 +134,30 @@ fun HomeScreen(
         }
     }
 
-    // Placeholder for platform-specific permission check/request
-    // In a real KMP app, you might use a library like MOKO Permissions 
-    // or a custom platform-specific bridge.
-    // For now, we'll simulate the logic as requested.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.handleEvent(HomeContract.Event.Refresh)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     if (state.showNotificationPermissionDialog) {
-        AlertDialog(
-            onDismissRequest = { viewModel.handleEvent(HomeContract.Event.SetShowNotificationPermissionDialog(false)) },
-            title = { Text("Bildirishnomalarga ruxsat bering") },
-            text = { Text("Yangi band qilingan vaqtlar va muhim yangiliklardan xabardor bo'lish uchun bildirishnomalarga ruxsat berishingizni so'raymiz.") },
-            confirmButton = {
-                Button(onClick = {
-                    viewModel.handleEvent(HomeContract.Event.RequestNotificationPermission)
-                    // Actual request logic would be triggered here
-                }) {
-                    Text("Ruxsat berish")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.handleEvent(HomeContract.Event.SetShowNotificationPermissionDialog(false)) }) {
-                    Text("Keyinroq")
-                }
-            }
+        NotificationPermissionExplanationDialog(
+            onConfirm = { viewModel.handleEvent(HomeContract.Event.RequestNotificationPermission) },
+            onDismiss = { viewModel.handleEvent(HomeContract.Event.SetShowNotificationPermissionDialog(false)) }
+        )
+    }
+
+    if (state.showPermanentlyDeniedDialog) {
+        PermanentlyDeniedDialog(
+            onOpenSettings = { viewModel.handleEvent(HomeContract.Event.OpenSettings) },
+            onDismiss = { viewModel.handleEvent(HomeContract.Event.DismissPermanentlyDeniedDialog) }
         )
     }
 
@@ -176,9 +184,7 @@ fun HomeScreen(
                     LayoutDirection.Ltr), end = padding.calculateEndPadding(LayoutDirection.Rtl))
         ) {
             if (state.isLoadingUser && state.userRole == UserRole.UNKNOWN) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                }
+                HomeShimmer()
             } else {
                 when (state.currentTab) {
                     0 -> {
@@ -190,7 +196,10 @@ fun HomeScreen(
                                     onAddUser = { navigator.push(uz.coder.foottopbusiness.presentation.main.home.user.UserCreateScreen()) },
                                     onAddTournament = { navigator.push(TournamentsVoyager) },
                                     onProfileClick = { navigator.push(SettingsVoyager) },
-                                    onNotificationClick = { navigator.push(SendNotificationVoyager) },
+                                    onNotificationClick = {
+                                        viewModel.handleEvent(HomeContract.Event.CheckNotificationPermission)
+                                        navigator.push(SendNotificationVoyager)
+                                    },
                                     onShowBookings = { navigator.push(BookingListVoyager()) }
                                 )
                             }
@@ -202,7 +211,10 @@ fun HomeScreen(
                                     onAddTournament = { navigator.push(TournamentsVoyager) },
                                     onAddCoach = { navigator.push(uz.coder.foottopbusiness.presentation.main.home.user.UserCreateScreen()) },
                                     onProfileClick = { navigator.push(SettingsVoyager) },
-                                    onNotificationClick = { navigator.push(SendNotificationVoyager) },
+                                    onNotificationClick = {
+                                        viewModel.handleEvent(HomeContract.Event.CheckNotificationPermission)
+                                        navigator.push(SendNotificationVoyager)
+                                    },
                                     onShowBookings = { navigator.push(BookingListVoyager()) }
                                 )
                             }
@@ -223,6 +235,62 @@ fun HomeScreen(
             }
         }
     }
+}
+
+@Composable
+private fun NotificationPermissionExplanationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Bildirishnomalarga ruxsat bering") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Quyidagi qulayliklardan foydalanish uchun bildirishnomalarni yoqing:")
+                BenefitItem("O'yin eslatmalari")
+                BenefitItem("Bron qilish holati o'zgarishi")
+                BenefitItem("Turnir yangiliklari")
+                BenefitItem("Muhim xabarlar")
+            }
+        },
+        confirmButton = {
+            Button(onClick = onConfirm) {
+                Text("Bildirishnomalarni yoqish")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Keyinroq")
+            }
+        },
+        shape = RoundedCornerShape(24.dp)
+    )
+}
+
+@Composable
+private fun BenefitItem(text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Icon(Icons.Default.SportsSoccer, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
+        Text(text, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+private fun PermanentlyDeniedDialog(onOpenSettings: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Bildirishnomalar o'chirilgan") },
+        text = { Text("Siz bildirishnomalarni taqiqlab qo'ygansiz. Turnir va bronlar haqida xabardor bo'lish uchun sozlamalardan ruxsat berishingiz kerak.") },
+        confirmButton = {
+            Button(onClick = onOpenSettings) {
+                Text("Sozlamalarni ochish")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Yopish")
+            }
+        },
+        shape = RoundedCornerShape(24.dp)
+    )
 }
 
 @Composable
@@ -513,8 +581,8 @@ private fun ScheduleList(state: HomeContract.State) {
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (state.isLoadingMatches) {
-            Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+            repeat(3) {
+                Box(modifier = Modifier.fillMaxWidth().height(70.dp).clip(RoundedCornerShape(12.dp)).shimmer())
             }
         } else if (bookedMatches.isEmpty()) {
             Text(
@@ -761,5 +829,36 @@ private fun TournamentDetailScreen(tournament: TournamentResponseDto, onBack: ()
         Text(strings.tournamentDetails, fontWeight = FontWeight.Bold, fontSize = 24.sp)
         Spacer(Modifier.height(16.dp))
         Text("${strings.tournamentName}: ${tournament.name}")
+    }
+}
+
+@Composable
+fun HomeShimmer() {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
+                .shimmer()
+        )
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(modifier = Modifier.weight(1f).height(130.dp).clip(RoundedCornerShape(24.dp)).shimmer())
+                Box(modifier = Modifier.weight(1f).height(130.dp).clip(RoundedCornerShape(24.dp)).shimmer())
+            }
+            Spacer(Modifier.height(16.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(modifier = Modifier.weight(1f).height(130.dp).clip(RoundedCornerShape(24.dp)).shimmer())
+                Box(modifier = Modifier.weight(1f).height(130.dp).clip(RoundedCornerShape(24.dp)).shimmer())
+            }
+            Spacer(Modifier.height(24.dp))
+            Box(modifier = Modifier.width(150.dp).height(24.dp).clip(RoundedCornerShape(4.dp)).shimmer())
+            Spacer(Modifier.height(16.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Box(modifier = Modifier.weight(1f).height(110.dp).clip(RoundedCornerShape(24.dp)).shimmer())
+                Box(modifier = Modifier.weight(1f).height(110.dp).clip(RoundedCornerShape(24.dp)).shimmer())
+            }
+        }
     }
 }

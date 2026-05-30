@@ -82,6 +82,7 @@ sealed interface HomeContract {
         
         // Notification permission
         val showNotificationPermissionDialog: Boolean = false,
+        val showPermanentlyDeniedDialog: Boolean = false,
     ) : MviState
 
     sealed interface Effect : MviEffect {
@@ -130,5 +131,8 @@ sealed interface HomeContract {
         
         data class SetShowNotificationPermissionDialog(val show: Boolean) : Event
         object RequestNotificationPermission : Event
+        object CheckNotificationPermission : Event
+        object DismissPermanentlyDeniedDialog : Event
+        object OpenSettings : Event
     }
 }

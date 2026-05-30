@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uz.coder.foottopbusiness.core.localization.Localization
+import uz.coder.foottopbusiness.core.ui.shimmer
 import uz.coder.foottopbusiness.presentation.main.components.StadiumCardItem
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
@@ -119,8 +120,19 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddStadium: () -> Uni
             )
 
             if (state.isLoading && state.stadiums.isEmpty()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    repeat(5) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .shimmer()
+                        )
+                    }
                 }
             } else {
                 val listState = rememberLazyListState()

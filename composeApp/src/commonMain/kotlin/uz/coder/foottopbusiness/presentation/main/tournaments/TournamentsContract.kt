@@ -4,6 +4,7 @@ import uz.coder.foottopbusiness.core.mvi.MviEffect
 import uz.coder.foottopbusiness.core.mvi.MviEvent
 import uz.coder.foottopbusiness.core.mvi.MviState
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
+import uz.coder.foottopbusiness.data.network.dto.tournament.TournamentFilterDto
 
 sealed interface TournamentsContract {
     data class State(
@@ -15,7 +16,8 @@ sealed interface TournamentsContract {
         val isCreating: Boolean = false,
         val showCreateDialog: Boolean = false,
         val page: Int = 0,
-        val isLastPage: Boolean = false
+        val isLastPage: Boolean = false,
+        val filters: TournamentFilterDto = TournamentFilterDto()
     ) : MviState
 
     sealed interface Effect : MviEffect {
@@ -29,6 +31,7 @@ sealed interface TournamentsContract {
         object ClearDetail : Event
         object ShowCreateDialog : Event
         object HideCreateDialog : Event
+        data class UpdateFilters(val filters: TournamentFilterDto) : Event
         data class Create(
             val name: String,
             val startDate: String,

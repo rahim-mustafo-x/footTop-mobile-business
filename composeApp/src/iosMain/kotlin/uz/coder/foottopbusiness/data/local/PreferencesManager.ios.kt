@@ -19,6 +19,8 @@ actual class PreferencesManager {
         private const val DISTRICT_ID = "district_id"
         private const val ACCESS_TOKEN_EXPIRATION = "access_token_expiration"
         private const val REFRESH_TOKEN_EXPIRATION = "refresh_token_expiration"
+        private const val NOTIFICATION_PERMISSION = "notification_permission"
+        private const val NOTIFICATION_PERMISSION_DATE = "notification_permission_date"
     }
     private val _token = MutableStateFlow(normalizeBearerToken(userDefaults.stringForKey(TOKEN)))
     private val _refreshToken = MutableStateFlow(normalizeBearerToken(userDefaults.stringForKey(REFRESH_TOKEN)))
@@ -29,6 +31,8 @@ actual class PreferencesManager {
     private val _districtId = MutableStateFlow(userDefaults.integerForKey(DISTRICT_ID).toInt())
     private val _accessTokenExpiration = MutableStateFlow(userDefaults.objectForKey(ACCESS_TOKEN_EXPIRATION) as? Long ?: 0L)
     private val _refreshTokenExpiration = MutableStateFlow(userDefaults.objectForKey(REFRESH_TOKEN_EXPIRATION) as? Long ?: 0L)
+    private val _notificationPermission = MutableStateFlow(userDefaults.boolForKey(NOTIFICATION_PERMISSION))
+    private val _notificationPermissionDate = MutableStateFlow(userDefaults.objectForKey(NOTIFICATION_PERMISSION_DATE) as? Long ?: 0L)
 
     actual val token: Flow<String?> get() = _token
     actual val refreshToken: Flow<String?> get() = _refreshToken
@@ -39,6 +43,8 @@ actual class PreferencesManager {
     actual val districtId: Flow<Int> get() = _districtId
     actual val accessTokenExpiration: Flow<Long> get() = _accessTokenExpiration
     actual val refreshTokenExpiration: Flow<Long> get() = _refreshTokenExpiration
+    actual val notificationPermission: Flow<Boolean> get() = _notificationPermission
+    actual val notificationPermissionDate: Flow<Long> get() = _notificationPermissionDate
 
     actual suspend fun setToken(token: String) {
         val cleaned = normalizeBearerToken(token)
@@ -102,6 +108,18 @@ actual class PreferencesManager {
         userDefaults.setObject(timestamp, REFRESH_TOKEN_EXPIRATION)
         userDefaults.synchronize()
         _refreshTokenExpiration.emit(timestamp)
+    }
+
+    actual suspend fun setNotificationPermission(value: Boolean) {
+        userDefaults.setBool(value, NOTIFICATION_PERMISSION)
+        userDefaults.synchronize()
+        _notificationPermission.emit(value)
+    }
+
+    actual suspend fun setNotificationPermissionDate(timestamp: Long) {
+        userDefaults.setObject(timestamp, NOTIFICATION_PERMISSION_DATE)
+        userDefaults.synchronize()
+        _notificationPermissionDate.emit(timestamp)
     }
 
     actual suspend fun logout() {

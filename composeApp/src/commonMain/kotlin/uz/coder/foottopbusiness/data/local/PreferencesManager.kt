@@ -14,6 +14,8 @@ expect class PreferencesManager {
     val districtId: Flow<Int>
     val accessTokenExpiration: Flow<Long>
     val refreshTokenExpiration: Flow<Long>
+    val notificationPermission: Flow<Boolean>
+    val notificationPermissionDate: Flow<Long>
     suspend fun setToken(token: String)
     suspend fun setRefreshToken(token: String)
     suspend fun setAuthorised(value: Boolean)
@@ -23,5 +25,7 @@ expect class PreferencesManager {
     suspend fun setDistrictId(id: Int)
     suspend fun setAccessTokenExpiration(timestamp: Long)
     suspend fun setRefreshTokenExpiration(timestamp: Long)
+    suspend fun setNotificationPermission(value: Boolean)
+    suspend fun setNotificationPermissionDate(timestamp: Long)
     suspend fun logout()
 }

@@ -16,7 +16,10 @@ sealed interface SettingsContract {
         val oldPassword: String = "",
         val newPassword: String = "",
         val confirmPassword: String = "",
-        val isChangingPassword: Boolean = false
+        val isChangingPassword: Boolean = false,
+        val showNotificationPermissionDialog: Boolean = false,
+        val showPermanentlyDeniedDialog: Boolean = false,
+        val notificationsEnabled: Boolean = false
     ) : MviState
 
     sealed interface Effect : MviEffect {
@@ -39,5 +42,10 @@ sealed interface SettingsContract {
         data class UpdateNewPassword(val text: String) : Event
         data class UpdateConfirmPassword(val text: String) : Event
         object ChangePassword : Event
+        object CheckNotificationPermission : Event
+        object RequestNotificationPermission : Event
+        data class SetShowNotificationPermissionDialog(val show: Boolean) : Event
+        object DismissPermanentlyDeniedDialog : Event
+        object OpenSettings : Event
     }
 }

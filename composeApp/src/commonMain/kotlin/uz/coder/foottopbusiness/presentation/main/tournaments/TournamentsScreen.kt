@@ -55,16 +55,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,7 +72,9 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import uz.coder.foottopbusiness.core.localization.ErrorMapper
 import uz.coder.foottopbusiness.core.localization.Localization
+import uz.coder.foottopbusiness.core.ui.shimmer
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
+import uz.coder.foottopbusiness.data.network.dto.tournament.TournamentFilterDto
 import uz.coder.foottopbusiness.presentation.main.tournaments.create.TournamentCreateScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -88,6 +83,8 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
     val state by viewModel.state.collectAsState()
     val navigator = LocalNavigator.currentOrThrow
     val strings = Localization.current
+    var showFilterSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
 
     LaunchedEffect(Unit) {
         viewModel.handleEvent(TournamentsContract.Event.Load)
@@ -129,13 +126,23 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
                     )
-                    IconButton(
-                        onClick = { navigator.push(TournamentCreateScreen()) },
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f))
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = "Add", tint = MaterialTheme.colorScheme.onPrimary)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        IconButton(
+                            onClick = { showFilterSheet = true },
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f))
+                        ) {
+                            Icon(Icons.Default.FilterList, contentDescription = "Filter", tint = MaterialTheme.colorScheme.onPrimary)
+                        }
+                        IconButton(
+                            onClick = { navigator.push(TournamentCreateScreen()) },
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f))
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = "Add", tint = MaterialTheme.colorScheme.onPrimary)
+                        }
                     }
                 }
             }
@@ -156,8 +163,10 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     OutlinedTextField(
-                        value = "",
-                        onValueChange = {},
+                        value = state.filters.name ?: "",
+                        onValueChange = { 
+                            viewModel.handleEvent(TournamentsContract.Event.UpdateFilters(state.filters.copy(name = it)))
+                        },
                         modifier = Modifier.weight(1f),
                         placeholder = { Text("${strings.search}...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
@@ -174,8 +183,13 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
 
                 Spacer(Modifier.height(16.dp))
 
-                val filterTabs = listOf("Barchasi", "Kutilmoqda", "Davom etmoqda", "Tugagan")
-                var selectedFilterIndex by remember { mutableStateOf(0) }
+                val filterTabs = listOf(
+                    "Barchasi" to null,
+                    strings.upcoming to "UPCOMING",
+                    strings.ongoing to "ONGOING",
+                    strings.finished to "FINISHED"
+                )
+                val selectedFilterIndex = filterTabs.indexOfFirst { it.second == state.filters.status }.coerceAtLeast(0)
 
                 ScrollableTabRow(
                     selectedTabIndex = selectedFilterIndex,
@@ -184,10 +198,12 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
                     divider = {},
                     indicator = {}
                 ) {
-                    filterTabs.forEachIndexed { index, title ->
+                    filterTabs.forEachIndexed { index, (title, status) ->
                         Tab(
                             selected = selectedFilterIndex == index,
-                            onClick = { selectedFilterIndex = index },
+                            onClick = { 
+                                viewModel.handleEvent(TournamentsContract.Event.UpdateFilters(state.filters.copy(status = status)))
+                            },
                             modifier = Modifier
                                 .padding(end = 8.dp)
                                 .clip(RoundedCornerShape(16.dp))
@@ -206,9 +222,7 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
             }
 
             when {
-                state.isLoading || state.isCreating -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                }
+                state.isLoading || state.isCreating -> TournamentShimmer()
                 state.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(state.error ?: "", color = MaterialTheme.colorScheme.error)
@@ -264,6 +278,21 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
                 }
             }
         }
+    }
+
+    if (showFilterSheet) {
+        TournamentFilterBottomSheet(
+            filters = state.filters,
+            onDismiss = { showFilterSheet = false },
+            onApply = { 
+                viewModel.handleEvent(TournamentsContract.Event.UpdateFilters(it))
+                showFilterSheet = false
+            },
+            onReset = {
+                viewModel.handleEvent(TournamentsContract.Event.UpdateFilters(TournamentFilterDto()))
+                showFilterSheet = false
+            }
+        )
     }
 }
 
@@ -328,6 +357,7 @@ private fun TournamentCard(t: TournamentResponseDto, onClick: () -> Unit) {
             }
         }
     }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -464,6 +494,7 @@ private fun TournamentDetailScreen(tournament: TournamentResponseDto, onBack: ()
             Spacer(Modifier.height(32.dp))
         }
     }
+
 }
 
 @Composable
@@ -508,6 +539,7 @@ private fun DetailRowItem(icon: ImageVector, label: String, value: String) {
             Text(value, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
         }
     }
+
 }
 
 @Composable
@@ -549,6 +581,7 @@ private fun ExpandableInfoCard(title: String, icon: ImageVector, content: String
             }
         }
     }
+
 }
 
 @Composable
@@ -566,4 +599,93 @@ private fun StatusChip(status: String?) {
     Box(modifier = Modifier.background(bg, RoundedCornerShape(6.dp)).padding(horizontal = 8.dp, vertical = 4.dp)) {
         Text(label, fontSize = 11.sp, color = fg, fontWeight = FontWeight.Medium)
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TournamentFilterBottomSheet(
+    filters: TournamentFilterDto,
+    onDismiss: () -> Unit,
+    onApply: (TournamentFilterDto) -> Unit,
+    onReset: () -> Unit
+) {
+    val strings = Localization.current
+    var currentFilters by remember { mutableStateOf(filters) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(strings.filter, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+
+            OutlinedTextField(
+                value = currentFilters.address ?: "",
+                onValueChange = { currentFilters = currentFilters.copy(address = it) },
+                label = { Text(strings.address) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            OutlinedTextField(
+                value = currentFilters.maxTeams?.toString() ?: "",
+                onValueChange = { currentFilters = currentFilters.copy(maxTeams = it.toIntOrNull()) },
+                label = { Text("Maksimal jamoalar soni") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            OutlinedTextField(
+                value = currentFilters.maxEntryFee?.toString() ?: "",
+                onValueChange = { currentFilters = currentFilters.copy(maxEntryFee = it.toDoubleOrNull()) },
+                label = { Text("Maksimal kirish to'lovi") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(
+                    onClick = onReset,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(strings.refresh)
+                }
+                Button(
+                    onClick = { onApply(currentFilters) },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Qo'llash")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TournamentShimmer() {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        repeat(6) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .shimmer()
+            )
+        }
+    }
+
 }

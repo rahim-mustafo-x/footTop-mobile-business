@@ -2,7 +2,11 @@ package uz.coder.foottopbusiness.presentation.main.home
 
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import androidx.lifecycle.viewModelScope
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
 import uz.coder.foottopbusiness.domain.usecase.admin.DashboardUseCase
 import uz.coder.foottopbusiness.domain.usecase.admin.WeeklyReportUseCase
@@ -18,10 +22,14 @@ import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.domain.usecase.booking.CreateBookingUseCase
 import uz.coder.foottopbusiness.data.network.dto.booking.BookingRequestDto
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import uz.coder.foottopbusiness.core.platform.checkNotificationPermissionStatus
+import uz.coder.foottopbusiness.core.platform.requestNotificationPermission
+import uz.coder.foottopbusiness.core.platform.PermissionStatus
+import uz.coder.foottopbusiness.core.platform.openAppSettings
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.home.HomeContract.Effect.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 private fun durationMinutesKey(key: String): Int = when(key) {
     "SIXTY" -> 60
@@ -52,21 +60,6 @@ class HomeViewModel(
 ) {
     init {
         handleEvent(HomeContract.Event.Load)
-        checkNotificationPermission()
-    }
-
-    private fun checkNotificationPermission() {
-        // This is a placeholder for checking permission.
-        // In a real app, you would use a platform-specific check.
-        // For now, we'll assume we need to ask if the user is an owner/admin
-        // and show the dialog once.
-        executeAsync {
-            // Simulate checking if we've already asked or if permission is granted
-            val alreadyAsked = preferencesManager.userId.first() != 0 // Just a dummy condition
-            if (!alreadyAsked) {
-                updateState { copy(showNotificationPermissionDialog = true) }
-            }
-        }
     }
 
     override fun handleEvent(event: HomeContract.Event) {
@@ -273,9 +266,49 @@ class HomeViewModel(
 
             is HomeContract.Event.SetShowNotificationPermissionDialog -> updateState { copy(showNotificationPermissionDialog = event.show) }
             HomeContract.Event.RequestNotificationPermission -> {
-                updateState { copy(showNotificationPermissionDialog = false) }
-                // Since this is KMP, the actual permission request will be handled in the UI layer 
-                // or via a platform-specific side effect.
+                requestPermission()
+            }
+            HomeContract.Event.CheckNotificationPermission -> {
+                checkPermission()
+            }
+            HomeContract.Event.DismissPermanentlyDeniedDialog -> {
+                updateState { copy(showPermanentlyDeniedDialog = false) }
+            }
+            HomeContract.Event.OpenSettings -> {
+                updateState { copy(showPermanentlyDeniedDialog = false) }
+                openAppSettings()
+            }
+        }
+    }
+
+    private fun requestPermission() {
+        updateState { copy(showNotificationPermissionDialog = false) }
+        executeAsync(
+            block = {
+                val status = requestNotificationPermission()
+                if (status == PermissionStatus.GRANTED) {
+                    preferencesManager.setNotificationPermission(true)
+                }
+                status
+            },
+            onSuccess = { status ->
+                if (status == PermissionStatus.PERMANENTLY_DENIED) {
+                    updateState { copy(showPermanentlyDeniedDialog = true) }
+                }
+            }
+        )
+    }
+
+    private fun checkPermission() {
+        executeAsync {
+            val grantedInPrefs = preferencesManager.notificationPermission.first()
+            if (!grantedInPrefs) {
+                val status = checkNotificationPermissionStatus()
+                if (status != PermissionStatus.GRANTED) {
+                    updateState { copy(showNotificationPermissionDialog = true) }
+                } else {
+                    preferencesManager.setNotificationPermission(true)
+                }
             }
         }
     }
@@ -333,7 +366,7 @@ class HomeViewModel(
             updateState { copy(isLoadingDashboard = true, isLoadingWeeklyReport = true) }
             executeAsync {
                 dashboardUseCase().collect { dashboard ->
-                    val totalRev = dashboard.stadiumRevenues.sumOf { it.totalRevenue }.toDouble()
+                    val totalRev = dashboard.stadiumRevenues.sumOf { it.totalRevenue }
                     updateState {
                         copy(
                             dashboard = dashboard,
@@ -352,7 +385,7 @@ class HomeViewModel(
                         copy(
                             weeklyReport = report,
                             isLoadingWeeklyReport = false,
-                            weeklyEarnings = report.dailyRevenue.map { it.revenue.toDouble() },
+                            weeklyEarnings = report.dailyRevenue.map { it.revenue },
                             weeklyLabels = report.dailyRevenue.map { day ->
                                 val parts = day.date.split("-")
                                 if (parts.size == 3) "${parts[2]}.${parts[1]}" else day.date

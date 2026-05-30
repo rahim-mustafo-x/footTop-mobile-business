@@ -3,6 +3,8 @@ package uz.coder.foottopbusiness.core.platform
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.provider.Settings
+import androidx.core.app.NotificationManagerCompat
 import uz.coder.foottopbusiness.core.context.ContextProvider
 
 import kotlin.system.exitProcess
@@ -75,4 +77,31 @@ actual fun makePhoneCall(phoneNumber: String) {
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
     context.startActivity(intent)
+}
+
+actual fun openAppSettings() {
+    val context = ContextProvider.getContext()
+    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+        data = Uri.fromParts("package", context.packageName, null)
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    context.startActivity(intent)
+}
+
+actual suspend fun checkNotificationPermissionStatus(): PermissionStatus {
+    val context = ContextProvider.getContext()
+    return if (NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+        PermissionStatus.GRANTED
+    } else {
+        // We can't easily know if it's permanently denied without trying to request 
+        // and checking shouldShowRequestPermissionRationale, which requires Activity.
+        // For simplicity, we return DENIED.
+        PermissionStatus.DENIED
+    }
+}
+
+actual suspend fun requestNotificationPermission(): PermissionStatus {
+    // On Android, this usually needs an Activity to show the dialog.
+    // We will handle the actual request in the UI layer using ActivityResult.
+    return checkNotificationPermissionStatus()
 }

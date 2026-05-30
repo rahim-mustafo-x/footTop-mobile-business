@@ -31,9 +31,11 @@ import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -80,6 +82,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
 import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.platform.getPlatform
+import uz.coder.foottopbusiness.core.ui.shimmer
 import uz.coder.foottopbusiness.presentation.auth.login.LoginVoyager
 import uz.coder.foottopbusiness.presentation.main.settings.about.AboutAppVoyager
 import uz.coder.foottopbusiness.presentation.main.settings.editprofile.EditProfileVoyager
@@ -358,11 +361,15 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                         )
 
                         if (state.isLoadingUser) {
-                            Box(
-                                modifier = Modifier.fillMaxWidth().padding(48.dp),
-                                contentAlignment = Alignment.Center
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                CircularProgressIndicator(strokeWidth = 3.dp)
+                                Box(modifier = Modifier.size(90.dp).clip(CircleShape).shimmer())
+                                Spacer(Modifier.height(16.dp))
+                                Box(modifier = Modifier.width(150.dp).height(24.dp).clip(RoundedCornerShape(4.dp)).shimmer())
+                                Spacer(Modifier.height(8.dp))
+                                Box(modifier = Modifier.width(100.dp).height(16.dp).clip(RoundedCornerShape(4.dp)).shimmer())
                             }
                         } else {
                             Column(
@@ -452,6 +459,14 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     onClick = { viewModel.handleEvent(SettingsContract.Event.ShowChangePassword) }
                 )
 
+                SettingsItem(
+                    icon = Icons.Default.Notifications,
+                    iconTint = Color(0xFF673AB7),
+                    title = "Bildirishnomalar",
+                    subtitle = if (state.notificationsEnabled) "Yoqilgan" else "O'chirilgan",
+                    onClick = { viewModel.handleEvent(SettingsContract.Event.CheckNotificationPermission) }
+                )
+
                 SettingsSectionTitle(strings.app)
 
                 SettingsItem(
@@ -523,6 +538,76 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             }
         }
     }
+
+    if (state.showNotificationPermissionDialog) {
+        NotificationPermissionExplanationDialog(
+            onConfirm = { viewModel.handleEvent(SettingsContract.Event.RequestNotificationPermission) },
+            onDismiss = { viewModel.handleEvent(SettingsContract.Event.SetShowNotificationPermissionDialog(false)) }
+        )
+    }
+
+    if (state.showPermanentlyDeniedDialog) {
+        PermanentlyDeniedDialog(
+            onOpenSettings = { viewModel.handleEvent(SettingsContract.Event.OpenSettings) },
+            onDismiss = { viewModel.handleEvent(SettingsContract.Event.DismissPermanentlyDeniedDialog) }
+        )
+    }
+}
+
+@Composable
+private fun NotificationPermissionExplanationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Bildirishnomalarga ruxsat bering") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Quyidagi qulayliklardan foydalanish uchun bildirishnomalarni yoqing:")
+                BenefitItem("O'yin eslatmalari")
+                BenefitItem("Bron qilish holati o'zgarishi")
+                BenefitItem("Turnir yangiliklari")
+                BenefitItem("Muhim xabarlar")
+            }
+        },
+        confirmButton = {
+            Button(onClick = onConfirm) {
+                Text("Bildirishnomalarni yoqish")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Keyinroq")
+            }
+        },
+        shape = RoundedCornerShape(24.dp)
+    )
+}
+
+@Composable
+private fun BenefitItem(text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Icon(Icons.Default.Check, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
+        Text(text, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+private fun PermanentlyDeniedDialog(onOpenSettings: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Bildirishnomalar o'chirilgan") },
+        text = { Text("Siz bildirishnomalarni taqiqlab qo'ygansiz. Turnir va bronlar haqida xabardor bo'lish uchun sozlamalardan ruxsat berishingiz kerak.") },
+        confirmButton = {
+            Button(onClick = onOpenSettings) {
+                Text("Sozlamalarni ochish")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Yopish")
+            }
+        },
+        shape = RoundedCornerShape(24.dp)
+    )
 }
 
 @Composable

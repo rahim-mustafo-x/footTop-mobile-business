@@ -1,5 +1,10 @@
 package uz.coder.foottopbusiness.presentation.main
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
@@ -87,6 +92,7 @@ fun MainScreen() {
     }
 
     val currentRole = UserRole.valueOf(persistedRole)
+    val isRoleLoaded = currentRole != UserRole.UNKNOWN
     val isAdminOrOwner = currentRole == UserRole.SUPER_ADMIN || currentRole == UserRole.DISTRICT_ADMIN || currentRole == UserRole.OWNER
     val strings = Localization.current
 
@@ -96,7 +102,11 @@ fun MainScreen() {
                 modifier = Modifier.fillMaxSize(),
                 snackbarHost = { SnackbarHost(snackbarHostState) },
                 bottomBar = {
-                    if (bottomBarVisible.value) {
+                    AnimatedVisibility(
+                        visible = bottomBarVisible.value && isRoleLoaded,
+                        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                    ) {
                         NavigationBar(
                             modifier = Modifier
                                 .fillMaxWidth()
