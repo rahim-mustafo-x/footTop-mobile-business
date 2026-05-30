@@ -21,18 +21,20 @@ fun Modifier.shimmer(): Modifier = composed {
         initialValue = -2 * size.width.toFloat(),
         targetValue = 2 * size.width.toFloat(),
         animationSpec = infiniteRepeatable(
-            animation = tween(1200)
+            animation = tween(1500, easing = LinearEasing)
         )
+    )
+
+    val colorScheme = androidx.compose.material3.MaterialTheme.colorScheme
+    val shimmerColors = listOf(
+        colorScheme.outlineVariant.copy(alpha = 0.6f),
+        colorScheme.outlineVariant.copy(alpha = 0.2f),
+        colorScheme.outlineVariant.copy(alpha = 0.6f),
     )
 
     background(
         brush = Brush.linearGradient(
-            colors = listOf(
-                Color(0xFFB8B5B5),
-                Color(0xFF8F8B8B),
-                Color(0xFFB8B5B5),
-            ),
-            start = Offset(startOffsetX, 0f),
+            colors = shimmerColors,
             end = Offset(startOffsetX + size.width.toFloat(), size.height.toFloat())
         )
     ).onGloballyPositioned {

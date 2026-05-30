@@ -2,6 +2,8 @@ package uz.coder.foottopbusiness.presentation.main.settings
 
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
 import uz.coder.foottopbusiness.core.platform.PermissionStatus
 import uz.coder.foottopbusiness.core.platform.checkNotificationPermissionStatus
@@ -40,7 +42,11 @@ class SettingsViewModel(
                 checkPermission()
             }
             SettingsContract.Event.RequestNotificationPermission -> {
-                requestPermission()
+                updateState { copy(showNotificationPermissionDialog = false, triggerNotificationRequest = true) }
+            }
+            is SettingsContract.Event.OnNotificationPermissionResult -> {
+                updateState { copy(triggerNotificationRequest = false) }
+                handlePermissionResult(event.status)
             }
             is SettingsContract.Event.SetShowNotificationPermissionDialog -> {
                 updateState { copy(showNotificationPermissionDialog = event.show) }
@@ -142,32 +148,37 @@ class SettingsViewModel(
         }
     }
 
-    private fun checkPermission() {
-        executeAsync {
-            val status = checkNotificationPermissionStatus()
+    private fun handlePermissionResult(status: PermissionStatus) {
+        viewModelScope.launch {
+            val currentCount = preferencesManager.notificationRequestCount.first()
+            preferencesManager.setNotificationRequestCount(currentCount + 1)
+
             updateState { copy(notificationsEnabled = status == PermissionStatus.GRANTED) }
-            if (status != PermissionStatus.GRANTED) {
-                updateState { copy(showNotificationPermissionDialog = true) }
+            
+            if (status == PermissionStatus.GRANTED) {
+                preferencesManager.setNotificationPermission(true)
+            } else if (status == PermissionStatus.DENIED) {
+                if (currentCount >= 2) {
+                    updateState { copy(showPermanentlyDeniedDialog = true) }
+                }
             }
         }
     }
 
-    private fun requestPermission() {
-        updateState { copy(showNotificationPermissionDialog = false) }
-        executeAsync(
-            block = {
-                val status = requestNotificationPermission()
-                if (status == PermissionStatus.GRANTED) {
-                    preferencesManager.setNotificationPermission(true)
-                }
-                status
-            },
-            onSuccess = { status ->
-                updateState { copy(notificationsEnabled = status == PermissionStatus.GRANTED) }
-                if (status == PermissionStatus.PERMANENTLY_DENIED) {
+    private fun checkPermission() {
+        executeAsync {
+            val grantedInPrefs = preferencesManager.notificationPermission.first()
+            val status = checkNotificationPermissionStatus()
+            updateState { copy(notificationsEnabled = status == PermissionStatus.GRANTED) }
+            
+            if (!grantedInPrefs && status != PermissionStatus.GRANTED) {
+                val requestCount = preferencesManager.notificationRequestCount.first()
+                if (requestCount <= 2) {
+                    updateState { copy(showNotificationPermissionDialog = true) }
+                } else {
                     updateState { copy(showPermanentlyDeniedDialog = true) }
                 }
             }
-        )
+        }
     }
 }

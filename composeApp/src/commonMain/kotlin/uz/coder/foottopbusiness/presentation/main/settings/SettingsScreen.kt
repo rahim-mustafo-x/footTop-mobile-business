@@ -88,6 +88,7 @@ import uz.coder.foottopbusiness.presentation.main.settings.about.AboutAppVoyager
 import uz.coder.foottopbusiness.presentation.main.settings.editprofile.EditProfileVoyager
 
 import uz.coder.foottopbusiness.core.visualTransformation.formatPhoneNumber
+import uz.coder.foottopbusiness.core.platform.NotificationPermissionLauncher
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -462,8 +463,8 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 SettingsItem(
                     icon = Icons.Default.Notifications,
                     iconTint = Color(0xFF673AB7),
-                    title = "Bildirishnomalar",
-                    subtitle = if (state.notificationsEnabled) "Yoqilgan" else "O'chirilgan",
+                    title = strings.notifications,
+                    subtitle = if (state.notificationsEnabled) strings.active else strings.inactive,
                     onClick = { viewModel.handleEvent(SettingsContract.Event.CheckNotificationPermission) }
                 )
 
@@ -552,61 +553,92 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             onDismiss = { viewModel.handleEvent(SettingsContract.Event.DismissPermanentlyDeniedDialog) }
         )
     }
+
+    NotificationPermissionLauncher(
+        trigger = state.triggerNotificationRequest,
+        onResult = { status ->
+            viewModel.handleEvent(SettingsContract.Event.OnNotificationPermissionResult(status))
+        }
+    )
 }
 
 @Composable
 private fun NotificationPermissionExplanationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    val strings = Localization.current
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Bildirishnomalarga ruxsat bering") },
+        title = { Text(strings.notificationRationaleTitle) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Quyidagi qulayliklardan foydalanish uchun bildirishnomalarni yoqing:")
-                BenefitItem("O'yin eslatmalari")
-                BenefitItem("Bron qilish holati o'zgarishi")
-                BenefitItem("Turnir yangiliklari")
-                BenefitItem("Muhim xabarlar")
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(strings.notificationRationaleDesc)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    BenefitItem(strings.notificationBenefit1)
+                    BenefitItem(strings.notificationBenefit2)
+                    BenefitItem(strings.notificationBenefit3)
+                    BenefitItem(strings.notificationBenefit4)
+                }
+                Text(
+                    text = "${strings.enableNotifications}?",
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
             }
         },
         confirmButton = {
-            Button(onClick = onConfirm) {
-                Text("Bildirishnomalarni yoqish")
+            Button(
+                onClick = onConfirm,
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(strings.enableNotifications)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Keyinroq")
+                Text(strings.maybeLater)
             }
         },
-        shape = RoundedCornerShape(24.dp)
+        shape = RoundedCornerShape(28.dp)
     )
 }
 
 @Composable
 private fun BenefitItem(text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Icon(Icons.Default.Check, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
+    Row(
+        verticalAlignment = Alignment.CenterVertically, 
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Icon(
+            Icons.Default.Check, 
+            null, 
+            tint = Color(0xFF4CAF50), 
+            modifier = Modifier.size(20.dp)
+        )
         Text(text, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
 @Composable
 private fun PermanentlyDeniedDialog(onOpenSettings: () -> Unit, onDismiss: () -> Unit) {
+    val strings = Localization.current
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Bildirishnomalar o'chirilgan") },
-        text = { Text("Siz bildirishnomalarni taqiqlab qo'ygansiz. Turnir va bronlar haqida xabardor bo'lish uchun sozlamalardan ruxsat berishingiz kerak.") },
+        title = { Text(strings.notificationsDeniedTitle) },
+        text = { Text(strings.notificationsDeniedDesc) },
         confirmButton = {
-            Button(onClick = onOpenSettings) {
-                Text("Sozlamalarni ochish")
+            Button(
+                onClick = onOpenSettings,
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(strings.openSettings)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Yopish")
+                Text(strings.cancel)
             }
         },
-        shape = RoundedCornerShape(24.dp)
+        shape = RoundedCornerShape(28.dp)
     )
 }
 

@@ -19,7 +19,8 @@ sealed interface SettingsContract {
         val isChangingPassword: Boolean = false,
         val showNotificationPermissionDialog: Boolean = false,
         val showPermanentlyDeniedDialog: Boolean = false,
-        val notificationsEnabled: Boolean = false
+        val notificationsEnabled: Boolean = false,
+        val triggerNotificationRequest: Boolean = false
     ) : MviState
 
     sealed interface Effect : MviEffect {
@@ -47,5 +48,6 @@ sealed interface SettingsContract {
         data class SetShowNotificationPermissionDialog(val show: Boolean) : Event
         object DismissPermanentlyDeniedDialog : Event
         object OpenSettings : Event
+        data class OnNotificationPermissionResult(val status: uz.coder.foottopbusiness.core.platform.PermissionStatus) : Event
     }
 }

@@ -7,10 +7,14 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.domain.usecase.auth.IsLoginInUseCase
+import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
 
 class SplashViewModel(
-    private val isLoginInUseCase: IsLoginInUseCase
+    private val isLoginInUseCase: IsLoginInUseCase,
+    private val getUserUseCase: GetUserUseCase,
+    private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
     private val _navigationEvent = MutableSharedFlow<SplashNavigationEvent>()
@@ -32,6 +36,14 @@ class SplashViewModel(
             delayJob.join()
 
             if (isLoggedIn) {
+                try {
+                    val userId = preferencesManager.userId.first()
+                    if (userId != 0) {
+                        getUserUseCase(userId.toLong()).first()
+                    }
+                } catch (e: Exception) {
+                    // Ignore errors, we just want to pre-load if possible
+                }
                 _navigationEvent.emit(SplashNavigationEvent.NavigateToMain)
             } else {
                 _navigationEvent.emit(SplashNavigationEvent.NavigateToLogin)

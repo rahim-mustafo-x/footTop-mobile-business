@@ -778,7 +778,7 @@ class UzLanguage : Language {
     override val noBookingsToday = "Bugun uchun bandlar yo'q"
     override val latestMatches = "Yaqin oradagi o'yinlar"
     
-    override val notifications = "Xabarnoma"
+    override val notifications = "Bildirishnomalar"
     override val notifyUsers = "Foydalanuvchilarni xabardor qiling"
     override val msgType = "XABAR TURI"
     override val booking = "Band qilish"

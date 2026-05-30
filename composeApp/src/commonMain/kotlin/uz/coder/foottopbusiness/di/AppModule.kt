@@ -124,7 +124,7 @@ val appModule = module {
 
 
     // viewModels
-    factory { SplashViewModel(get()) }
+    factory { SplashViewModel(get(), get(), get()) }
     factory { LoginViewModel(get(), get(), get(), get()) }
     factory { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { StadiumViewModel(get(), get(), get(), get()) }

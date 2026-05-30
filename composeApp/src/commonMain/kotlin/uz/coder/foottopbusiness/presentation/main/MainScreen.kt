@@ -85,6 +85,8 @@ fun MainScreen() {
     // Persist role to avoid flickering during state updates
     var persistedRole by rememberSaveable { mutableStateOf(UserRole.UNKNOWN.name) }
     
+    // We can assume if we reached MainScreen and homeState.userRole is still UNKNOWN,
+    // we should wait, but if we already have it from Splash or a previous load, we use it.
     LaunchedEffect(homeState.userRole) {
         if (homeState.userRole != UserRole.UNKNOWN) {
             persistedRole = homeState.userRole.name
@@ -92,8 +94,7 @@ fun MainScreen() {
     }
 
     val currentRole = UserRole.valueOf(persistedRole)
-    val isRoleLoaded = currentRole != UserRole.UNKNOWN
-    val isAdminOrOwner = currentRole == UserRole.SUPER_ADMIN || currentRole == UserRole.DISTRICT_ADMIN || currentRole == UserRole.OWNER
+    val isAdminOrOwner = currentRole == UserRole.SUPER_ADMIN || currentRole == UserRole.DISTRICT_ADMIN || currentRole == UserRole.OWNER || currentRole == UserRole.UNKNOWN
     val strings = Localization.current
 
     CompositionLocalProvider(LocalBottomBarVisible provides bottomBarVisible) {
@@ -103,7 +104,7 @@ fun MainScreen() {
                 snackbarHost = { SnackbarHost(snackbarHostState) },
                 bottomBar = {
                     AnimatedVisibility(
-                        visible = bottomBarVisible.value && isRoleLoaded,
+                        visible = bottomBarVisible.value,
                         enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
                         exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
                     ) {
@@ -116,10 +117,10 @@ fun MainScreen() {
                         ) {
                             TabNavigationItem(HomeTab, if (currentRole == UserRole.OWNER) strings.tabHome else strings.tabPanel)
                             TabNavigationItem(StadiumTab, if (currentRole == UserRole.OWNER) strings.tabSchedule else strings.tabStadium)
-                            /* if (isAdminOrOwner) {
-                                TabNavigationItem(CoachesTab, if (currentRole == UserRole.OWNER) strings.tabCoaches else strings.tabRoles)
-                            } */
-                            if (isAdminOrOwner) {
+                            
+                            // Show relevant tabs even if role is still loading (using persisted or defaults)
+                            // This prevents the navigation bar from being empty or flickering
+                            if (currentRole == UserRole.SUPER_ADMIN || currentRole == UserRole.DISTRICT_ADMIN || currentRole == UserRole.OWNER || currentRole == UserRole.UNKNOWN) {
                                 TabNavigationItem(ReportsTab, strings.tabRevenue)
                             }
                         }
