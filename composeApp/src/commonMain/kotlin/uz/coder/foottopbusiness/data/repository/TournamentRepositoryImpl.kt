@@ -52,4 +52,16 @@ class TournamentRepositoryImpl(
         log("TournamentRepository", "createTournament error: ${it.message}")
         throw it
     }
+
+    override fun updateTournament(id: Long, request: TournamentRequestDto) = flow {
+        val response = api.updateTournament(id, request)
+        if (response.success == true) {
+            response.data?.let { emit(it) } ?: throw Exception("Turnir yangilandi, lekin ma'lumotlar qaytmadi")
+        } else {
+            throw Exception(response.message ?: "Turnirni yangilashda xatolik")
+        }
+    }.catch {
+        log("TournamentRepository", "updateTournament error: ${it.message}")
+        throw it
+    }
 }

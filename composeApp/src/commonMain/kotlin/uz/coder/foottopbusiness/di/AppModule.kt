@@ -37,6 +37,7 @@ import uz.coder.foottopbusiness.domain.usecase.stadium.SaveRegionIdUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.UpdateOpenCloseTimeUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.UpdateStadiumUseCase
 import uz.coder.foottopbusiness.domain.usecase.tournament.CreateTournamentUseCase
+import uz.coder.foottopbusiness.domain.usecase.tournament.UpdateTournamentUseCase
 import uz.coder.foottopbusiness.domain.usecase.tournament.GetTournamentsUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GetAllUsersUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GeneratePasswordUseCase
@@ -106,6 +107,7 @@ val appModule = module {
     factory { CreateCoachUseCase(get()) }
     factory { GetTournamentsUseCase(get()) }
     factory { CreateTournamentUseCase(get()) }
+    factory { UpdateTournamentUseCase(get()) }
     factory { GetMatchesUseCase(get()) }
     factory { GetUserUseCase(get()) }
     factory { GetAllUsersUseCase(get()) }
@@ -133,7 +135,7 @@ val appModule = module {
     factory { (stadium: StadiumResponse) -> StadiumDetailsViewModel(stadium, get(), get(), get(), get(), get()) }
     factory { BookingListViewModel(get(), get()) }
     factory { CoachesViewModel(get(), get(), get()) }
-    factory { TournamentsViewModel(get(), get(), get()) }
+    factory { TournamentsViewModel(get(), get(), get(), get(), get(), get()) }
     factory { SettingsViewModel(get(), get(), get()) }
     factory { EditProfileViewModel(get(), get()) }
     factory { SendNotificationViewModel(get()) }

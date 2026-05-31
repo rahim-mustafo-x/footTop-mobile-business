@@ -34,6 +34,7 @@ import androidx.compose.material.icons.automirrored.filled.Rule
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.LocationOn
@@ -76,6 +77,7 @@ import uz.coder.foottopbusiness.core.ui.shimmer
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.data.network.dto.tournament.TournamentFilterDto
 import uz.coder.foottopbusiness.presentation.main.tournaments.create.TournamentCreateScreen
+import uz.coder.foottopbusiness.presentation.main.tournaments.edit.TournamentEditScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -365,6 +367,7 @@ private fun TournamentCard(t: TournamentResponseDto, onClick: () -> Unit) {
 private fun TournamentDetailScreen(tournament: TournamentResponseDto, onBack: () -> Unit) {
     val scrollState = rememberScrollState()
     val strings = Localization.current
+    val navigator = LocalNavigator.currentOrThrow
 
     Scaffold(
         topBar = {
@@ -373,6 +376,11 @@ private fun TournamentDetailScreen(tournament: TournamentResponseDto, onBack: ()
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { navigator.push(TournamentEditScreen(tournament)) }) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

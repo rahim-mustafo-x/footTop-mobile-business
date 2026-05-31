@@ -235,6 +235,15 @@ interface Language {
     val bookNow: String
     val pitchName: String
     val field: String
+    val showBooked: String
+    val statusBookedWord: String
+    val statusBookedSentence: String
+    val statusAvailableWord: String
+    val statusAvailableSentence: String
+    val statusSelectedWord: String
+    val statusSelectedSentence: String
+    val statusPastWord: String
+    val statusPastSentence: String
 
     // Errors
     val districtScopeViolation: String
@@ -470,6 +479,15 @@ class EnLanguage : Language {
     override val bookNow = "Book Now"
     override val pitchName = "Pitch Name"
     override val field = "Field"
+    override val showBooked = "Show already booked slots"
+    override val statusBookedWord = "Booked"
+    override val statusBookedSentence = "This slot is already booked."
+    override val statusAvailableWord = "Available"
+    override val statusAvailableSentence = "This slot is available for booking."
+    override val statusSelectedWord = "Selected"
+    override val statusSelectedSentence = "You have selected this slot."
+    override val statusPastWord = "Past"
+    override val statusPastSentence = "This time slot has already passed."
 
     override val districtScopeViolation = "You can only create stadiums in your own assigned district."
     override val dataIntegrityViolation = "Data integrity error. This information may be used by other records."
@@ -704,6 +722,15 @@ class RuLanguage : Language {
     override val bookNow = "Забронировать"
     override val pitchName = "Название поля"
     override val field = "Поле"
+    override val showBooked = "Показать уже забронированные слоты"
+    override val statusBookedWord = "Занято"
+    override val statusBookedSentence = "Это время уже забронировано."
+    override val statusAvailableWord = "Свободно"
+    override val statusAvailableSentence = "Этот слот доступен для бронирования."
+    override val statusSelectedWord = "Выбрано"
+    override val statusSelectedSentence = "Вы выбрали этот слот."
+    override val statusPastWord = "Прошло"
+    override val statusPastSentence = "Это время уже прошло."
 
     override val districtScopeViolation = "Вы можете создавать стадионы только в своем закрепленном районе."
     override val dataIntegrityViolation = "Ошибка целостности данных. Эта информация может использоваться другими записями."
@@ -938,6 +965,15 @@ class UzLanguage : Language {
     override val bookNow = "Bron qilish"
     override val pitchName = "Pitch nomi"
     override val field = "Maydon"
+    override val showBooked = "Band qilingan vaqtlarni ko'rsatish"
+    override val statusBookedWord = "Band"
+    override val statusBookedSentence = "Ushbu vaqt allaqachon band qilingan."
+    override val statusAvailableWord = "Bo'sh"
+    override val statusAvailableSentence = "Ushbu vaqt bron qilish uchun mavjud."
+    override val statusSelectedWord = "Tanlangan"
+    override val statusSelectedSentence = "Siz ushbu vaqtni tanladingiz."
+    override val statusPastWord = "O'tgan"
+    override val statusPastSentence = "Ushbu vaqt o'tib ketgan."
 
     override val districtScopeViolation = "Siz faqat o'zingizga biriktirilgan hududda stadion yarata olasiz."
     override val dataIntegrityViolation = "Ma'lumotlar yaxlitligi xatosi. Ushbu ma'lumot boshqa yozuvlar tomonidan foydalanilayotgan bo'lishi mumkin."

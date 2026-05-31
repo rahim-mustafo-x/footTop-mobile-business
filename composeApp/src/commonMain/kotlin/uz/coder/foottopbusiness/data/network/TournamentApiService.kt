@@ -18,6 +18,7 @@ class TournamentApiService(private val client: HttpClient) {
     companion object {
         private const val TOURNAMENTS = "/v1/tournaments"
         private const val TOURNAMENTS_CREATE = "/v1/tournaments/create"
+        private const val TOURNAMENTS_UPDATE = "/v1/tournaments/update"
     }
 
     suspend fun getTournaments(
@@ -52,6 +53,13 @@ class TournamentApiService(private val client: HttpClient) {
 
     suspend fun createTournament(request: TournamentRequestDto): BaseResponse<TournamentResponseDto> =
         client.post(TOURNAMENTS_CREATE) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
+
+    suspend fun updateTournament(id: Long, request: TournamentRequestDto): BaseResponse<TournamentResponseDto> =
+        client.post(TOURNAMENTS_UPDATE) {
+            url { appendPathSegments(id.toString()) }
             contentType(ContentType.Application.Json)
             setBody(request)
         }.body()

@@ -17,7 +17,15 @@ sealed interface TournamentsContract {
         val showCreateDialog: Boolean = false,
         val page: Int = 0,
         val isLastPage: Boolean = false,
-        val filters: TournamentFilterDto = TournamentFilterDto()
+        val filters: TournamentFilterDto = TournamentFilterDto(),
+        
+        // Address selection
+        val regions: List<uz.coder.foottopbusiness.data.network.dto.stadium.RegionDto> = emptyList(),
+        val districts: List<uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto> = emptyList(),
+        val selectedRegion: uz.coder.foottopbusiness.data.network.dto.stadium.RegionDto? = null,
+        val selectedDistrict: uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto? = null,
+        val showRegionDropdown: Boolean = false,
+        val showDistrictDropdown: Boolean = false
     ) : MviState
 
     sealed interface Effect : MviEffect {
@@ -32,7 +40,26 @@ sealed interface TournamentsContract {
         object ShowCreateDialog : Event
         object HideCreateDialog : Event
         data class UpdateFilters(val filters: TournamentFilterDto) : Event
+        
+        // Address selection events
+        data class SelectRegion(val region: uz.coder.foottopbusiness.data.network.dto.stadium.RegionDto) : Event
+        data class SelectDistrict(val district: uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto) : Event
+        data class ShowRegionDropdown(val show: Boolean) : Event
+        data class ShowDistrictDropdown(val show: Boolean) : Event
+
         data class Create(
+            val name: String,
+            val startDate: String,
+            val endDate: String,
+            val maxTeams: Int,
+            val entryFee: Double,
+            val address: String?,
+            val startTime: String?,
+            val endTime: String?,
+        ) : Event
+
+        data class Update(
+            val id: Long,
             val name: String,
             val startDate: String,
             val endDate: String,

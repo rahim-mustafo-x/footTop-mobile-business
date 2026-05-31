@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -70,6 +71,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
     val now: Instant = remember { Clock.System.now() }
     val scope = rememberCoroutineScope()
     val strings = Localization.current
+    var showBookedSlots by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
@@ -185,10 +187,8 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
 
                             Spacer(Modifier.height(12.dp))
 
-                            SwipeToConfirmButton(
-                                text = strings.bookNow,
-                                enabled = true,
-                                onConfirm = {
+                            Button(
+                                onClick = {
                                     if (selectedEnd != null) {
                                         viewModel.handleEvent(
                                             StadiumDetailsContract.Event.CreateBooking(
@@ -202,8 +202,15 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                         )
                                     }
                                 },
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                modifier = Modifier.fillMaxWidth().height(56.dp)
+                            ) {
+                                Text(
+                                    text = strings.bookNow,
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                )
+                            }
                         }
                     }
                 }
@@ -234,7 +241,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                         )
                         IconButton(
                             onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.BackClick) },
-                            modifier = Modifier.statusBarsPadding().padding(8.dp).align(Alignment.TopEnd).background(Color.Black.copy(0.3f), CircleShape)
+                            modifier = Modifier.statusBarsPadding().padding(8.dp).align(Alignment.TopStart).background(Color.Black.copy(0.3f), CircleShape)
                         ) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White)
                         }
@@ -287,7 +294,25 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                             }
 
                             Spacer(Modifier.height(24.dp))
-                            SectionTitle(strings.freeSlots)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                SectionTitle(strings.freeSlots)
+                                SwitchItem(
+                                    label = strings.statusBookedWord,
+                                    checked = showBookedSlots,
+                                    onCheckedChange = { showBookedSlots = it },
+                                    modifier = Modifier.width(130.dp)
+                                )
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = strings.showBooked,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            )
                             Spacer(Modifier.height(12.dp))
 
                             if (state.isSlotsLoading) {
@@ -318,6 +343,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                 val nowInstant = Clock.System.now()
                                 val slotsWithIndices = slots.mapIndexed { i, s -> i to s }
                                     .filter { state.selectedDate == null || it.second.start.toLocalDateTimeSafe()?.date.toString() == state.selectedDate }
+                                    .filter { showBookedSlots || it.second.status != "BOOKED" }
                                 
                                 if (slotsWithIndices.isEmpty()) {
                                     Text(strings.noSlotsToday, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(16.dp))
@@ -515,74 +541,132 @@ private fun SlotListItem(
     rowState: SlotRowState,
     onClick: () -> Unit
 ) {
+    val strings = Localization.current
     val startDt = slot.start.toLocalDateTimeSafe()
     val startStr = startDt?.let { formatTimeFromDateTime(it) } ?: "--:--"
     val endDt = slot.end.toLocalDateTimeSafe()
     val endStr = endDt?.let { formatTimeFromDateTime(it) } ?: "--:--"
 
-    val bgColor = when {
-        rowState == SlotRowState.SELECTED -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.30f)
-        else -> MaterialTheme.colorScheme.surface
+    val isSelected = rowState == SlotRowState.SELECTED
+    val isBusy = rowState == SlotRowState.BOOKED || rowState == SlotRowState.PAST
+
+    val statusText = when (rowState) {
+        SlotRowState.AVAILABLE -> strings.statusAvailableWord
+        SlotRowState.SELECTED -> strings.statusSelectedWord
+        SlotRowState.BOOKED -> strings.statusBookedWord
+        SlotRowState.PAST -> strings.statusPastWord
     }
 
-    val accentColor = when {
-        rowState == SlotRowState.SELECTED -> MaterialTheme.colorScheme.primary
+    val subtitleText = when (rowState) {
+        SlotRowState.SELECTED -> strings.statusSelectedSentence
+        SlotRowState.BOOKED -> strings.statusBookedSentence
+        SlotRowState.PAST -> strings.statusPastSentence
+        SlotRowState.AVAILABLE -> strings.statusAvailableSentence
+    }
+
+    val statusColor = when (rowState) {
+        SlotRowState.AVAILABLE -> Color(0xFF4CAF50)
+        SlotRowState.SELECTED -> MaterialTheme.colorScheme.primary
+        SlotRowState.BOOKED -> MaterialTheme.colorScheme.error
+        SlotRowState.PAST -> MaterialTheme.colorScheme.outline
+    }
+
+    val containerColor = when {
+        isSelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+        isBusy -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
         else -> Color.Transparent
     }
 
-    val timeColor = when (rowState) {
-        SlotRowState.PAST -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.30f)
-        SlotRowState.BOOKED -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
-        SlotRowState.SELECTED -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.onSurface
-    }
-
-    val subtitleText = when {
-        rowState == SlotRowState.SELECTED -> "Tanlangan"
-        rowState == SlotRowState.BOOKED -> "Bron qilingan"
-        rowState == SlotRowState.PAST -> "O'tib ketgan"
-        else -> "Bo'sh"
-    }
-
-    val subtitleColor = when {
-        rowState == SlotRowState.SELECTED -> MaterialTheme.colorScheme.primary
-        rowState == SlotRowState.PAST || rowState == SlotRowState.BOOKED -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
-    Row(modifier = Modifier.fillMaxWidth().background(bgColor).clickable(enabled = rowState != SlotRowState.PAST && rowState != SlotRowState.BOOKED) { onClick() }, verticalAlignment = Alignment.CenterVertically) {
-        Box(modifier = Modifier.width(4.dp).height(56.dp).background(accentColor))
-        Row(modifier = Modifier.weight(1f).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(text = "$startStr – $endStr", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = if (rowState == SlotRowState.SELECTED) FontWeight.Bold else FontWeight.Normal), color = timeColor)
-                Text(text = subtitleText, style = MaterialTheme.typography.labelSmall, color = subtitleColor)
-            }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Surface(shape = RoundedCornerShape(20.dp), color = when(rowState) {
-                    SlotRowState.SELECTED -> MaterialTheme.colorScheme.primary
-                    SlotRowState.BOOKED -> MaterialTheme.colorScheme.errorContainer
-                    else -> MaterialTheme.colorScheme.primaryContainer
-                }) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = !isBusy) { onClick() },
+        color = containerColor
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                Icon(
+                    imageVector = Icons.Default.AccessTime,
+                    contentDescription = null,
+                    tint = if (isBusy) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(12.dp))
+                Column {
                     Text(
-                        text = when(rowState) {
-                            SlotRowState.SELECTED -> "Tanlangan"
-                            SlotRowState.BOOKED -> "Band"
-                            SlotRowState.PAST -> "O'tgan"
-                            else -> "Mavjud"
-                        },
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                        text = "$startStr - $endStr",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                        ),
+                        color = if (isBusy) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = subtitleText,
                         style = MaterialTheme.typography.labelSmall,
-                        color = when(rowState) {
-                            SlotRowState.SELECTED -> MaterialTheme.colorScheme.onPrimary
-                            SlotRowState.BOOKED -> MaterialTheme.colorScheme.error
-                            else -> MaterialTheme.colorScheme.primary
-                        }
+                        color = statusColor.copy(alpha = 0.8f)
                     )
                 }
             }
+
+            Surface(
+                color = statusColor.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, statusColor.copy(alpha = 0.4f))
+            ) {
+                Text(
+                    text = statusText.uppercase(),
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp),
+                    color = statusColor
+                )
+            }
         }
     }
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f), thickness = 1.dp)
+}
+
+@Composable
+fun SwitchItem(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        shape = RoundedCornerShape(12.dp),
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                colors = SwitchDefaults.colors(
+                    checkedTrackColor = MaterialTheme.colorScheme.primary,
+                    uncheckedTrackColor = MaterialTheme.colorScheme.outlineVariant
+                ),
+                modifier = Modifier.scale(0.7f)
+            )
+        }
+    }
 }
 
 @Composable

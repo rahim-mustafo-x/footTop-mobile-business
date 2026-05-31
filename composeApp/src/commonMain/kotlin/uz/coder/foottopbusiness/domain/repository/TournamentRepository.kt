@@ -14,4 +14,5 @@ interface TournamentRepository {
     ): Flow<PageTournamentResponseDto>
     fun getTournamentById(id: Long): Flow<TournamentResponseDto>
     fun createTournament(request: TournamentRequestDto): Flow<TournamentResponseDto>
+    fun updateTournament(id: Long, request: TournamentRequestDto): Flow<TournamentResponseDto>
 }

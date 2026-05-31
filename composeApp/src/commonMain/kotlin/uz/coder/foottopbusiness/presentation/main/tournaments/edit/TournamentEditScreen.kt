@@ -1,22 +1,9 @@
-package uz.coder.foottopbusiness.presentation.main.tournaments.create
+package uz.coder.foottopbusiness.presentation.main.tournaments.edit
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,52 +11,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberTimePickerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -85,13 +33,12 @@ import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
 import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.visualTransformation.AmountTransformation
-import uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto
-import uz.coder.foottopbusiness.data.network.dto.stadium.RegionDto
+import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsContract
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsViewModel
 import kotlin.time.Instant
 
-class TournamentCreateScreen : Screen {
+class TournamentEditScreen(private val tournament: TournamentResponseDto) : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
@@ -100,14 +47,25 @@ class TournamentCreateScreen : Screen {
         val state by viewModel.state.collectAsState()
         val strings = Localization.current
 
-        var name by remember { mutableStateOf("") }
-        var startDate by remember { mutableStateOf("") }
-        var endDate by remember { mutableStateOf("") }
-        var startTime by remember { mutableStateOf("") }
-        var endTime by remember { mutableStateOf("") }
-        var maxTeams by remember { mutableStateOf("") }
-        var entryFee by remember { mutableStateOf("") }
-        var address by remember { mutableStateOf("") }
+        var name by remember { mutableStateOf(tournament.name ?: "") }
+        
+        fun formatFromApi(d: String?): String {
+            if (d == null) return ""
+            val parts = d.split("-")
+            return if (parts.size == 3) "${parts[2]}.${parts[1]}.${parts[0]}" else d
+        }
+        
+        var startDate by remember { mutableStateOf(formatFromApi(tournament.startDate)) }
+        var endDate by remember { mutableStateOf(formatFromApi(tournament.endDate)) }
+        var startTime by remember { mutableStateOf(tournament.startTime ?: "") }
+        var endTime by remember { mutableStateOf(tournament.endTime ?: "") }
+        var maxTeams by remember { mutableStateOf(tournament.maxTeams?.toString() ?: "") }
+        var entryFee by remember { mutableStateOf(tournament.entryFee?.toInt()?.toString() ?: "") }
+        
+        // Handle address extraction if it's formatted as "Region, District, Address"
+        val initialAddress = tournament.address ?: ""
+        val addressParts = initialAddress.split(", ")
+        var preciseAddress by remember { mutableStateOf(if (addressParts.size >= 3) addressParts.last() else initialAddress) }
 
         var showStartDatePicker by remember { mutableStateOf(false) }
         var showEndDatePicker by remember { mutableStateOf(false) }
@@ -157,7 +115,11 @@ class TournamentCreateScreen : Screen {
         }
 
         if (showStartTimePicker) {
-            val timePickerState = rememberTimePickerState(is24Hour = true)
+            val timePickerState = rememberTimePickerState(
+                initialHour = tournament.startTime?.split(":")?.firstOrNull()?.toIntOrNull() ?: 0,
+                initialMinute = tournament.startTime?.split(":")?.lastOrNull()?.toIntOrNull() ?: 0,
+                is24Hour = true
+            )
             TimePickerDialog(
                 onDismissRequest = { showStartTimePicker = !showStartTimePicker },
                 confirmButton = {
@@ -177,7 +139,11 @@ class TournamentCreateScreen : Screen {
         }
 
         if (showEndTimePicker) {
-            val timePickerState = rememberTimePickerState(is24Hour = true)
+            val timePickerState = rememberTimePickerState(
+                initialHour = tournament.endTime?.split(":")?.firstOrNull()?.toIntOrNull() ?: 0,
+                initialMinute = tournament.endTime?.split(":")?.lastOrNull()?.toIntOrNull() ?: 0,
+                is24Hour = true
+            )
             TimePickerDialog(
                 onDismissRequest = { showEndTimePicker = !showEndTimePicker },
                 confirmButton = {
@@ -236,13 +202,13 @@ class TournamentCreateScreen : Screen {
                         Spacer(Modifier.width(16.dp))
                         Column {
                             Text(
-                                strings.createTournament,
+                                strings.edit,
                                 color = MaterialTheme.colorScheme.onPrimary,
                                 fontSize = 24.sp,
                                 fontWeight = FontWeight.Black
                             )
                             Text(
-                                strings.technicalInfo,
+                                tournament.name ?: "",
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium
@@ -274,8 +240,8 @@ class TournamentCreateScreen : Screen {
                     DistrictDropdown(state, viewModel)
 
                     TournamentInputField(
-                        value = address,
-                        onValueChange = { address = it },
+                        value = preciseAddress,
+                        onValueChange = { preciseAddress = it },
                         label = strings.preciseAddress,
                         icon = Icons.Default.LocationOn,
                         placeholder = strings.addressPlaceholder
@@ -389,22 +355,23 @@ class TournamentCreateScreen : Screen {
                                 if (isNotEmpty()) append(", ")
                                 append(it.name) 
                             }
-                            if (address.isNotBlank()) {
+                            if (preciseAddress.isNotBlank()) {
                                 if (isNotEmpty()) append(", ")
-                                append(address)
+                                append(preciseAddress)
                             }
                         }
 
                         viewModel.handleEvent(
-                            TournamentsContract.Event.Create(
-                                name,
-                                formatToApi(startDate),
-                                formatToApi(endDate),
-                                maxTeams.toIntOrNull() ?: 0,
-                                entryFee.toDoubleOrNull() ?: 0.0,
-                                formattedAddress.takeIf { it.isNotBlank() },
-                                startTime.takeIf { it.isNotBlank() },
-                                endTime.takeIf { it.isNotBlank() }
+                            TournamentsContract.Event.Update(
+                                id = tournament.id ?: 0L,
+                                name = name,
+                                startDate = formatToApi(startDate),
+                                endDate = formatToApi(endDate),
+                                maxTeams = maxTeams.toIntOrNull() ?: 0,
+                                entryFee = entryFee.toDoubleOrNull() ?: 0.0,
+                                address = formattedAddress.takeIf { it.isNotBlank() },
+                                startTime = startTime.takeIf { it.isNotBlank() },
+                                endTime = endTime.takeIf { it.isNotBlank() }
                             )
                         )
                         navigator.pop()
@@ -417,13 +384,13 @@ class TournamentCreateScreen : Screen {
                         containerColor = MaterialTheme.colorScheme.primary,
                         disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                     ),
-                    enabled = !state.isCreating && name.isNotBlank() && startDate.isNotBlank() && endDate.isNotBlank() && state.selectedRegion != null && state.selectedDistrict != null,
+                    enabled = !state.isCreating && name.isNotBlank() && startDate.isNotBlank() && endDate.isNotBlank(),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp, pressedElevation = 0.dp)
                 ) {
                     if (state.isCreating) {
                         CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                     } else {
-                        Text(strings.createTournament.uppercase(), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+                        Text(strings.save.uppercase(), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
                     }
                 }
                 
