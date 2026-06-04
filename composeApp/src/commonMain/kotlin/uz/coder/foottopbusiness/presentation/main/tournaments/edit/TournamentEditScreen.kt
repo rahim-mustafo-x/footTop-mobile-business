@@ -36,6 +36,8 @@ import uz.coder.foottopbusiness.core.visualTransformation.AmountTransformation
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsContract
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsViewModel
+import uz.coder.foottopbusiness.presentation.main.stadium.edit.components.LocationPicker
+import uz.coder.foottopbusiness.presentation.main.stadium.edit.MapSelectionScreen
 import kotlin.time.Instant
 
 class TournamentEditScreen(private val tournament: TournamentResponseDto) : Screen {
@@ -66,6 +68,8 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
         val initialAddress = tournament.address ?: ""
         val addressParts = initialAddress.split(", ")
         var preciseAddress by remember { mutableStateOf(if (addressParts.size >= 3) addressParts.last() else initialAddress) }
+        var latitude by remember { mutableStateOf(tournament.location?.latitude) }
+        var longitude by remember { mutableStateOf(tournament.location?.longitude) }
 
         var showStartDatePicker by remember { mutableStateOf(false) }
         var showEndDatePicker by remember { mutableStateOf(false) }
@@ -116,8 +120,8 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
 
         if (showStartTimePicker) {
             val timePickerState = rememberTimePickerState(
-                initialHour = tournament.startTime?.split(":")?.firstOrNull()?.toIntOrNull() ?: 0,
-                initialMinute = tournament.startTime?.split(":")?.lastOrNull()?.toIntOrNull() ?: 0,
+                initialHour = tournament.startTime?.split(":")?.getOrNull(0)?.toIntOrNull() ?: 0,
+                initialMinute = tournament.startTime?.split(":")?.getOrNull(1)?.toIntOrNull() ?: 0,
                 is24Hour = true
             )
             TimePickerDialog(
@@ -140,8 +144,8 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
 
         if (showEndTimePicker) {
             val timePickerState = rememberTimePickerState(
-                initialHour = tournament.endTime?.split(":")?.firstOrNull()?.toIntOrNull() ?: 0,
-                initialMinute = tournament.endTime?.split(":")?.lastOrNull()?.toIntOrNull() ?: 0,
+                initialHour = tournament.endTime?.split(":")?.getOrNull(0)?.toIntOrNull() ?: 0,
+                initialMinute = tournament.endTime?.split(":")?.getOrNull(1)?.toIntOrNull() ?: 0,
                 is24Hour = true
             )
             TimePickerDialog(
@@ -246,6 +250,34 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                         icon = Icons.Default.LocationOn,
                         placeholder = strings.addressPlaceholder
                     )
+                }
+
+                // Location Card
+                CreateCard(title = strings.location, icon = Icons.Default.LocationOn) {
+                    LocationPicker(
+                        latitude = latitude,
+                        longitude = longitude,
+                        address = preciseAddress,
+                        onLatitudeChange = { latitude = it.toDoubleOrNull() },
+                        onLongitudeChange = { longitude = it.toDoubleOrNull() },
+                        onAddressChange = { preciseAddress = it },
+                        onSelectOnMap = {
+                            navigator.push(MapSelectionScreen(latitude, longitude) { lat, lng ->
+                                latitude = lat
+                                longitude = lng
+                            })
+                        },
+                        onGetCurrentLocation = {
+                            viewModel.handleEvent(TournamentsContract.Event.GetCurrentLocation)
+                        }
+                    )
+                }
+
+                LaunchedEffect(state.latitude, state.longitude) {
+                    if (state.latitude != null && state.longitude != null) {
+                        latitude = state.latitude
+                        longitude = state.longitude
+                    }
                 }
 
                 // Date and Time Card
@@ -371,7 +403,9 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                                 entryFee = entryFee.toDoubleOrNull() ?: 0.0,
                                 address = formattedAddress.takeIf { it.isNotBlank() },
                                 startTime = startTime.takeIf { it.isNotBlank() },
-                                endTime = endTime.takeIf { it.isNotBlank() }
+                                endTime = endTime.takeIf { it.isNotBlank() },
+                                latitude = latitude,
+                                longitude = longitude
                             )
                         )
                         navigator.pop()

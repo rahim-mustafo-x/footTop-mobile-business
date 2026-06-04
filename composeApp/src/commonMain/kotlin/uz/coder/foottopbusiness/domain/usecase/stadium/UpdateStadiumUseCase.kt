@@ -18,8 +18,11 @@ class UpdateStadiumUseCase(private val repository: StadiumRepository) {
         districtId: Int,
         isActive: Boolean = true,
         ownerId: Int? = null,
-        phone: String? = null
+        phone: String? = null,
+        latitude: Double? = null,
+        longitude: Double? = null,
+        address: String? = null,
     ) = repository.updateStadium(
-        id, name, description, type, duration, capacity, pricePerHour, openTime, closeTime, imageUrl, regionId, districtId, isActive, ownerId, phone
+        id, name, description, type, duration, capacity, pricePerHour, openTime, closeTime, imageUrl, regionId, districtId, isActive, ownerId, phone, latitude, longitude, address
     )
 }

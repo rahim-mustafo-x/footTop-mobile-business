@@ -61,6 +61,7 @@ import cafe.adriel.voyager.navigator.tab.TabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import org.koin.compose.koinInject
 import uz.coder.foottopbusiness.core.SessionManager
+import uz.coder.foottopbusiness.core.UserSession
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.presentation.main.coaches.CoachesVoyager
@@ -79,21 +80,11 @@ fun MainScreen() {
     val bottomBarVisible = remember { mutableStateOf(true) }
     val homeViewModel = koinInject<HomeViewModel>()
     val sessionManager = koinInject<SessionManager>()
+    val userSession = koinInject<UserSession>()
     val homeState by homeViewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Persist role to avoid flickering during state updates
-    var persistedRole by rememberSaveable { mutableStateOf(UserRole.UNKNOWN.name) }
-    
-    // We can assume if we reached MainScreen and homeState.userRole is still UNKNOWN,
-    // we should wait, but if we already have it from Splash or a previous load, we use it.
-    LaunchedEffect(homeState.userRole) {
-        if (homeState.userRole != UserRole.UNKNOWN) {
-            persistedRole = homeState.userRole.name
-        }
-    }
-
-    val currentRole = UserRole.valueOf(persistedRole)
+    val currentRole by userSession.role.collectAsState()
     val isAdminOrOwner = currentRole == UserRole.SUPER_ADMIN || currentRole == UserRole.DISTRICT_ADMIN || currentRole == UserRole.OWNER || currentRole == UserRole.UNKNOWN
     val strings = Localization.current
 

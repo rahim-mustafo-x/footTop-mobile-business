@@ -83,11 +83,16 @@ import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.log
 import uz.coder.foottopbusiness.core.visualTransformation.AmountTransformation
 import uz.coder.foottopbusiness.core.visualTransformation.PhoneTransformation
+import uz.coder.foottopbusiness.presentation.main.stadium.edit.components.LocationPicker
+import uz.coder.foottopbusiness.presentation.main.stadium.edit.MapSelectionScreen
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddStadiumScreen(viewModel: AddStadiumViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsState()
+    val navigator = LocalNavigator.currentOrThrow
     val hostState = remember { SnackbarHostState() }
     val strings = Localization.current
 
@@ -230,11 +235,11 @@ fun AddStadiumScreen(viewModel: AddStadiumViewModel, onBack: () -> Unit) {
 
                     LabelAndField(
                         strings.preciseAddress,
-                        state.name,
+                        state.preciseAddress,
                         strings.addressPlaceholder,
                         icon = Icons.Default.Map
                     ) {
-                        viewModel.handleEvent(AddStadiumContract.Event.Name(it))
+                        viewModel.handleEvent(AddStadiumContract.Event.PreciseAddress(it))
                     }
 
                     LabelAndField(
@@ -348,6 +353,35 @@ fun AddStadiumScreen(viewModel: AddStadiumViewModel, onBack: () -> Unit) {
                     ) {
                         viewModel.handleEvent(AddStadiumContract.Event.PricePerHour(it))
                     }
+                }
+            }
+
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    LocationPicker(
+                        latitude = state.latitude,
+                        longitude = state.longitude,
+                        address = state.preciseAddress,
+                        onLatitudeChange = { viewModel.handleEvent(AddStadiumContract.Event.Latitude(it.toDoubleOrNull())) },
+                        onLongitudeChange = { viewModel.handleEvent(AddStadiumContract.Event.Longitude(it.toDoubleOrNull())) },
+                        onAddressChange = { viewModel.handleEvent(AddStadiumContract.Event.PreciseAddress(it)) },
+                        onSelectOnMap = {
+                            navigator.push(MapSelectionScreen(state.latitude, state.longitude) { lat, lng ->
+                                viewModel.handleEvent(AddStadiumContract.Event.Latitude(lat))
+                                viewModel.handleEvent(AddStadiumContract.Event.Longitude(lng))
+                            })
+                        },
+                        onGetCurrentLocation = {
+                            viewModel.handleEvent(AddStadiumContract.Event.GetCurrentLocation)
+                        }
+                    )
                 }
             }
 

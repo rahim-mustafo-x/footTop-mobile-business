@@ -40,12 +40,15 @@ class StadiumRepositoryImpl(
         name: String, description: String, type: String, duration: String,
         capacity: Int, pricePerHour: Int, openTime: String, closeTime: String,
         imageUrl: String, regionId: Int, districtId: Int, ownerId: Int?, phone: String?,
+        latitude: Double?, longitude: Double?, address: String?,
     ): Flow<StadiumResponse> = flow {
         val finalOwnerId = ownerId ?: preferencesManager.userId.first().takeIf { it != 0 }
         val response = stadiumApiService.createStadium(
             request = CreateStadiumRequest(
                 name = name, phone = phone, ownerId = finalOwnerId, regionId = regionId, districtId = districtId,
-                description = description, location = LocationDto(), type = type, duration = duration,
+                description = description, 
+                location = LocationDto(latitude = latitude, longitude = longitude, address = address),
+                type = type, duration = duration,
                 capacity = capacity, pricePerHour = pricePerHour,
                 images = if (imageUrl.isNotBlank()) listOf(ImageDto(imageUrl)) else emptyList(),
                 isActive = true
@@ -81,12 +84,17 @@ class StadiumRepositoryImpl(
         isActive: Boolean,
         ownerId: Int?,
         phone: String?,
+        latitude: Double?,
+        longitude: Double?,
+        address: String?,
     ): Flow<StadiumResponse> = flow {
         val response = stadiumApiService.updateStadium(
             id = id.toLong(),
             request = CreateStadiumRequest(
                 name = name, phone = phone, ownerId = ownerId, regionId = regionId, districtId = districtId,
-                description = description, location = LocationDto(), type = type, duration = duration,
+                description = description, 
+                location = LocationDto(latitude = latitude, longitude = longitude, address = address),
+                type = type, duration = duration,
                 capacity = capacity, pricePerHour = pricePerHour,
                 images = if (imageUrl.isNotBlank()) listOf(ImageDto(imageUrl)) else emptyList(),
                 isActive = isActive

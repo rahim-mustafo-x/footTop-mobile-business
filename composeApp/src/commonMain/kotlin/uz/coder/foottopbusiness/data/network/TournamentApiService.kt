@@ -14,11 +14,12 @@ import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.data.network.dto.tournament.TournamentFilterDto
 import uz.coder.foottopbusiness.data.network.dto.tournament.TournamentRequestDto
 
+import io.ktor.client.request.put
+
 class TournamentApiService(private val client: HttpClient) {
     companion object {
         private const val TOURNAMENTS = "/v1/tournaments"
         private const val TOURNAMENTS_CREATE = "/v1/tournaments/create"
-        private const val TOURNAMENTS_UPDATE = "/v1/tournaments/update"
     }
 
     suspend fun getTournaments(
@@ -58,7 +59,7 @@ class TournamentApiService(private val client: HttpClient) {
         }.body()
 
     suspend fun updateTournament(id: Long, request: TournamentRequestDto): BaseResponse<TournamentResponseDto> =
-        client.post(TOURNAMENTS_UPDATE) {
+        client.put(TOURNAMENTS) {
             url { appendPathSegments(id.toString()) }
             contentType(ContentType.Application.Json)
             setBody(request)

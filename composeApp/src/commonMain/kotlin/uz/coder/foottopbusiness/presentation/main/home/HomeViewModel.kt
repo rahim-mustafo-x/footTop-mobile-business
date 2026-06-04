@@ -26,6 +26,7 @@ import uz.coder.foottopbusiness.core.platform.checkNotificationPermissionStatus
 import uz.coder.foottopbusiness.core.platform.requestNotificationPermission
 import uz.coder.foottopbusiness.core.platform.PermissionStatus
 import uz.coder.foottopbusiness.core.platform.openAppSettings
+import uz.coder.foottopbusiness.core.UserSession
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.home.HomeContract.Effect.*
 import kotlinx.coroutines.Job
@@ -52,13 +53,27 @@ class HomeViewModel(
     private val getMatchesUseCase: GetMatchesUseCase,
     private val getTournamentsUseCase: GetTournamentsUseCase,
     private val getAllUsersUseCase: GetAllUsersUseCase,
-    private val createBookingUseCase: CreateBookingUseCase
+    private val createBookingUseCase: CreateBookingUseCase,
+    private val userSession: UserSession
 ) : BaseViewModel<HomeContract.State, HomeContract.Effect, HomeContract.Event>(
     initialState = HomeContract.State(
         selectedDate = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
     )
 ) {
     init {
+        val currentUser = userSession.user.value
+        if (currentUser != null) {
+            val role = userSession.role.value
+            updateState { 
+                copy(
+                    user = currentUser,
+                    isAdmin = role == UserRole.SUPER_ADMIN || role == UserRole.DISTRICT_ADMIN,
+                    isOwner = role == UserRole.OWNER,
+                    userRole = role,
+                    isLoadingUser = false
+                ) 
+            }
+        }
         handleEvent(HomeContract.Event.Load)
     }
 
@@ -329,27 +344,34 @@ class HomeViewModel(
     }
 
     private fun loadUser() {
+        val currentUser = userSession.user.value
+        if (currentUser != null) {
+            val role = userSession.role.value
+            updateState { 
+                copy(
+                    user = currentUser,
+                    isAdmin = role == UserRole.SUPER_ADMIN || role == UserRole.DISTRICT_ADMIN,
+                    isOwner = role == UserRole.OWNER,
+                    userRole = role,
+                    isLoadingUser = false
+                ) 
+            }
+            loadDashboardStats()
+            return
+        }
+
         updateState { copy(isLoadingUser = true) }
         executeAsync {
             val userId = preferencesManager.userId.filter { it != 0 }.first()
             getUserUseCase(userId.toLong()).collect { result ->
-                val isSuperAdmin = result.roles?.any { it.name == "ROLE_SUPER_ADMIN" || it.name == "SUPER_ADMIN" } ?: false
-                val isDistrictAdmin = result.roles?.any { it.name == "ROLE_DISTRICT_ADMIN" } ?: false
-                val isOwner = result.roles?.any { it.name == "ROLE_OWNER" } ?: false
-                
-                val userRole = when {
-                    isSuperAdmin -> UserRole.SUPER_ADMIN
-                    isDistrictAdmin -> UserRole.DISTRICT_ADMIN
-                    isOwner -> UserRole.OWNER
-                    result.roles?.any { it.name?.contains("COACH", ignoreCase = true) == true || it.name?.contains("MURABBIY", ignoreCase = true) == true } == true -> UserRole.COACH
-                    else -> UserRole.fromString(result.roles?.firstOrNull()?.name)
-                }
+                userSession.setUser(result)
+                val userRole = userSession.role.value
 
                 updateState { 
                     copy(
                         user = result,
-                        isAdmin = isSuperAdmin || isDistrictAdmin,
-                        isOwner = isOwner,
+                        isAdmin = userRole == UserRole.SUPER_ADMIN || userRole == UserRole.DISTRICT_ADMIN,
+                        isOwner = userRole == UserRole.OWNER,
                         userRole = userRole,
                         isLoadingUser = false
                     ) 

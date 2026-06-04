@@ -1,6 +1,8 @@
 package uz.coder.foottopbusiness.core.platform
 
+import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
@@ -9,10 +11,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.core.app.NotificationManagerCompat
-import uz.coder.foottopbusiness.core.context.ContextProvider
-
-import kotlin.system.exitProcess
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import com.google.android.gms.location.LocationServices
+import kotlinx.coroutines.tasks.await
+import uz.coder.foottopbusiness.core.context.ContextProvider
+import kotlin.system.exitProcess
 
 class AndroidPlatform : Platform {
     override val name: String = "Android ${Build.VERSION.SDK_INT}"
@@ -77,7 +81,7 @@ actual fun openFile(path: String) {
 
 actual fun makePhoneCall(phoneNumber: String) {
     val context = ContextProvider.getContext()
-    val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phoneNumber")).apply {
+    val intent = Intent(Intent.ACTION_DIAL, phoneNumber.toUri()).apply {
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
     context.startActivity(intent)
@@ -97,16 +101,11 @@ actual suspend fun checkNotificationPermissionStatus(): PermissionStatus {
     return if (NotificationManagerCompat.from(context).areNotificationsEnabled()) {
         PermissionStatus.GRANTED
     } else {
-        // We can't easily know if it's permanently denied without trying to request 
-        // and checking shouldShowRequestPermissionRationale, which requires Activity.
-        // For simplicity, we return DENIED.
         PermissionStatus.DENIED
     }
 }
 
 actual suspend fun requestNotificationPermission(): PermissionStatus {
-    // On Android, this usually needs an Activity to show the dialog.
-    // We will handle the actual request in the UI layer using ActivityResult.
     return checkNotificationPermissionStatus()
 }
 
@@ -133,5 +132,59 @@ actual fun NotificationPermissionLauncher(
                 onResult(PermissionStatus.GRANTED)
             }
         }
+    }
+}
+
+@Composable
+actual fun LocationPermissionLauncher(
+    trigger: Boolean,
+    onResult: (PermissionStatus) -> Unit
+) {
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions.getOrDefault(android.Manifest.permission.ACCESS_FINE_LOCATION, false) ||
+                permissions.getOrDefault(android.Manifest.permission.ACCESS_COARSE_LOCATION, false)
+        onResult(if (granted) PermissionStatus.GRANTED else PermissionStatus.DENIED)
+    }
+
+    LaunchedEffect(trigger) {
+        if (trigger) {
+            launcher.launch(
+                arrayOf(
+                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+    }
+}
+
+actual suspend fun checkLocationPermissionStatus(): PermissionStatus {
+    val context = ContextProvider.getContext()
+    val fine = ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_FINE_LOCATION)
+    val coarse = ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_COARSE_LOCATION)
+    return if (fine == PackageManager.PERMISSION_GRANTED || coarse == PackageManager.PERMISSION_GRANTED) {
+        PermissionStatus.GRANTED
+    } else {
+        PermissionStatus.DENIED
+    }
+}
+
+actual suspend fun requestLocationPermission(): PermissionStatus {
+    return checkLocationPermissionStatus()
+}
+
+@SuppressLint("MissingPermission")
+actual suspend fun getCurrentLocation(): Pair<Double, Double>? {
+    val context = ContextProvider.getContext()
+    if (checkLocationPermissionStatus() != PermissionStatus.GRANTED) return null
+    
+    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+    return try {
+        val location = fusedLocationClient.lastLocation.await()
+        location?.let { it.latitude to it.longitude }
+    } catch (e: Exception) {
+        null
     }
 }

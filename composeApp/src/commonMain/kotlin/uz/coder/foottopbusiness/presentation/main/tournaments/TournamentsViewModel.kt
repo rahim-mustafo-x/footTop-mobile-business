@@ -15,6 +15,8 @@ import uz.coder.foottopbusiness.domain.usecase.stadium.GetRegionsUseCase
 import uz.coder.foottopbusiness.domain.usecase.tournament.CreateTournamentUseCase
 import uz.coder.foottopbusiness.domain.usecase.tournament.UpdateTournamentUseCase
 import uz.coder.foottopbusiness.domain.usecase.tournament.GetTournamentsUseCase
+import uz.coder.foottopbusiness.core.platform.getCurrentLocation
+import uz.coder.foottopbusiness.data.network.dto.stadium.LocationDto
 
 class TournamentsViewModel(
     private val getTournamentsUseCase: GetTournamentsUseCase,
@@ -55,6 +57,9 @@ class TournamentsViewModel(
             is TournamentsContract.Event.SelectDistrict -> updateState { copy(selectedDistrict = event.district, showDistrictDropdown = false) }
             is TournamentsContract.Event.ShowRegionDropdown -> updateState { copy(showRegionDropdown = event.show) }
             is TournamentsContract.Event.ShowDistrictDropdown -> updateState { copy(showDistrictDropdown = event.show) }
+            is TournamentsContract.Event.Latitude -> updateState { copy(latitude = event.value) }
+            is TournamentsContract.Event.Longitude -> updateState { copy(longitude = event.value) }
+            TournamentsContract.Event.GetCurrentLocation -> fetchCurrentLocation()
             is TournamentsContract.Event.Create -> {
                 updateState { copy(isCreating = true, showCreateDialog = false) }
                 executeAsync(
@@ -72,6 +77,10 @@ class TournamentsViewModel(
                                 address = event.address,
                                 startTime = event.startTime,
                                 endTime = event.endTime,
+                                districtId = state.value.selectedDistrict?.id?.toLong(),
+                                location = if (event.latitude != null && event.longitude != null) {
+                                    LocationDto(event.latitude, event.longitude)
+                                } else null
                             )
                         ).collect { result = it }
                         result!!
@@ -104,6 +113,10 @@ class TournamentsViewModel(
                                 address = event.address,
                                 startTime = event.startTime,
                                 endTime = event.endTime,
+                                districtId = state.value.selectedDistrict?.id?.toLong(),
+                                location = if (event.latitude != null && event.longitude != null) {
+                                    LocationDto(event.latitude, event.longitude)
+                                } else null
                             )
                         ).collect { result = it }
                         result!!
@@ -168,6 +181,17 @@ class TournamentsViewModel(
         executeAsync(
             block = { getDistrictsUseCase(region.id).first() },
             onSuccess = { updateState { copy(districts = it) } }
+        )
+    }
+
+    private fun fetchCurrentLocation() {
+        executeAsync(
+            block = { getCurrentLocation() },
+            onSuccess = { location ->
+                location?.let {
+                    updateState { copy(latitude = it.first, longitude = it.second) }
+                } ?: sendEffect(TournamentsContract.Effect.ShowToast("Joylashuvni aniqlab bo'lmadi"))
+            }
         )
     }
 }

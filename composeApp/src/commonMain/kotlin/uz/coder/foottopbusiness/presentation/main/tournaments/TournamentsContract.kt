@@ -25,7 +25,9 @@ sealed interface TournamentsContract {
         val selectedRegion: uz.coder.foottopbusiness.data.network.dto.stadium.RegionDto? = null,
         val selectedDistrict: uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto? = null,
         val showRegionDropdown: Boolean = false,
-        val showDistrictDropdown: Boolean = false
+        val showDistrictDropdown: Boolean = false,
+        val latitude: Double? = null,
+        val longitude: Double? = null
     ) : MviState
 
     sealed interface Effect : MviEffect {
@@ -46,6 +48,9 @@ sealed interface TournamentsContract {
         data class SelectDistrict(val district: uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto) : Event
         data class ShowRegionDropdown(val show: Boolean) : Event
         data class ShowDistrictDropdown(val show: Boolean) : Event
+        data class Latitude(val value: Double?) : Event
+        data class Longitude(val value: Double?) : Event
+        object GetCurrentLocation : Event
 
         data class Create(
             val name: String,
@@ -56,6 +61,8 @@ sealed interface TournamentsContract {
             val address: String?,
             val startTime: String?,
             val endTime: String?,
+            val latitude: Double? = null,
+            val longitude: Double? = null
         ) : Event
 
         data class Update(
@@ -68,6 +75,8 @@ sealed interface TournamentsContract {
             val address: String?,
             val startTime: String?,
             val endTime: String?,
+            val latitude: Double? = null,
+            val longitude: Double? = null
         ) : Event
     }
 }

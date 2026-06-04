@@ -57,6 +57,7 @@ kotlin {
             implementation(libs.firebase.analytics)
             implementation(libs.firebase.messaging)
             implementation(libs.kotlinx.coroutines.play.services)
+            implementation(libs.play.services.location)
         }
         iosMain.dependencies{
             implementation(compose.ui)
@@ -105,6 +106,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.maplibre.compose)
         }
         
         commonTest.dependencies {

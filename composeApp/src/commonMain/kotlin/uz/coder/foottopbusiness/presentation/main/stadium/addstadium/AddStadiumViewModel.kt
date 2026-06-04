@@ -19,6 +19,7 @@ import uz.coder.foottopbusiness.domain.usecase.stadium.SaveRegionIdUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetSavedDistrictIdUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetSavedRegionIdUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.UserIdUseCase
+import uz.coder.foottopbusiness.core.platform.getCurrentLocation
 
 class AddStadiumViewModel(
     private val createStadiumUseCase: CreateStadiumUseCase,
@@ -96,8 +97,23 @@ class AddStadiumViewModel(
             is AddStadiumContract.Event.ShowOwnerDropdown -> updateState { copy(showOwnerDropdown = event.show) }
             is AddStadiumContract.Event.ShowTypeDropdown -> updateState { copy(showTypeDropdown = event.show) }
             is AddStadiumContract.Event.ShowDurationDropdown -> updateState { copy(showDurationDropdown = event.show) }
+            is AddStadiumContract.Event.Latitude -> updateState { copy(latitude = event.value) }
+            is AddStadiumContract.Event.Longitude -> updateState { copy(longitude = event.value) }
+            is AddStadiumContract.Event.PreciseAddress -> updateState { copy(preciseAddress = event.value) }
+            AddStadiumContract.Event.GetCurrentLocation -> fetchCurrentLocation()
             is AddStadiumContract.Event.Save -> save()
         }
+    }
+
+    private fun fetchCurrentLocation() {
+        executeAsync(
+            block = { getCurrentLocation() },
+            onSuccess = { location ->
+                location?.let {
+                    updateState { copy(latitude = it.first, longitude = it.second) }
+                } ?: sendEffect(AddStadiumContract.Effect.ShowToast("Joylashuvni aniqlab bo'lmadi"))
+            }
+        )
     }
 
     private fun loadRegions() {
@@ -210,7 +226,10 @@ class AddStadiumViewModel(
                     regionId = regionId,
                     districtId = districtId,
                     ownerId = s.selectedOwner?.id?.toInt(),
-                    phone = s.phone
+                    phone = s.phone,
+                    latitude = s.latitude,
+                    longitude = s.longitude,
+                    address = s.preciseAddress
                 ).first()
             },
             onSuccess = {

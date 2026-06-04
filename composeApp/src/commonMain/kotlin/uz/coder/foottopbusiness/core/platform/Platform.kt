@@ -29,8 +29,20 @@ expect suspend fun checkNotificationPermissionStatus(): PermissionStatus
 
 expect suspend fun requestNotificationPermission(): PermissionStatus
 
+expect suspend fun checkLocationPermissionStatus(): PermissionStatus
+
+expect suspend fun requestLocationPermission(): PermissionStatus
+
 @Composable
 expect fun NotificationPermissionLauncher(
     trigger: Boolean,
     onResult: (PermissionStatus) -> Unit
 )
+
+@Composable
+expect fun LocationPermissionLauncher(
+    trigger: Boolean,
+    onResult: (PermissionStatus) -> Unit
+)
+
+expect suspend fun getCurrentLocation(): Pair<Double, Double>?

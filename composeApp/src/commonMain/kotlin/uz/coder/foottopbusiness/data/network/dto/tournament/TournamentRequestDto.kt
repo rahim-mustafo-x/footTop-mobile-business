@@ -3,6 +3,8 @@ package uz.coder.foottopbusiness.data.network.dto.tournament
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+import uz.coder.foottopbusiness.data.network.dto.stadium.LocationDto
+
 @Serializable
 data class TournamentRequestDto(
     @SerialName("name") val name: String,
@@ -19,4 +21,5 @@ data class TournamentRequestDto(
     @SerialName("endTime") val endTime: String? = null,     // "HH:mm"
     @SerialName("prizes") val prizes: String? = null,
     @SerialName("rules") val rules: String? = null,
+    @SerialName("location") val location: LocationDto? = null,
 )

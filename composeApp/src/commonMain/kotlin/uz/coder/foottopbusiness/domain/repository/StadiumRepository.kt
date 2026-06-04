@@ -21,6 +21,9 @@ interface StadiumRepository {
         districtId: Int,
         ownerId: Int? = null,
         phone: String? = null,
+        latitude: Double? = null,
+        longitude: Double? = null,
+        address: String? = null,
     ): Flow<StadiumResponse>
 
     fun updateStadium(
@@ -39,6 +42,9 @@ interface StadiumRepository {
         isActive: Boolean = true,
         ownerId: Int? = null,
         phone: String? = null,
+        latitude: Double? = null,
+        longitude: Double? = null,
+        address: String? = null,
     ): Flow<StadiumResponse>
 
     fun getStadiums(

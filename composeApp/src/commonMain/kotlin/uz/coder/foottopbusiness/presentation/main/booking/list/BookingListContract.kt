@@ -8,7 +8,10 @@ import uz.coder.foottopbusiness.data.network.dto.booking.BookingResponseDto
 sealed interface BookingListContract {
     data class State(
         val bookings: List<BookingResponseDto> = emptyList(),
+        val filteredBookings: List<BookingResponseDto> = emptyList(),
+        val selectedTab: Int = 0, // 0: All, 1: Upcoming, 2: Active, 3: Completed, 4: Cancelled
         val isLoading: Boolean = false,
+        val isRefreshing: Boolean = false,
         val showCancelDialog: Boolean = false,
         val cancelReason: String = "",
         val bookingToCancel: Long? = null,
@@ -20,11 +23,14 @@ sealed interface BookingListContract {
     sealed interface Effect : MviEffect {
         data class ShowToast(val message: String) : Effect
         object NavigateBack : Effect
+        data class NavigateToDetails(val booking: BookingResponseDto) : Effect
     }
 
     sealed interface Event : MviEvent {
         object Refresh : Event
         object BackClick : Event
+        data class ChangeTab(val index: Int) : Event
+        data class SelectBooking(val booking: BookingResponseDto) : Event
         data class OpenCancelDialog(val bookingId: Long) : Event
         object DismissCancelDialog : Event
         data class UpdateCancelReason(val reason: String) : Event

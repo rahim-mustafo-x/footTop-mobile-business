@@ -25,6 +25,9 @@ kotlinx-coroutines = "1.11.0"
 ktor = "3.5.0"
 androidx-datastore = "1.2.1"
 coreKtx = "1.7.0"
+google-maps = "6.4.4"
+play-services-location = "21.3.0"
+maplibre-compose = "0.13.0"
 
 
 [libraries]
@@ -86,6 +89,9 @@ androidx-datastore-preferences = { module = "androidx.datastore:datastore-prefer
 core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "coreKtx" }
 kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinx-coroutines" }
+play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "play-services-location" }
+maplibre-compose = { module = "org.maplibre.compose:maplibre-compose", version.ref = "maplibre-compose" }
+google-maps-compose = { module = "com.google.maps.android:maps-compose", version.ref = "google-maps" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

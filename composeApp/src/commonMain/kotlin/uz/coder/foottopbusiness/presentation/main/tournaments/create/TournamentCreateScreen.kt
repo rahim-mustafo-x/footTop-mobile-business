@@ -89,6 +89,8 @@ import uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.RegionDto
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsContract
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsViewModel
+import uz.coder.foottopbusiness.presentation.main.stadium.edit.components.LocationPicker
+import uz.coder.foottopbusiness.presentation.main.stadium.edit.MapSelectionScreen
 import kotlin.time.Instant
 
 class TournamentCreateScreen : Screen {
@@ -108,6 +110,8 @@ class TournamentCreateScreen : Screen {
         var maxTeams by remember { mutableStateOf("") }
         var entryFee by remember { mutableStateOf("") }
         var address by remember { mutableStateOf("") }
+        var latitude by remember { mutableStateOf<Double?>(null) }
+        var longitude by remember { mutableStateOf<Double?>(null) }
 
         var showStartDatePicker by remember { mutableStateOf(false) }
         var showEndDatePicker by remember { mutableStateOf(false) }
@@ -282,6 +286,34 @@ class TournamentCreateScreen : Screen {
                     )
                 }
 
+                // Location Card
+                CreateCard(title = strings.location, icon = Icons.Default.LocationOn) {
+                    LocationPicker(
+                        latitude = latitude,
+                        longitude = longitude,
+                        address = address,
+                        onLatitudeChange = { latitude = it.toDoubleOrNull() },
+                        onLongitudeChange = { longitude = it.toDoubleOrNull() },
+                        onAddressChange = { address = it },
+                        onSelectOnMap = {
+                            navigator.push(MapSelectionScreen(latitude, longitude) { lat, lng ->
+                                latitude = lat
+                                longitude = lng
+                            })
+                        },
+                        onGetCurrentLocation = {
+                            viewModel.handleEvent(TournamentsContract.Event.GetCurrentLocation)
+                        }
+                    )
+                }
+
+                LaunchedEffect(state.latitude, state.longitude) {
+                    if (state.latitude != null && state.longitude != null) {
+                        latitude = state.latitude
+                        longitude = state.longitude
+                    }
+                }
+
                 // Date and Time Card
                 CreateCard(title = "${strings.tournamentDate} & ${strings.tournamentTime}", icon = Icons.Default.CalendarToday) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -404,7 +436,9 @@ class TournamentCreateScreen : Screen {
                                 entryFee.toDoubleOrNull() ?: 0.0,
                                 formattedAddress.takeIf { it.isNotBlank() },
                                 startTime.takeIf { it.isNotBlank() },
-                                endTime.takeIf { it.isNotBlank() }
+                                endTime.takeIf { it.isNotBlank() },
+                                latitude = latitude,
+                                longitude = longitude
                             )
                         )
                         navigator.pop()

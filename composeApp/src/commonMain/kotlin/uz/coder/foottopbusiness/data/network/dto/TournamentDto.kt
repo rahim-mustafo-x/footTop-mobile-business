@@ -3,6 +3,22 @@ package uz.coder.foottopbusiness.data.network.dto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+import uz.coder.foottopbusiness.data.network.dto.stadium.LocationDto
+
+@Serializable
+data class TimeDto(
+    @SerialName("hour") val hour: Int? = 0,
+    @SerialName("minute") val minute: Int? = 0,
+    @SerialName("second") val second: Int? = 0,
+    @SerialName("nano") val nano: Int? = 0
+) {
+    fun toFormattedString(): String {
+        val h = hour?.toString()?.padStart(2, '0') ?: "00"
+        val m = minute?.toString()?.padStart(2, '0') ?: "00"
+        return "$h:$m"
+    }
+}
+
 @Serializable
 data class TournamentResponseDto(
     @SerialName("id") val id: Long? = null,
@@ -20,4 +36,5 @@ data class TournamentResponseDto(
     @SerialName("startTime") val startTime: String? = null,
     @SerialName("endTime") val endTime: String? = null,
     @SerialName("prizes") val prizes: String? = null,
+    @SerialName("location") val location: LocationDto? = null,
 )

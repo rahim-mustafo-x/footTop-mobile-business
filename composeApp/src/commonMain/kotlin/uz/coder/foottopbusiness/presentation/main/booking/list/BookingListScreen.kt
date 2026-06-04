@@ -13,7 +13,9 @@ import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,54 +24,108 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.data.network.dto.booking.BookingResponseDto
 import uz.coder.foottopbusiness.core.toLocalDateTimeSafe
 import uz.coder.foottopbusiness.core.formatToTime
 import uz.coder.foottopbusiness.core.visualTransformation.formatPhoneNumber
 
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import uz.coder.foottopbusiness.presentation.main.booking.details.BookingDetailsScreen
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookingListScreen(viewModel: BookingListViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val navigator = LocalNavigator.currentOrThrow
     val strings = Localization.current
+
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                BookingListContract.Effect.NavigateBack -> onBack()
+                is BookingListContract.Effect.ShowToast -> { /* Show toast */ }
+                is BookingListContract.Effect.NavigateToDetails -> {
+                    navigator.push(BookingDetailsScreen(effect.booking))
+                }
+            }
+        }
+    }
+    val tabs = listOf("Barchasi", "Kelgusi", "Faol", "Yakunlangan", "Bekor qilingan")
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Bronlar ro'yxati", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+            Column(modifier = Modifier.background(MaterialTheme.colorScheme.primary)) {
+                TopAppBar(
+                    title = { Text("Bronlar ro'yxati", fontWeight = FontWeight.Bold) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 )
-            )
+                ScrollableTabRow(
+                    selectedTabIndex = state.selectedTab,
+                    containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    edgePadding = 16.dp,
+                    divider = {},
+                    indicator = { tabPositions ->
+                        TabRowDefaults.SecondaryIndicator(
+                            modifier = Modifier.tabIndicatorOffset(tabPositions[state.selectedTab]),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                ) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = state.selectedTab == index,
+                            onClick = { viewModel.handleEvent(BookingListContract.Event.ChangeTab(index)) },
+                            text = { Text(title, fontSize = 13.sp) }
+                        )
+                    }
+                }
+            }
         }
     ) { paddingValues ->
-        if (state.isLoading) {
-            Box(Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        } else if (state.bookings.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
-                Text("Hozircha bronlar yo'q", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(paddingValues),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(state.bookings) { booking ->
-                    BookingItem(
-                        booking = booking,
-                        onCancelClick = { booking.id?.let { viewModel.handleEvent(BookingListContract.Event.OpenCancelDialog(it)) } }
-                    )
+        PullToRefreshBox(
+            isRefreshing = state.isRefreshing,
+            onRefresh = { viewModel.handleEvent(BookingListContract.Event.Refresh) },
+            modifier = Modifier.fillMaxSize().padding(paddingValues)
+        ) {
+            if (state.isLoading && !state.isRefreshing) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                val bookings = state.filteredBookings
+                
+                if (bookings.isEmpty()) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Hozircha bronlar yo'q", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(bookings) { booking ->
+                            BookingItem(
+                                booking = booking,
+                                onCancelClick = { booking.id?.let { viewModel.handleEvent(BookingListContract.Event.OpenCancelDialog(it)) } },
+                                onClick = { viewModel.handleEvent(BookingListContract.Event.SelectBooking(booking)) }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -114,9 +170,9 @@ fun BookingListScreen(viewModel: BookingListViewModel, onBack: () -> Unit) {
 }
 
 @Composable
-fun BookingItem(booking: BookingResponseDto, onCancelClick: () -> Unit) {
+fun BookingItem(booking: BookingResponseDto, onCancelClick: () -> Unit, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)

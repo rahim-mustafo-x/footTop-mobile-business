@@ -65,6 +65,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.compose.AsyncImage
 import uz.coder.foottopbusiness.core.BackHandler
 import uz.coder.foottopbusiness.domain.model.UserRole
@@ -74,11 +76,13 @@ import uz.coder.foottopbusiness.presentation.main.stadium.addstadium.TimePickerD
 
 import uz.coder.foottopbusiness.core.localization.ErrorMapper
 import uz.coder.foottopbusiness.core.localization.Localization
+import uz.coder.foottopbusiness.presentation.main.stadium.edit.components.LocationPicker
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditStadiumScreen(viewModel: EditStadiumViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val navigator = LocalNavigator.currentOrThrow
     val focusManager = LocalFocusManager.current
     val hostState = remember { SnackbarHostState() }
     val strings = Localization.current
@@ -405,6 +409,25 @@ fun EditStadiumScreen(viewModel: EditStadiumViewModel, onBack: () -> Unit) {
                     showCloseTimePicker = true
                 }
             }
+            Spacer(Modifier.height(24.dp))
+            LocationPicker(
+                latitude = state.latitude,
+                longitude = state.longitude,
+                address = state.preciseAddress,
+                onLatitudeChange = { viewModel.handleEvent(EditStadiumContract.Event.Latitude(it.toDoubleOrNull())) },
+                onLongitudeChange = { viewModel.handleEvent(EditStadiumContract.Event.Longitude(it.toDoubleOrNull())) },
+                onAddressChange = { viewModel.handleEvent(EditStadiumContract.Event.PreciseAddress(it)) },
+                onSelectOnMap = { 
+                    navigator.push(MapSelectionScreen(state.latitude, state.longitude) { lat, lng ->
+                        viewModel.handleEvent(EditStadiumContract.Event.Latitude(lat))
+                        viewModel.handleEvent(EditStadiumContract.Event.Longitude(lng))
+                    })
+                },
+                onGetCurrentLocation = {
+                    viewModel.handleEvent(EditStadiumContract.Event.GetCurrentLocation)
+                }
+            )
+
             Spacer(Modifier.height(32.dp))
 
             Button(

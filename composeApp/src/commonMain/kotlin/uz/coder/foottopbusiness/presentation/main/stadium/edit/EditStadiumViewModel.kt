@@ -9,6 +9,7 @@ import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.RegionDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
+import uz.coder.foottopbusiness.core.platform.getCurrentLocation
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.domain.repository.UserRepository
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetDistrictsUseCase
@@ -37,6 +38,9 @@ class EditStadiumViewModel(
         // Note: images are handled differently in StadiumResponse vs CreateRequest
         // For simplicity assuming first image or empty
         imageUrl = "",
+        latitude = stadium.location?.latitude,
+        longitude = stadium.location?.longitude,
+        preciseAddress = stadium.name ?: "", // Or some other field if available
         type = try { StadiumType.valueOf(stadium.type ?: "FOOTBALL") } catch (_: Exception) { StadiumType.FOOTBALL },
         duration = try { StadiumDuration.valueOf(stadium.duration ?: "SIXTY") } catch (_: Exception) { StadiumDuration.SIXTY }
     )
@@ -91,8 +95,23 @@ class EditStadiumViewModel(
             is EditStadiumContract.Event.ShowOwnerDropdown -> updateState { copy(showOwnerDropdown = event.show) }
             is EditStadiumContract.Event.ShowTypeDropdown -> updateState { copy(showTypeDropdown = event.show) }
             is EditStadiumContract.Event.ShowDurationDropdown -> updateState { copy(showDurationDropdown = event.show) }
+            is EditStadiumContract.Event.Latitude -> updateState { copy(latitude = event.value) }
+            is EditStadiumContract.Event.Longitude -> updateState { copy(longitude = event.value) }
+            is EditStadiumContract.Event.PreciseAddress -> updateState { copy(preciseAddress = event.value) }
+            EditStadiumContract.Event.GetCurrentLocation -> fetchCurrentLocation()
             is EditStadiumContract.Event.Save -> save()
         }
+    }
+
+    private fun fetchCurrentLocation() {
+        executeAsync(
+            block = { getCurrentLocation() },
+            onSuccess = { location ->
+                location?.let {
+                    updateState { copy(latitude = it.first, longitude = it.second) }
+                } ?: sendEffect(EditStadiumContract.Effect.ShowToast("Joylashuvni aniqlab bo'lmadi"))
+            }
+        )
     }
 
     private fun loadRegions() {
@@ -141,7 +160,10 @@ class EditStadiumViewModel(
                     regionId = s.selectedRegion?.id ?: 0,
                     districtId = s.selectedDistrict?.id ?: 0,
                     ownerId = s.selectedOwner?.id?.toInt(),
-                    phone = s.phone
+                    phone = s.phone,
+                    latitude = s.latitude,
+                    longitude = s.longitude,
+                    address = s.preciseAddress
                 ).first()
             },
             onSuccess = {

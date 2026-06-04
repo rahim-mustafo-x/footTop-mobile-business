@@ -3,6 +3,7 @@ package uz.coder.foottopbusiness.di
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import uz.coder.foottopbusiness.core.SessionManager
+import uz.coder.foottopbusiness.core.UserSession
 import uz.coder.foottopbusiness.data.network.*
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.data.repository.*
@@ -60,6 +61,7 @@ import uz.coder.foottopbusiness.presentation.splash.SplashViewModel
 
 val appModule = module {
     // core
+    single { UserSession() }
     single { SessionManager(get()) }
     single { HttpClientFactory(get(), get()) }
     single { get<HttpClientFactory>().create() }
@@ -126,9 +128,9 @@ val appModule = module {
 
 
     // viewModels
-    factory { SplashViewModel(get(), get(), get()) }
+    factory { SplashViewModel(get(), get(), get(), get()) }
     factory { LoginViewModel(get(), get(), get(), get()) }
-    factory { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    factory { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { StadiumViewModel(get(), get(), get(), get()) }
     factory { AddStadiumViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { (stadium: StadiumResponse) -> EditStadiumViewModel(stadium, get(), get(), get(), get(), get()) }

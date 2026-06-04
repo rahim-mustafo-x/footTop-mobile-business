@@ -25,6 +25,7 @@ data class CreateStadiumRequest(
 data class LocationDto(
     @SerialName("latitude") val latitude: Double? = 0.0,
     @SerialName("longitude") val longitude: Double? = 0.0,
+    @SerialName("address") val address: String? = null,
 ) : KmpSerializable
 
 @Serializable

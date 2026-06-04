@@ -48,6 +48,9 @@ sealed interface AddStadiumContract {
         val showDurationDropdown: Boolean = false,
         val isLoading: Boolean = false,
         val error: String? = null,
+        val latitude: Double? = null,
+        val longitude: Double? = null,
+        val preciseAddress: String = ""
     ) : MviState
 
     sealed interface Effect : MviEffect {
@@ -74,6 +77,10 @@ sealed interface AddStadiumContract {
         data class ShowOwnerDropdown(val show: Boolean) : Event
         data class ShowTypeDropdown(val show: Boolean) : Event
         data class ShowDurationDropdown(val show: Boolean) : Event
+        data class Latitude(val value: Double?) : Event
+        data class Longitude(val value: Double?) : Event
+        data class PreciseAddress(val value: String) : Event
+        object GetCurrentLocation : Event
         object Save : Event
     }
 }

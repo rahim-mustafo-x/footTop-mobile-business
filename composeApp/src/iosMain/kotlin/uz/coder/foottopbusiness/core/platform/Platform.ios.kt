@@ -12,6 +12,10 @@ import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import platform.CoreLocation.*
+import platform.darwin.NSObject
+import platform.Foundation.NSError
+import kotlinx.cinterop.*
 
 class IOSPlatform: Platform {
     override val name: String = UIDevice.currentDevice.systemName() + " " + UIDevice.currentDevice.systemVersion
@@ -96,3 +100,82 @@ actual fun NotificationPermissionLauncher(
     }
 }
 
+actual suspend fun checkLocationPermissionStatus(): PermissionStatus {
+    val status = CLLocationManager.authorizationStatus()
+    return when (status) {
+        kCLAuthorizationStatusAuthorizedAlways, kCLAuthorizationStatusAuthorizedWhenInUse -> PermissionStatus.GRANTED
+        kCLAuthorizationStatusDenied, kCLAuthorizationStatusRestricted -> PermissionStatus.DENIED
+        else -> PermissionStatus.DENIED
+    }
+}
+
+actual suspend fun requestLocationPermission(): PermissionStatus {
+    val locationManager = CLLocationManager()
+    locationManager.requestWhenInUseAuthorization()
+    return checkLocationPermissionStatus()
+}
+
+@Composable
+actual fun LocationPermissionLauncher(
+    trigger: Boolean,
+    onResult: (PermissionStatus) -> Unit
+) {
+    LaunchedEffect(trigger) {
+        if (trigger) {
+            onResult(requestLocationPermission())
+        }
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private class LocationDelegate(
+    private val onLocationUpdate: (Pair<Double, Double>?) -> Unit
+) : NSObject(), CLLocationManagerDelegateProtocol {
+    override fun locationManager(manager: CLLocationManager, didUpdateLocations: List<*>) {
+        val location = didUpdateLocations.lastOrNull() as? CLLocation
+        if (location != null) {
+            location.coordinate.useContents {
+                onLocationUpdate(latitude to longitude)
+            }
+        }
+    }
+
+    override fun locationManager(manager: CLLocationManager, didFailWithError: NSError) {
+        onLocationUpdate(null)
+    }
+    
+    override fun locationManager(manager: CLLocationManager, didChangeAuthorizationStatus: CLAuthorizationStatus) {
+        if (didChangeAuthorizationStatus == kCLAuthorizationStatusAuthorizedAlways || 
+            didChangeAuthorizationStatus == kCLAuthorizationStatusAuthorizedWhenInUse) {
+            manager.startUpdatingLocation()
+        } else if (didChangeAuthorizationStatus == kCLAuthorizationStatusDenied || 
+                   didChangeAuthorizationStatus == kCLAuthorizationStatusRestricted) {
+            onLocationUpdate(null)
+        }
+    }
+}
+
+actual suspend fun getCurrentLocation(): Pair<Double, Double>? = suspendCancellableCoroutine { continuation ->
+    val locationManager = CLLocationManager()
+    val delegate = LocationDelegate { location ->
+        locationManager.stopUpdatingLocation()
+        if (continuation.isActive) {
+            continuation.resume(location)
+        }
+    }
+    locationManager.delegate = delegate
+    
+    val status = CLLocationManager.authorizationStatus()
+    if (status == kCLAuthorizationStatusNotDetermined) {
+        locationManager.requestWhenInUseAuthorization()
+    } else if (status == kCLAuthorizationStatusAuthorizedAlways || status == kCLAuthorizationStatusAuthorizedWhenInUse) {
+        locationManager.startUpdatingLocation()
+    } else {
+        continuation.resume(null)
+    }
+
+    continuation.invokeOnCancellation {
+        locationManager.stopUpdatingLocation()
+        locationManager.delegate = null
+    }
+}
