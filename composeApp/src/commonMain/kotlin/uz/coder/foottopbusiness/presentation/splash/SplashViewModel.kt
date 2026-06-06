@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import uz.coder.foottopbusiness.core.UserSession
 import uz.coder.foottopbusiness.data.local.PreferencesManager
+import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.domain.usecase.auth.IsLoginInUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
 
@@ -40,11 +41,16 @@ class SplashViewModel(
                     if (userId != 0) {
                         val user = getUserUseCase(userId.toLong()).first()
                         userSession.setUser(user)
+                        
+                        // Sync role to preferences to prevent UI glitches in other screens
+                        val determinedRole = userSession.role.value
+                        if (determinedRole != UserRole.UNKNOWN) {
+                            preferencesManager.setRole(determinedRole.roleName)
+                        }
                     }
                 } catch (e: Exception) {
-                    // If we can't load user info, we might want to logout or try again
-                    // For now, if logged in, we try to proceed, but if user data is critical, 
-                    // we could stay on Splash or go to Login.
+                    // If we can't load user info, we might want to check if token is still valid
+                    // For now, if logged in, we try to proceed to main screen
                 }
                 delayJob.join()
                 _navigationEvent.emit(SplashNavigationEvent.NavigateToMain)

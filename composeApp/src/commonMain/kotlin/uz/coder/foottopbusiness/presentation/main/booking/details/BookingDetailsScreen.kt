@@ -68,7 +68,6 @@ class BookingDetailsScreen(private val booking: BookingResponseDto) : Screen {
                     val start = booking.startTime.toLocalDateTimeSafe()
                     DetailRow(Icons.Default.CalendarToday, "Sana", start?.date?.toString() ?: "—")
                     DetailRow(Icons.Default.AccessTime, "Vaqt", "${booking.startTime.formatToTime()} - ${booking.endTime.formatToTime()}")
-                    DetailRow(Icons.Default.Stadium, "Stadion ID", booking.stadiumId?.toString() ?: "—")
                 }
 
                 // Payment Info

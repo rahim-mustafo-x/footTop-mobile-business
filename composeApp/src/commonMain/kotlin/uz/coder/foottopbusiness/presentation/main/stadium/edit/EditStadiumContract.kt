@@ -43,6 +43,7 @@ sealed interface EditStadiumContract {
         val showDurationDropdown: Boolean = false,
         val isLoading: Boolean = false,
         val error: String? = null,
+        val triggerLocationPermission: Boolean = false
     ) : MviState
 
     sealed interface Effect : MviEffect {
@@ -73,6 +74,8 @@ sealed interface EditStadiumContract {
         data class Longitude(val value: Double?) : Event
         data class PreciseAddress(val value: String) : Event
         object GetCurrentLocation : Event
+        data class OnLocationPermissionResult(val status: uz.coder.foottopbusiness.core.platform.PermissionStatus) : Event
+        data class TriggerLocationPermission(val trigger: Boolean) : Event
         object Save : Event
     }
 }

@@ -162,16 +162,21 @@ class StadiumDetailsViewModel(
                 refreshStadium()
             }
             is StadiumDetailsContract.Event.CreateBooking -> {
+                if (state.value.bookerName.isBlank() || state.value.bookerPhone.length < 9) {
+                    updateState { copy(showBookerErrors = true) }
+                    sendEffect(StadiumDetailsContract.Effect.ShowToast("Iltimos, ma'lumotlarni to'liq kiriting"))
+                    return
+                }
                 bookSelectedSlots(event)
             }
             StadiumDetailsContract.Event.DismissBookingResultDialog -> {
                 updateState { copy(showBookingResultDialog = false) }
             }
             is StadiumDetailsContract.Event.UpdateBookerName -> {
-                updateState { copy(bookerName = event.name) }
+                updateState { copy(bookerName = event.name, showBookerErrors = false) }
             }
             is StadiumDetailsContract.Event.UpdateBookerPhone -> {
-                updateState { copy(bookerPhone = event.phone) }
+                updateState { copy(bookerPhone = event.phone, showBookerErrors = false) }
             }
             is StadiumDetailsContract.Event.OpenCancelDialog -> {
                 updateState { copy(showCancelDialog = true, bookingToCancel = event.bookingId, cancelReason = "") }

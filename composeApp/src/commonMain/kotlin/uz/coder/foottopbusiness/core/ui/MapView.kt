@@ -3,8 +3,10 @@ package uz.coder.foottopbusiness.core.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpOffset
@@ -16,6 +18,8 @@ import org.maplibre.spatialk.geojson.Position
 import org.maplibre.compose.util.ClickResult
 import org.maplibre.compose.style.BaseStyle
 import kotlin.time.Duration.Companion.milliseconds
+import uz.coder.foottopbusiness.core.platform.getCurrentLocation
+import kotlinx.coroutines.launch
 
 @Composable
 fun MapView(
@@ -26,6 +30,7 @@ fun MapView(
 ) {
     val tashkentLat = 41.311081
     val tashkentLng = 69.240562
+    val scope = rememberCoroutineScope()
 
     val currentLat = initialLatitude ?: tashkentLat
     val currentLng = initialLongitude ?: tashkentLng
@@ -60,6 +65,33 @@ fun MapView(
                 ClickResult.Consume
             }
         )
+
+        // My Location FAB inside MapView
+        SmallFloatingActionButton(
+            onClick = {
+                scope.launch {
+                    val loc = getCurrentLocation()
+                    loc?.let {
+                        onLocationSelected(it.first, it.second)
+                        cameraState.animateTo(
+                            CameraPosition(
+                                target = Position(longitude = it.second, latitude = it.first),
+                                zoom = 15.0
+                            ),
+                            duration = 1000.milliseconds
+                        )
+                    }
+                }
+            },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.primary,
+            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 2.dp)
+        ) {
+            Icon(Icons.Default.MyLocation, contentDescription = "My Location", modifier = Modifier.size(20.dp))
+        }
 
         // Custom Compose Marker Overlay
         if (initialLatitude != null && initialLongitude != null) {

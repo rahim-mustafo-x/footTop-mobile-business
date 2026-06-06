@@ -1,92 +1,43 @@
 package uz.coder.foottopbusiness.presentation.main.stadium.addstadium
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AddPhotoAlternate
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Person
-import uz.coder.foottopbusiness.domain.model.UserRole
-import uz.coder.foottopbusiness.data.network.dto.UserDto
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.TimePickerDefaults
-import androidx.compose.material3.rememberTimePickerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import uz.coder.foottopbusiness.core.BackHandler
 import uz.coder.foottopbusiness.core.localization.ErrorMapper
 import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.log
+import uz.coder.foottopbusiness.core.platform.LocationPermissionLauncher
 import uz.coder.foottopbusiness.core.visualTransformation.AmountTransformation
 import uz.coder.foottopbusiness.core.visualTransformation.PhoneTransformation
-import uz.coder.foottopbusiness.presentation.main.stadium.edit.components.LocationPicker
+import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.stadium.edit.MapSelectionScreen
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import uz.coder.foottopbusiness.presentation.main.stadium.edit.components.LocationPicker
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,6 +48,13 @@ fun AddStadiumScreen(viewModel: AddStadiumViewModel, onBack: () -> Unit) {
     val strings = Localization.current
 
     BackHandler { onBack() }
+
+    LocationPermissionLauncher(
+        trigger = state.triggerLocationPermission,
+        onResult = { status ->
+            viewModel.handleEvent(AddStadiumContract.Event.OnLocationPermissionResult(status))
+        }
+    )
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
@@ -200,284 +158,206 @@ fun AddStadiumScreen(viewModel: AddStadiumViewModel, onBack: () -> Unit) {
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            val locationError = state.showErrors && (state.selectedRegion == null || state.selectedDistrict == null || state.name.isBlank())
+            
+            PremiumCard(
+                title = strings.locationInfo,
+                icon = Icons.Outlined.LocationOn,
+                isError = locationError
             ) {
                 Column(
-                    modifier = Modifier.padding(20.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.LocationOn,
-                            null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            strings.locationInfo,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    RegionDropdown(state, viewModel, isError = state.showErrors && state.selectedRegion == null)
+                    DistrictDropdown(state, viewModel, isError = state.showErrors && state.selectedDistrict == null)
+                }
 
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        RegionDropdown(state, viewModel)
-                        DistrictDropdown(state, viewModel)
-                    }
+                LabelAndField(
+                    strings.tournamentName,
+                    state.name,
+                    "Stadion nomi",
+                    icon = Icons.Outlined.Edit,
+                    isError = state.showErrors && state.name.isBlank()
+                ) {
+                    viewModel.handleEvent(AddStadiumContract.Event.Name(it))
+                }
 
-                    LabelAndField(
-                        strings.preciseAddress,
-                        state.preciseAddress,
-                        strings.addressPlaceholder,
-                        icon = Icons.Default.Map
-                    ) {
-                        viewModel.handleEvent(AddStadiumContract.Event.PreciseAddress(it))
-                    }
+                LabelAndField(
+                    strings.preciseAddress,
+                    state.preciseAddress,
+                    strings.addressPlaceholder,
+                    icon = Icons.Outlined.Map
+                ) {
+                    viewModel.handleEvent(AddStadiumContract.Event.PreciseAddress(it))
+                }
 
-                    LabelAndField(
-                        strings.phoneNumber,
-                        state.phone,
-                        "901234567",
-                        keyboardType = KeyboardType.Phone,
-                        icon = Icons.Default.Phone,
-                        visualTransformation = PhoneTransformation()
-                    ) {
-                        if (it.length <= 9) {
-                            viewModel.handleEvent(AddStadiumContract.Event.Phone(it))
-                        }
+                LabelAndField(
+                    strings.phoneNumber,
+                    state.phone,
+                    "901234567",
+                    keyboardType = KeyboardType.Phone,
+                    icon = Icons.Outlined.Phone,
+                    visualTransformation = PhoneTransformation()
+                ) {
+                    if (it.length <= 9) {
+                        viewModel.handleEvent(AddStadiumContract.Event.Phone(it))
                     }
                 }
             }
 
             if (state.userRole == UserRole.SUPER_ADMIN || state.userRole == UserRole.DISTRICT_ADMIN) {
-                Card(
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                PremiumCard(
+                    title = strings.assignOwner,
+                    icon = Icons.Outlined.Person
                 ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.Person,
-                                null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
+                    OwnerDropdown(state, viewModel)
+                }
+            }
+
+            val technicalError = state.showErrors && (state.description.isBlank() || state.capacity.isBlank() || state.pricePerHour.isBlank())
+
+            PremiumCard(
+                title = strings.technicalInfo,
+                icon = Icons.Outlined.Info,
+                isError = technicalError
+            ) {
+                LabelAndField(
+                    "${strings.description} (ixtiyoriy)",
+                    state.description,
+                    "Stadion haqida qo'shimcha ma'lumot...",
+                    singleLine = false,
+                    icon = Icons.Outlined.Description,
+                    isError = false
+                ) {
+                    viewModel.handleEvent(AddStadiumContract.Event.Description(it))
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        LabelAndField(
+                            strings.fieldCapacity,
+                            state.capacity,
+                            "3",
+                            KeyboardType.Number,
+                            icon = Icons.Outlined.GridView,
+                            isError = state.showErrors && state.capacity.isBlank()
+                        ) {
+                            viewModel.handleEvent(AddStadiumContract.Event.Capacity(it))
+                        }
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        SportTypeDropdown(state, viewModel)
+                    }
+                }
+
+                LabelAndField(
+                    strings.hourlyPrice,
+                    state.pricePerHour,
+                    "50 000",
+                    KeyboardType.Number,
+                    icon = Icons.Outlined.Payments,
+                    visualTransformation = AmountTransformation(),
+                    isError = state.showErrors && state.pricePerHour.isBlank()
+                ) {
+                    viewModel.handleEvent(AddStadiumContract.Event.PricePerHour(it))
+                }
+            }
+
+            PremiumCard(
+                title = "Xaritada joylashuv",
+                icon = Icons.Outlined.Map
+            ) {
+                LocationPicker(
+                    latitude = state.latitude,
+                    longitude = state.longitude,
+                    address = state.preciseAddress,
+                    onLatitudeChange = { viewModel.handleEvent(AddStadiumContract.Event.Latitude(it.toDoubleOrNull())) },
+                    onLongitudeChange = { viewModel.handleEvent(AddStadiumContract.Event.Longitude(it.toDoubleOrNull())) },
+                    onAddressChange = { viewModel.handleEvent(AddStadiumContract.Event.PreciseAddress(it)) },
+                    onSelectOnMap = {
+                        navigator.push(MapSelectionScreen(state.latitude, state.longitude) { lat, lng ->
+                            viewModel.handleEvent(AddStadiumContract.Event.Latitude(lat))
+                            viewModel.handleEvent(AddStadiumContract.Event.Longitude(lng))
+                        })
+                    }
+                )
+            }
+
+            PremiumCard(
+                title = strings.workingHoursAndImages,
+                icon = Icons.Outlined.Schedule
+            ) {
+                Column {
+                    Text(
+                        strings.workingHours,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                            .border(
+                                1.dp,
+                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                                RoundedCornerShape(16.dp)
                             )
-                            Spacer(Modifier.width(8.dp))
+                            .padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            state.openTime.ifBlank { "08:00" },
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.clickable { showOpenTimePicker = true }.weight(1f)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text(
-                                strings.assignOwner,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 18.sp,
+                                "-",
+                                color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.Bold
                             )
                         }
-
-                        OwnerDropdown(state, viewModel)
-                    }
-                }
-            }
-
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Info,
-                            null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
                         Text(
-                            strings.technicalInfo,
+                            state.closeTime.ifBlank { "22:00" },
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
+                            modifier = Modifier.clickable { showCloseTimePicker = true }.weight(1f),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.End
                         )
-                    }
-
-                    LabelAndField(
-                        strings.description,
-                        state.description,
-                        "Stadion haqida qo'shimcha ma'lumot...",
-                        singleLine = false,
-                        icon = Icons.Default.Description
-                    ) {
-                        viewModel.handleEvent(AddStadiumContract.Event.Description(it))
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Box(modifier = Modifier.weight(1f)) {
-                            LabelAndField(
-                                strings.fieldCapacity,
-                                state.capacity,
-                                "3",
-                                KeyboardType.Number,
-                                icon = Icons.Default.GridView
-                            ) {
-                                viewModel.handleEvent(AddStadiumContract.Event.Capacity(it))
-                            }
-                        }
-                        Box(modifier = Modifier.weight(1f)) {
-                            SportTypeDropdown(state, viewModel)
-                        }
-                    }
-
-                    LabelAndField(
-                        strings.hourlyPrice,
-                        state.pricePerHour,
-                        "50 000",
-                        KeyboardType.Number,
-                        icon = Icons.Default.Payments,
-                        visualTransformation = AmountTransformation()
-                    ) {
-                        viewModel.handleEvent(AddStadiumContract.Event.PricePerHour(it))
                     }
                 }
-            }
 
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                Button(
+                    onClick = { /* TODO: Image picker */ },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
                 ) {
-                    LocationPicker(
-                        latitude = state.latitude,
-                        longitude = state.longitude,
-                        address = state.preciseAddress,
-                        onLatitudeChange = { viewModel.handleEvent(AddStadiumContract.Event.Latitude(it.toDoubleOrNull())) },
-                        onLongitudeChange = { viewModel.handleEvent(AddStadiumContract.Event.Longitude(it.toDoubleOrNull())) },
-                        onAddressChange = { viewModel.handleEvent(AddStadiumContract.Event.PreciseAddress(it)) },
-                        onSelectOnMap = {
-                            navigator.push(MapSelectionScreen(state.latitude, state.longitude) { lat, lng ->
-                                viewModel.handleEvent(AddStadiumContract.Event.Latitude(lat))
-                                viewModel.handleEvent(AddStadiumContract.Event.Longitude(lng))
-                            })
-                        },
-                        onGetCurrentLocation = {
-                            viewModel.handleEvent(AddStadiumContract.Event.GetCurrentLocation)
-                        }
-                    )
-                }
-            }
-
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Schedule,
-                            null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            strings.workingHoursAndImages,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    Column {
-                        Text(
-                            strings.workingHours,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-                                .border(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                                    RoundedCornerShape(16.dp)
-                                )
-                                .padding(horizontal = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                state.openTime.ifBlank { "08:00" },
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.clickable { showOpenTimePicker = true }.weight(1f)
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    "-",
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            Text(
-                                state.closeTime.ifBlank { "22:00" },
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.clickable { showCloseTimePicker = true }.weight(1f),
-                                textAlign = androidx.compose.ui.text.style.TextAlign.End
-                            )
-                        }
-                    }
-
-                    Button(
-                        onClick = { /* TODO: Image picker */ },
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        ),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
-                    ) {
-                        Icon(Icons.Default.AddPhotoAlternate, null, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(strings.addPhoto, fontWeight = FontWeight.SemiBold)
-                    }
+                    Icon(Icons.Outlined.AddAPhoto, null, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(strings.addPhoto, fontWeight = FontWeight.SemiBold)
                 }
             }
 
@@ -503,11 +383,60 @@ fun AddStadiumScreen(viewModel: AddStadiumViewModel, onBack: () -> Unit) {
                         modifier = Modifier.size(24.dp)
                     )
                 } else {
-                    Icon(Icons.Default.Save, null)
+                    Icon(Icons.Outlined.Save, null)
                     Spacer(Modifier.width(8.dp))
                     Text(strings.save.uppercase(), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun PremiumCard(
+    title: String,
+    icon: ImageVector,
+    isError: Boolean = false,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isError) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.05f) 
+                             else MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = if (isError) BorderStroke(1.dp, MaterialTheme.colorScheme.error) 
+                 else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = (if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary).copy(alpha = 0.1f),
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            icon,
+                            null,
+                            tint = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    title,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            content()
         }
     }
 }
@@ -521,6 +450,7 @@ private fun LabelAndField(
     singleLine: Boolean = true,
     icon: ImageVector? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
+    isError: Boolean = false,
     onValueChange: (String) -> Unit
 ) {
     Column {
@@ -528,7 +458,7 @@ private fun LabelAndField(
             label,
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(
@@ -541,10 +471,11 @@ private fun LabelAndField(
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
             },
-            leadingIcon = icon?.let { { Icon(it, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f), modifier = Modifier.size(20.dp)) } },
+            leadingIcon = icon?.let { { Icon(it, null, tint = (if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary).copy(alpha = 0.7f), modifier = Modifier.size(20.dp)) } },
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             singleLine = singleLine,
             visualTransformation = visualTransformation,
+            isError = isError,
             minLines = if (singleLine) 1 else 3,
             maxLines = if (singleLine) 1 else 5,
             shape = RoundedCornerShape(16.dp),
@@ -552,7 +483,8 @@ private fun LabelAndField(
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                 unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                 focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                errorBorderColor = MaterialTheme.colorScheme.error
             )
         )
     }
@@ -562,11 +494,12 @@ private fun LabelAndField(
 @Composable
 private fun RegionDropdown(
     state: AddStadiumContract.State,
-    viewModel: AddStadiumViewModel
+    viewModel: AddStadiumViewModel,
+    isError: Boolean = false
 ) {
     val strings = Localization.current
     Column {
-        Text(strings.chooseRegion.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(strings.chooseRegion.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(8.dp))
         ExposedDropdownMenuBox(
             expanded = state.showRegionDropdown,
@@ -577,6 +510,7 @@ private fun RegionDropdown(
                 value = state.selectedRegion?.name ?: strings.chooseRegion,
                 onValueChange = {},
                 readOnly = true,
+                isError = isError,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
                 singleLine = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showRegionDropdown) },
@@ -586,7 +520,8 @@ private fun RegionDropdown(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                     focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                    errorBorderColor = MaterialTheme.colorScheme.error
                 )
             )
             ExposedDropdownMenu(
@@ -611,11 +546,12 @@ private fun RegionDropdown(
 @Composable
 private fun DistrictDropdown(
     state: AddStadiumContract.State,
-    viewModel: AddStadiumViewModel
+    viewModel: AddStadiumViewModel,
+    isError: Boolean = false
 ) {
     val strings = Localization.current
     Column {
-        Text(strings.chooseDistrict.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(strings.chooseDistrict.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(8.dp))
         ExposedDropdownMenuBox(
             expanded = state.showDistrictDropdown,
@@ -626,6 +562,7 @@ private fun DistrictDropdown(
                 value = state.selectedDistrict?.name ?: strings.chooseDistrict,
                 onValueChange = {},
                 readOnly = true,
+                isError = isError,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
                 singleLine = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showDistrictDropdown) },
@@ -635,7 +572,8 @@ private fun DistrictDropdown(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                     focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                    errorBorderColor = MaterialTheme.colorScheme.error
                 )
             )
             ExposedDropdownMenu(
@@ -746,6 +684,17 @@ private fun SportTypeDropdown(
                 StadiumType.entries.forEach { type ->
                     DropdownMenuItem(
                         text = { Text(type.label) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = when(type) {
+                                    StadiumType.FOOTBALL -> Icons.Outlined.SportsSoccer
+                                    StadiumType.TENNIS -> Icons.Outlined.SportsTennis
+                                },
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
                         onClick = {
                             viewModel.handleEvent(AddStadiumContract.Event.Type(type))
                             viewModel.handleEvent(AddStadiumContract.Event.ShowTypeDropdown(false))

@@ -11,30 +11,30 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.SportsSoccer
+import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.ui.shimmer
-import uz.coder.foottopbusiness.presentation.main.components.StadiumCardItem
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddStadium: () -> Unit = {}) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val strings = Localization.current
-    val scope = rememberCoroutineScope()
 
     if (state.stadiumToDelete != null) {
         AlertDialog(
@@ -44,7 +44,7 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddStadium: () -> Uni
             confirmButton = {
                 TextButton(
                     onClick = { viewModel.handleEvent(StadiumContract.Event.ConfirmDelete) },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
                 ) {
                     Text(strings.delete)
                 }
@@ -65,27 +65,46 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddStadium: () -> Uni
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                    .background(MaterialTheme.colorScheme.primary)
-                    .padding(top = statusBarPadding, start = 24.dp, end = 24.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                            )
+                        )
+                    )
+                    .padding(top = statusBarPadding, start = 24.dp, end = 24.dp, bottom = 24.dp)
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 32.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        if (state.isOwner) strings.schedule else strings.stadiums,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    IconButton(
-                        onClick = onNavigateToAddStadium,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f))
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = "Add", tint = MaterialTheme.colorScheme.onPrimary)
+                    Column {
+                        Text(
+                            if (state.isOwner) strings.schedule else strings.stadiums,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Black
+                        )
+                        if (!state.isOwner) {
+                            Text(
+                                "${state.stadiums.size} ta stadion",
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                    if (!state.isOwner) {
+                        IconButton(
+                            onClick = onNavigateToAddStadium,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f))
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = "Add", tint = MaterialTheme.colorScheme.onPrimary)
+                        }
                     }
                 }
             }
@@ -94,42 +113,46 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddStadium: () -> Uni
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = paddingValues.calculateTopPadding(), start = paddingValues.calculateStartPadding(
-                    LayoutDirection.Ltr), end = paddingValues.calculateEndPadding(LayoutDirection.Rtl))
-                .background(MaterialTheme.colorScheme.background)
+                .padding(paddingValues)
         ) {
-            // Search Bar
-            OutlinedTextField(
-                value = state.searchQuery,
-                onValueChange = { viewModel.handleEvent(StadiumContract.Event.Search(it)) },
+            // Modern Search Bar
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                placeholder = { Text("${strings.search}...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 2.dp,
+                shadowElevation = 0.dp
+            ) {
+                TextField(
+                    value = state.searchQuery,
+                    onValueChange = { viewModel.handleEvent(StadiumContract.Event.Search(it)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text(strings.search, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
+                    leadingIcon = { Icon(Icons.Outlined.Search, null, tint = MaterialTheme.colorScheme.primary) },
+                    singleLine = true,
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    )
                 )
-            )
+            }
 
             if (state.isLoading && state.stadiums.isEmpty()) {
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    repeat(5) {
+                    items(6) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(120.dp)
-                                .clip(RoundedCornerShape(16.dp))
+                                .height(130.dp)
+                                .clip(RoundedCornerShape(24.dp))
                                 .shimmer()
                         )
                     }
@@ -137,11 +160,11 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddStadium: () -> Uni
             } else {
                 val listState = rememberLazyListState()
 
-                // Pagination logic
+                // Pagination
                 LaunchedEffect(listState) {
                     snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
                         .collect { lastIndex ->
-                            if (lastIndex != null && lastIndex >= state.stadiums.size - 1 && !state.isLastPage && !state.isLoading) {
+                            if (lastIndex != null && (lastIndex >= state.stadiums.size - 1) && !state.isLastPage && !state.isLoading) {
                                 viewModel.handleEvent(StadiumContract.Event.LoadNextPage)
                             }
                         }
@@ -150,17 +173,12 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddStadium: () -> Uni
                 LazyColumn(
                     state = listState,
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
+                    contentPadding = PaddingValues(bottom = 32.dp, start = 16.dp, end = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    itemsIndexed(state.stadiums) { index, item ->
-                        StadiumCardItem(
-                            name = item.name ?: strings.unknown,
-                            address = "${item.districtName}, ${item.regionName}",
-                            pitchCount = item.capacity ?: 0,
-                            price = item.pricePerHour ?: 0.0,
-                            isActive = item.isActive ?: true,
-                            description = item.description,
+                    itemsIndexed(state.stadiums) { _, item ->
+                        StadiumListItem(
+                            stadium = item,
                             onClick = { viewModel.handleEvent(StadiumContract.Event.StadiumClick(item)) }
                         )
                     }
@@ -168,7 +186,7 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddStadium: () -> Uni
                     if (state.isLoading) {
                         item {
                             Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.primary)
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                             }
                         }
                     }
@@ -179,37 +197,22 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddStadium: () -> Uni
 }
 
 @Composable
-private fun StadiumInfoChip(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-            .padding(horizontal = 6.dp, vertical = 2.dp)
-    ) {
-        Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
-        Spacer(Modifier.width(4.dp))
-        Text(text, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
 private fun StadiumListItem(
     stadium: uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse,
-    onClick: () -> Unit,
-    onDelete: () -> Unit
+    onClick: () -> Unit
 ) {
     val strings = Localization.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             val statusColor = when {
@@ -218,81 +221,81 @@ private fun StadiumListItem(
                 else -> MaterialTheme.colorScheme.error
             }
 
-            // Icon
+            // Sport Icon with rounded background
             Box(
                 modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.background),
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    Icons.Default.SportsSoccer,
+                    Icons.Outlined.SportsSoccer,
                     contentDescription = null,
-                    tint = statusColor,
-                    modifier = Modifier.size(24.dp)
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(32.dp)
                 )
             }
 
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(16.dp))
 
-            // Info
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stadium.name ?: strings.unknown,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    letterSpacing = (-0.5).sp
-                )
-                Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = stadium.districtName ?: "",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text = stadium.name ?: strings.unknown,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 18.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Text(
-                        text = stadium.regionName ?: "",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Spacer(Modifier.width(8.dp))
+                    // Status dot
+                    Box(modifier = Modifier.size(8.dp).clip(androidx.compose.foundation.shape.CircleShape).background(statusColor))
                 }
                 
-                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "${stadium.districtName}, ${stadium.regionName}",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                
+                Spacer(Modifier.height(12.dp))
                 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    StadiumInfoChip(Icons.Default.GridView, "${stadium.capacity ?: 0} ${strings.fieldCount}")
-                    StadiumInfoChip(Icons.Default.Payments, "${stadium.pricePerHour?.toInt() ?: 0} ${strings.uzsPerHour}")
+                    StadiumBadge(Icons.Outlined.GridView, (stadium.capacity ?: 0).toString())
+                    StadiumBadge(Icons.Outlined.Payments, "${stadium.pricePerHour?.toInt() ?: 0} ${strings.uzsPerHour}")
                 }
             }
 
-            // Status Badge
-            val statusText = when {
-                stadium.isActive == true -> strings.active
-                stadium.description?.contains("ta'mir", ignoreCase = true) == true -> strings.underRepair
-                else -> strings.closed
-            }
+            Icon(
+                Icons.Default.ChevronRight,
+                null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
+}
 
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(statusColor.copy(alpha = 0.1f))
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = statusText,
-                    color = statusColor,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+@Composable
+private fun StadiumBadge(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+            Text(text, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

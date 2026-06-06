@@ -14,8 +14,6 @@ import uz.coder.foottopbusiness.domain.model.WeeklyReport
 
 sealed interface HomeContract {
     data class State(
-        // Navigation
-        val currentTab: Int = 0, // 0: Home, 1: History, 2: Profile
         val showStadiumTable: Boolean = false,
         
         // Role info
@@ -98,7 +96,6 @@ sealed interface HomeContract {
     sealed interface Event : MviEvent {
         object Load : Event
         object Refresh : Event
-        data class ChangeTab(val index: Int) : Event
         data class SetShowStadiumTable(val show: Boolean) : Event
         data class Search(val query: String) : Event
         data class FilterActive(val isActive: Boolean?) : Event

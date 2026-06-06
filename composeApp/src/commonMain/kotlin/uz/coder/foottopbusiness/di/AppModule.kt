@@ -137,7 +137,7 @@ val appModule = module {
     factory { (stadium: StadiumResponse) -> StadiumDetailsViewModel(stadium, get(), get(), get(), get(), get()) }
     factory { BookingListViewModel(get(), get()) }
     factory { CoachesViewModel(get(), get(), get()) }
-    factory { TournamentsViewModel(get(), get(), get(), get(), get(), get()) }
+    factory { TournamentsViewModel(get(), get(), get(), get(), get(), get(), get()) }
     factory { SettingsViewModel(get(), get(), get()) }
     factory { EditProfileViewModel(get(), get()) }
     factory { SendNotificationViewModel(get()) }

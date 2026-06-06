@@ -41,6 +41,7 @@ sealed interface StadiumDetailsContract {
         val hasConflict: Boolean = false,
         val bookerName: String = "",
         val bookerPhone: String = "",
+        val showBookerErrors: Boolean = false,
         val showCancelDialog: Boolean = false,
         val cancelReason: String = "",
         val bookingToCancel: Long? = null,

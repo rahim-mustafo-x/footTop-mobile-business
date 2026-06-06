@@ -20,6 +20,8 @@ import uz.coder.foottopbusiness.domain.usecase.stadium.GetSavedDistrictIdUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetSavedRegionIdUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.UserIdUseCase
 import uz.coder.foottopbusiness.core.platform.getCurrentLocation
+import uz.coder.foottopbusiness.core.platform.checkLocationPermissionStatus
+import uz.coder.foottopbusiness.core.platform.PermissionStatus
 
 class AddStadiumViewModel(
     private val createStadiumUseCase: CreateStadiumUseCase,
@@ -70,16 +72,16 @@ class AddStadiumViewModel(
 
     override fun handleEvent(event: AddStadiumContract.Event) {
         when (event) {
-            is AddStadiumContract.Event.Name -> updateState { copy(name = event.value) }
-            is AddStadiumContract.Event.Phone -> updateState { copy(phone = event.value) }
-            is AddStadiumContract.Event.Description -> updateState { copy(description = event.value) }
-            is AddStadiumContract.Event.Type -> updateState { copy(type = event.value, showTypeDropdown = false) }
-            is AddStadiumContract.Event.Duration -> updateState { copy(duration = event.value, showDurationDropdown = false) }
-            is AddStadiumContract.Event.Capacity -> updateState { copy(capacity = event.value) }
-            is AddStadiumContract.Event.PricePerHour -> updateState { copy(pricePerHour = event.value) }
-            is AddStadiumContract.Event.OpenTime -> updateState { copy(openTime = event.value) }
-            is AddStadiumContract.Event.CloseTime -> updateState { copy(closeTime = event.value) }
-            is AddStadiumContract.Event.ImageUrl -> updateState { copy(imageUrl = event.value) }
+            is AddStadiumContract.Event.Name -> updateState { copy(name = event.value, showErrors = false) }
+            is AddStadiumContract.Event.Phone -> updateState { copy(phone = event.value, showErrors = false) }
+            is AddStadiumContract.Event.Description -> updateState { copy(description = event.value, showErrors = false) }
+            is AddStadiumContract.Event.Type -> updateState { copy(type = event.value, showTypeDropdown = false, showErrors = false) }
+            is AddStadiumContract.Event.Duration -> updateState { copy(duration = event.value, showDurationDropdown = false, showErrors = false) }
+            is AddStadiumContract.Event.Capacity -> updateState { copy(capacity = event.value, showErrors = false) }
+            is AddStadiumContract.Event.PricePerHour -> updateState { copy(pricePerHour = event.value, showErrors = false) }
+            is AddStadiumContract.Event.OpenTime -> updateState { copy(openTime = event.value, showErrors = false) }
+            is AddStadiumContract.Event.CloseTime -> updateState { copy(closeTime = event.value, showErrors = false) }
+            is AddStadiumContract.Event.ImageUrl -> updateState { copy(imageUrl = event.value, showErrors = false) }
             is AddStadiumContract.Event.SelectRegion -> onRegionSelected(event.region)
             is AddStadiumContract.Event.SelectDistrict -> onDistrictSelected(event.district)
             is AddStadiumContract.Event.SelectOwner -> {
@@ -88,7 +90,8 @@ class AddStadiumViewModel(
                     copy(
                         selectedOwner = owner, 
                         showOwnerDropdown = false,
-                        phone = if (phone.isBlank()) owner.phone?.filter { it.isDigit() }?.takeLast(9) ?: phone else phone
+                        phone = if (phone.isBlank()) owner.phone?.filter { it.isDigit() }?.takeLast(9) ?: phone else phone,
+                        showErrors = false
                     ) 
                 }
             }
@@ -97,12 +100,34 @@ class AddStadiumViewModel(
             is AddStadiumContract.Event.ShowOwnerDropdown -> updateState { copy(showOwnerDropdown = event.show) }
             is AddStadiumContract.Event.ShowTypeDropdown -> updateState { copy(showTypeDropdown = event.show) }
             is AddStadiumContract.Event.ShowDurationDropdown -> updateState { copy(showDurationDropdown = event.show) }
-            is AddStadiumContract.Event.Latitude -> updateState { copy(latitude = event.value) }
-            is AddStadiumContract.Event.Longitude -> updateState { copy(longitude = event.value) }
-            is AddStadiumContract.Event.PreciseAddress -> updateState { copy(preciseAddress = event.value) }
-            AddStadiumContract.Event.GetCurrentLocation -> fetchCurrentLocation()
+            is AddStadiumContract.Event.Latitude -> updateState { copy(latitude = event.value, showErrors = false) }
+            is AddStadiumContract.Event.Longitude -> updateState { copy(longitude = event.value, showErrors = false) }
+            is AddStadiumContract.Event.PreciseAddress -> updateState { copy(preciseAddress = event.value, showErrors = false) }
+            AddStadiumContract.Event.GetCurrentLocation -> handleLocationRequest()
+            is AddStadiumContract.Event.OnLocationPermissionResult -> {
+                updateState { copy(triggerLocationPermission = false) }
+                if (event.status == PermissionStatus.GRANTED) {
+                    fetchCurrentLocation()
+                } else {
+                    sendEffect(AddStadiumContract.Effect.ShowToast("Joylashuv ruxsati berilmadi"))
+                }
+            }
+            is AddStadiumContract.Event.TriggerLocationPermission -> updateState { copy(triggerLocationPermission = event.trigger) }
             is AddStadiumContract.Event.Save -> save()
         }
+    }
+
+    private fun handleLocationRequest() {
+        executeAsync(
+            block = { checkLocationPermissionStatus() },
+            onSuccess = { status ->
+                if (status == PermissionStatus.GRANTED) {
+                    fetchCurrentLocation()
+                } else {
+                    updateState { copy(triggerLocationPermission = true) }
+                }
+            }
+        )
     }
 
     private fun fetchCurrentLocation() {
@@ -136,7 +161,7 @@ class AddStadiumViewModel(
 
     private fun onRegionSelected(region: RegionDto) {
         log(logLabel, "Region selected: ${region.name} (ID: ${region.id})")
-        updateState { copy(selectedRegion = region, selectedDistrict = null, districts = emptyList(), showRegionDropdown = false) }
+        updateState { copy(selectedRegion = region, selectedDistrict = null, districts = emptyList(), showRegionDropdown = false, showErrors = false) }
         viewModelScope.launch {
             saveRegionIdUseCase(region.id)
         }
@@ -156,7 +181,7 @@ class AddStadiumViewModel(
 
     private fun onDistrictSelected(district: DistrictDto) {
         log(logLabel, "District selected: ${district.name} (ID: ${district.id})")
-        updateState { copy(selectedDistrict = district, showDistrictDropdown = false) }
+        updateState { copy(selectedDistrict = district, showDistrictDropdown = false, showErrors = false) }
         viewModelScope.launch {
             saveDistrictIdUseCase(district.id?:0)
         }
@@ -165,37 +190,11 @@ class AddStadiumViewModel(
     private fun save() {
         val s = state.value
 
-        // Validation
-        if (s.name.isBlank()) {
-            sendEffect(AddStadiumContract.Effect.ShowToast("Stadion nomini kiriting"))
-            return
-        }
-        if (s.description.isBlank()) {
-            sendEffect(AddStadiumContract.Effect.ShowToast("Tavsifni kiriting"))
-            return
-        }
-        if (s.capacity.isBlank()) {
-            sendEffect(AddStadiumContract.Effect.ShowToast("Sig'imni kiriting"))
-            return
-        }
-        if (s.pricePerHour.isBlank()) {
-            sendEffect(AddStadiumContract.Effect.ShowToast("Soatlik narxni kiriting"))
-            return
-        }
-        if (s.openTime.isBlank()) {
-            sendEffect(AddStadiumContract.Effect.ShowToast("Ochilish vaqtini kiriting"))
-            return
-        }
-        if (s.closeTime.isBlank()) {
-            sendEffect(AddStadiumContract.Effect.ShowToast("Yopilish vaqtini kiriting"))
-            return
-        }
-        if (s.selectedRegion == null) {
-            sendEffect(AddStadiumContract.Effect.ShowToast("Viloyatni tanlang"))
-            return
-        }
-        if (s.selectedDistrict == null) {
-            sendEffect(AddStadiumContract.Effect.ShowToast("Tumanni tanlang"))
+        // Validation - description is now optional
+        if (s.name.isBlank() || s.capacity.isBlank() || 
+            s.pricePerHour.isBlank() || s.selectedRegion == null || s.selectedDistrict == null) {
+            updateState { copy(showErrors = true) }
+            sendEffect(AddStadiumContract.Effect.ShowToast("Iltimos, barcha majburiy maydonlarni to'ldiring"))
             return
         }
 
@@ -215,7 +214,7 @@ class AddStadiumViewModel(
                 
                 createStadiumUseCase(
                     name = s.name,
-                    description = s.description,
+                    description = s.description.ifBlank { "Tavsif berilmagan" },
                     type = s.type.name,
                     duration = s.duration.name,
                     capacity = s.capacity.toIntOrNull() ?: 0,

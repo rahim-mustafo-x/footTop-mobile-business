@@ -10,6 +10,8 @@ import uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.RegionDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.core.platform.getCurrentLocation
+import uz.coder.foottopbusiness.core.platform.checkLocationPermissionStatus
+import uz.coder.foottopbusiness.core.platform.PermissionStatus
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.domain.repository.UserRepository
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetDistrictsUseCase
@@ -98,9 +100,31 @@ class EditStadiumViewModel(
             is EditStadiumContract.Event.Latitude -> updateState { copy(latitude = event.value) }
             is EditStadiumContract.Event.Longitude -> updateState { copy(longitude = event.value) }
             is EditStadiumContract.Event.PreciseAddress -> updateState { copy(preciseAddress = event.value) }
-            EditStadiumContract.Event.GetCurrentLocation -> fetchCurrentLocation()
+            EditStadiumContract.Event.GetCurrentLocation -> handleLocationRequest()
+            is EditStadiumContract.Event.OnLocationPermissionResult -> {
+                updateState { copy(triggerLocationPermission = false) }
+                if (event.status == PermissionStatus.GRANTED) {
+                    fetchCurrentLocation()
+                } else {
+                    sendEffect(EditStadiumContract.Effect.ShowToast("Joylashuv ruxsati berilmadi"))
+                }
+            }
+            is EditStadiumContract.Event.TriggerLocationPermission -> updateState { copy(triggerLocationPermission = event.trigger) }
             is EditStadiumContract.Event.Save -> save()
         }
+    }
+
+    private fun handleLocationRequest() {
+        executeAsync(
+            block = { checkLocationPermissionStatus() },
+            onSuccess = { status ->
+                if (status == PermissionStatus.GRANTED) {
+                    fetchCurrentLocation()
+                } else {
+                    updateState { copy(triggerLocationPermission = true) }
+                }
+            }
+        )
     }
 
     private fun fetchCurrentLocation() {
@@ -149,7 +173,7 @@ class EditStadiumViewModel(
                 updateStadiumUseCase(
                     id = s.id,
                     name = s.name,
-                    description = s.description,
+                    description = s.description.ifBlank { "Tavsif berilmagan" },
                     type = s.type.name,
                     duration = s.duration.name,
                     capacity = s.capacity.toIntOrNull() ?: 0,

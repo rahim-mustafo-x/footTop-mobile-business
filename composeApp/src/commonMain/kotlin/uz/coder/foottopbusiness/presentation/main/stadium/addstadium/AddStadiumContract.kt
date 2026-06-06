@@ -26,8 +26,8 @@ sealed interface AddStadiumContract {
         val description: String = "",
         val type: StadiumType = StadiumType.FOOTBALL,
         val duration: StadiumDuration = StadiumDuration.SIXTY,
-        val capacity: String = "",
-        val pricePerHour: String = "",
+        val capacity: String = "1",
+        val pricePerHour: String = "100000",
         val openTime: String = "08:00",
         val closeTime: String = "22:00",
         val imageUrl: String = "",
@@ -50,7 +50,9 @@ sealed interface AddStadiumContract {
         val error: String? = null,
         val latitude: Double? = null,
         val longitude: Double? = null,
-        val preciseAddress: String = ""
+        val preciseAddress: String = "",
+        val triggerLocationPermission: Boolean = false,
+        val showErrors: Boolean = false
     ) : MviState
 
     sealed interface Effect : MviEffect {
@@ -81,6 +83,8 @@ sealed interface AddStadiumContract {
         data class Longitude(val value: Double?) : Event
         data class PreciseAddress(val value: String) : Event
         object GetCurrentLocation : Event
+        data class OnLocationPermissionResult(val status: uz.coder.foottopbusiness.core.platform.PermissionStatus) : Event
+        data class TriggerLocationPermission(val trigger: Boolean) : Event
         object Save : Event
     }
 }

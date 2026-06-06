@@ -9,6 +9,8 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -48,6 +50,7 @@ import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.platform.makePhoneCall
 import uz.coder.foottopbusiness.core.plusMinutes
 import uz.coder.foottopbusiness.core.toLocalDateTimeSafe
+import uz.coder.foottopbusiness.core.ui.shimmer
 import uz.coder.foottopbusiness.data.network.dto.stadium.SlotDto
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.stadium.edit.EditStadiumVoyager
@@ -218,8 +221,54 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
         }
     ) { paddingValues ->
         if (stadium == null) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                // Hero Image Shimmer
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(250.dp)
+                        .shimmer()
+                )
+                
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .offset(y = (-24).dp)
+                        .background(
+                            MaterialTheme.colorScheme.surface,
+                            RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+                        )
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Title Shimmer
+                    Box(modifier = Modifier.width(200.dp).height(32.dp).clip(RoundedCornerShape(8.dp)).shimmer())
+                    // Location Shimmer
+                    Box(modifier = Modifier.width(150.dp).height(16.dp).clip(RoundedCornerShape(4.dp)).shimmer())
+                    
+                    Spacer(Modifier.height(8.dp))
+                    
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box(modifier = Modifier.weight(1f).height(60.dp).clip(RoundedCornerShape(12.dp)).shimmer())
+                        Box(modifier = Modifier.weight(1f).height(60.dp).clip(RoundedCornerShape(12.dp)).shimmer())
+                    }
+                    
+                    Spacer(Modifier.height(16.dp))
+                    
+                    // Section Title Shimmer
+                    Box(modifier = Modifier.width(120.dp).height(24.dp).clip(RoundedCornerShape(4.dp)).shimmer())
+                    // Day Selector Shimmer
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        repeat(5) {
+                            Box(modifier = Modifier.size(60.dp).clip(RoundedCornerShape(12.dp)).shimmer())
+                        }
+                    }
+                }
             }
         } else {
             LazyColumn(
@@ -316,8 +365,16 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                             Spacer(Modifier.height(12.dp))
 
                             if (state.isSlotsLoading) {
-                                Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
-                                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    repeat(4) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(72.dp)
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .shimmer()
+                                        )
+                                    }
                                 }
                             } else if (stadiums.isNotEmpty()) {
                                 var selectedTabIndex by remember { mutableIntStateOf(0) }
@@ -376,25 +433,48 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                         // Booker Info (If selected)
                         if (showSticky) {
                             Spacer(Modifier.height(24.dp))
-                            SectionTitle("Bron qiluvchi ma'lumotlari")
-                            Spacer(Modifier.height(12.dp))
-                            OutlinedTextField(
-                                value = state.bookerName,
-                                onValueChange = { viewModel.handleEvent(StadiumDetailsContract.Event.UpdateBookerName(it)) },
-                                label = { Text("Ism (ixtiyoriy)") },
+                            
+                            val nameError = state.showBookerErrors && state.bookerName.isBlank()
+                            val phoneError = state.showBookerErrors && state.bookerPhone.length < 9
+                            val hasError = nameError || phoneError
+
+                            Card(
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            OutlinedTextField(
-                                value = state.bookerPhone,
-                                onValueChange = { if (it.length <= 9) viewModel.handleEvent(StadiumDetailsContract.Event.UpdateBookerPhone(it)) },
-                                label = { Text("Telefon (ixtiyoriy)") },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                prefix = { Text("+998 ") },
-                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number)
-                            )
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (hasError) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f) 
+                                                     else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                                ),
+                                border = if (hasError) BorderStroke(1.dp, MaterialTheme.colorScheme.error) else null
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    SectionTitle("Bron qiluvchi ma'lumotlari")
+                                    Spacer(Modifier.height(12.dp))
+                                    OutlinedTextField(
+                                        value = state.bookerName,
+                                        onValueChange = { viewModel.handleEvent(StadiumDetailsContract.Event.UpdateBookerName(it)) },
+                                        label = { Text("Ism") },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(12.dp),
+                                        isError = nameError,
+                                        supportingText = if (nameError) { { Text("Ismni kiriting") } } else null,
+                                        leadingIcon = { Icon(Icons.Default.Person, null, tint = if (nameError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary) }
+                                    )
+                                    Spacer(Modifier.height(8.dp))
+                                    OutlinedTextField(
+                                        value = state.bookerPhone,
+                                        onValueChange = { if (it.length <= 9) viewModel.handleEvent(StadiumDetailsContract.Event.UpdateBookerPhone(it)) },
+                                        label = { Text("Telefon") },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(12.dp),
+                                        prefix = { Text("+998 ") },
+                                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        isError = phoneError,
+                                        supportingText = if (phoneError) { { Text("Telefon raqamini to'liq kiriting") } } else null,
+                                        leadingIcon = { Icon(Icons.Default.Phone, null, tint = if (phoneError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary) }
+                                    )
+                                }
+                            }
                         }
 
                         Spacer(Modifier.height(24.dp))

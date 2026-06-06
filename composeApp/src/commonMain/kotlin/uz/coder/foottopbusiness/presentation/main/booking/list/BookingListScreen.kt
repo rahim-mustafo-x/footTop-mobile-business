@@ -1,5 +1,6 @@
 package uz.coder.foottopbusiness.presentation.main.booking.list
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,6 +32,7 @@ import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.data.network.dto.booking.BookingResponseDto
 import uz.coder.foottopbusiness.core.toLocalDateTimeSafe
 import uz.coder.foottopbusiness.core.formatToTime
+import uz.coder.foottopbusiness.core.ui.shimmer
 import uz.coder.foottopbusiness.core.visualTransformation.formatPhoneNumber
 
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -102,8 +105,20 @@ fun BookingListScreen(viewModel: BookingListViewModel, onBack: () -> Unit) {
             modifier = Modifier.fillMaxSize().padding(paddingValues)
         ) {
             if (state.isLoading && !state.isRefreshing) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(6) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(160.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .shimmer()
+                        )
+                    }
                 }
             } else {
                 val bookings = state.filteredBookings
@@ -139,13 +154,28 @@ fun BookingListScreen(viewModel: BookingListViewModel, onBack: () -> Unit) {
                 Column {
                     Text("Haqiqatan ham ushbu bronni bekor qilmoqchimisiz?")
                     Spacer(Modifier.height(16.dp))
-                    OutlinedTextField(
-                        value = state.cancelReason,
-                        onValueChange = { viewModel.handleEvent(BookingListContract.Event.UpdateCancelReason(it)) },
-                        label = { Text("Bekor qilish sababi (shart)") },
+                    
+                    val isError = state.cancelReason.isBlank()
+                    
+                    Card(
                         modifier = Modifier.fillMaxWidth(),
-                        minLines = 3
-                    )
+                        shape = RoundedCornerShape(12.dp),
+                        border = if (isError) BorderStroke(1.dp, MaterialTheme.colorScheme.error) else null,
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isError) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.05f) 
+                                             else Color.Transparent
+                        )
+                    ) {
+                        OutlinedTextField(
+                            value = state.cancelReason,
+                            onValueChange = { viewModel.handleEvent(BookingListContract.Event.UpdateCancelReason(it)) },
+                            label = { Text("Bekor qilish sababi (shart)") },
+                            modifier = Modifier.fillMaxWidth().padding(if (isError) 4.dp else 0.dp),
+                            minLines = 3,
+                            isError = isError,
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
                 }
             },
             confirmButton = {

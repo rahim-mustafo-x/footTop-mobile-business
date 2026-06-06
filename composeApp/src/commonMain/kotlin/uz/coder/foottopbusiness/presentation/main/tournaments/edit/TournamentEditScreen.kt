@@ -1,5 +1,6 @@
 package uz.coder.foottopbusiness.presentation.main.tournaments.edit
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,7 +40,7 @@ import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsContrac
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsViewModel
 import uz.coder.foottopbusiness.presentation.main.stadium.edit.components.LocationPicker
 import uz.coder.foottopbusiness.presentation.main.stadium.edit.MapSelectionScreen
-import kotlin.time.Instant
+import kotlinx.datetime.Instant
 
 class TournamentEditScreen(private val tournament: TournamentResponseDto) : Screen {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -85,6 +87,7 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                         datePickerState.selectedDateMillis?.let {
                             val date = Instant.fromEpochMilliseconds(it).toLocalDateTime(TimeZone.currentSystemDefault()).date
                             startDate = "${date.day.toString().padStart(2, '0')}.${date.month.number.toString().padStart(2, '0')}.${date.year}"
+                            viewModel.handleEvent(TournamentsContract.Event.ShowErrors(false))
                         }
                         showStartDatePicker = !showStartDatePicker
                     }) { Text(strings.save) }
@@ -106,6 +109,7 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                         datePickerState.selectedDateMillis?.let {
                             val date = Instant.fromEpochMilliseconds(it).toLocalDateTime(TimeZone.currentSystemDefault()).date
                             endDate = "${date.day.toString().padStart(2, '0')}.${date.month.number.toString().padStart(2, '0')}.${date.year}"
+                            viewModel.handleEvent(TournamentsContract.Event.ShowErrors(false))
                         }
                         showEndDatePicker = !showEndDatePicker
                     }) { Text(strings.save) }
@@ -178,7 +182,7 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                             Brush.verticalGradient(
                                 colors = listOf(
                                     MaterialTheme.colorScheme.primary,
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.9f)
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
                                 )
                             )
                         )
@@ -231,29 +235,31 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 // Info Card
-                CreateCard(title = strings.management, icon = Icons.Default.EmojiEvents) {
+                val infoError = state.showErrors && (name.isBlank() || state.selectedRegion == null || state.selectedDistrict == null)
+                PremiumEditCard(title = strings.management, icon = Icons.Outlined.EmojiEvents, isError = infoError) {
                     TournamentInputField(
                         value = name,
-                        onValueChange = { name = it },
+                        onValueChange = { name = it; viewModel.handleEvent(TournamentsContract.Event.ShowErrors(false)) },
                         label = strings.tournamentName,
-                        icon = Icons.Default.Edit,
-                        placeholder = strings.titleHint
+                        icon = Icons.Outlined.Edit,
+                        placeholder = strings.titleHint,
+                        isError = state.showErrors && name.isBlank()
                     )
 
-                    RegionDropdown(state, viewModel)
-                    DistrictDropdown(state, viewModel)
+                    RegionDropdown(state, viewModel, isError = state.showErrors && state.selectedRegion == null)
+                    DistrictDropdown(state, viewModel, isError = state.showErrors && state.selectedDistrict == null)
 
                     TournamentInputField(
                         value = preciseAddress,
                         onValueChange = { preciseAddress = it },
                         label = strings.preciseAddress,
-                        icon = Icons.Default.LocationOn,
+                        icon = Icons.Outlined.LocationOn,
                         placeholder = strings.addressPlaceholder
                     )
                 }
 
                 // Location Card
-                CreateCard(title = strings.location, icon = Icons.Default.LocationOn) {
+                PremiumEditCard(title = strings.location, icon = Icons.Outlined.Map) {
                     LocationPicker(
                         latitude = latitude,
                         longitude = longitude,
@@ -266,9 +272,6 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                                 latitude = lat
                                 longitude = lng
                             })
-                        },
-                        onGetCurrentLocation = {
-                            viewModel.handleEvent(TournamentsContract.Event.GetCurrentLocation)
                         }
                     )
                 }
@@ -281,16 +284,18 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                 }
 
                 // Date and Time Card
-                CreateCard(title = "${strings.tournamentDate} & ${strings.tournamentTime}", icon = Icons.Default.CalendarToday) {
+                val dateError = state.showErrors && (startDate.isBlank() || endDate.isBlank())
+                PremiumEditCard(title = "${strings.tournamentDate} & ${strings.tournamentTime}", icon = Icons.Outlined.CalendarToday, isError = dateError) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(modifier = Modifier.weight(1f).clickable { showStartDatePicker = true }) {
                             TournamentInputField(
                                 value = startDate,
                                 onValueChange = { },
                                 label = strings.active,
-                                icon = Icons.Default.CalendarMonth,
+                                icon = Icons.Outlined.CalendarMonth,
                                 enabled = false,
-                                placeholder = "KK.OO.YYYY"
+                                placeholder = "KK.OO.YYYY",
+                                isError = state.showErrors && startDate.isBlank()
                             )
                         }
                         Box(modifier = Modifier.weight(1f).clickable { showEndDatePicker = true }) {
@@ -298,9 +303,10 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                                 value = endDate,
                                 onValueChange = { },
                                 label = strings.inactive,
-                                icon = Icons.Default.CalendarMonth,
+                                icon = Icons.Outlined.CalendarMonth,
                                 enabled = false,
-                                placeholder = "KK.OO.YYYY"
+                                placeholder = "KK.OO.YYYY",
+                                isError = state.showErrors && endDate.isBlank()
                             )
                         }
                     }
@@ -311,7 +317,7 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                                 value = startTime,
                                 onValueChange = { },
                                 label = strings.openTime,
-                                icon = Icons.Default.AccessTime,
+                                icon = Icons.Outlined.AccessTime,
                                 enabled = false,
                                 placeholder = "00:00"
                             )
@@ -321,7 +327,7 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                                 value = endTime,
                                 onValueChange = { },
                                 label = strings.closeTime,
-                                icon = Icons.Default.AccessTime,
+                                icon = Icons.Outlined.AccessTime,
                                 enabled = false,
                                 placeholder = "00:00"
                             )
@@ -330,13 +336,13 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                 }
 
                 // Conditions Card
-                CreateCard(title = strings.technicalInfo, icon = Icons.Default.Settings) {
+                PremiumEditCard(title = strings.technicalInfo, icon = Icons.Outlined.Settings) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         TournamentInputField(
                             value = maxTeams,
                             onValueChange = { maxTeams = it.filter { c -> c.isDigit() } },
                             label = strings.participants,
-                            icon = Icons.Default.Groups,
+                            icon = Icons.Outlined.Groups,
                             keyboardType = KeyboardType.Number,
                             modifier = Modifier.weight(1f),
                             placeholder = "16"
@@ -345,7 +351,7 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                             value = entryFee,
                             onValueChange = { entryFee = it.filter { c -> c.isDigit() || c == '.' } },
                             label = strings.entryFee,
-                            icon = Icons.Default.Payments,
+                            icon = Icons.Outlined.Payments,
                             keyboardType = KeyboardType.Decimal,
                             modifier = Modifier.weight(1f),
                             placeholder = "200 000",
@@ -393,6 +399,11 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                             }
                         }
 
+                        if (name.isBlank() || startDate.isBlank() || endDate.isBlank() || state.selectedRegion == null || state.selectedDistrict == null) {
+                            viewModel.handleEvent(TournamentsContract.Event.ShowErrors(true))
+                            return@Button
+                        }
+
                         viewModel.handleEvent(
                             TournamentsContract.Event.Update(
                                 id = tournament.id ?: 0L,
@@ -418,7 +429,7 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                         containerColor = MaterialTheme.colorScheme.primary,
                         disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                     ),
-                    enabled = !state.isCreating && name.isNotBlank() && startDate.isNotBlank() && endDate.isNotBlank(),
+                    enabled = !state.isCreating,
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp, pressedElevation = 0.dp)
                 ) {
                     if (state.isCreating) {
@@ -434,11 +445,14 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
     }
 
     @Composable
-    private fun CreateCard(title: String, icon: ImageVector, content: @Composable ColumnScope.() -> Unit) {
+    private fun PremiumEditCard(title: String, icon: ImageVector, isError: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
         Card(
             shape = RoundedCornerShape(28.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (isError) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.05f) else MaterialTheme.colorScheme.surface
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            border = if (isError) BorderStroke(1.dp, MaterialTheme.colorScheme.error) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
@@ -448,11 +462,11 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        modifier = Modifier.size(36.dp)
+                        color = (if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary).copy(alpha = 0.1f),
+                        modifier = Modifier.size(40.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                            Icon(icon, null, tint = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                         }
                     }
                     Spacer(Modifier.width(12.dp))
@@ -460,7 +474,7 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                         title,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                     )
                 }
                 content()
@@ -478,30 +492,33 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
         placeholder: String = "",
         keyboardType: KeyboardType = KeyboardType.Text,
         enabled: Boolean = true,
+        isError: Boolean = false,
         visualTransformation: VisualTransformation = VisualTransformation.None
     ) {
-        Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f), maxLines = 1)
+        Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f), maxLines = 1)
             OutlinedTextField(
                 value = value,
                 onValueChange = onValueChange,
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), fontSize = 12.sp) },
-                leadingIcon = { Icon(icon, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f), modifier = Modifier.size(16.dp)) },
-                shape = RoundedCornerShape(12.dp),
+                placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), fontSize = 13.sp) },
+                leadingIcon = { Icon(icon, null, tint = (if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary).copy(alpha = 0.6f), modifier = Modifier.size(18.dp)) },
+                shape = RoundedCornerShape(16.dp),
                 keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
                 enabled = enabled,
+                isError = isError,
                 singleLine = true,
                 visualTransformation = visualTransformation,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                     disabledBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                     disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
                     disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                    disabledLeadingIconColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    disabledLeadingIconColor = (if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary).copy(alpha = 0.5f),
+                    errorBorderColor = MaterialTheme.colorScheme.error
                 )
             )
         }
@@ -511,11 +528,12 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
     @Composable
     private fun RegionDropdown(
         state: TournamentsContract.State,
-        viewModel: TournamentsViewModel
+        viewModel: TournamentsViewModel,
+        isError: Boolean = false
     ) {
         val strings = Localization.current
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(strings.chooseRegion, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(strings.chooseRegion, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
             ExposedDropdownMenuBox(
                 expanded = state.showRegionDropdown,
                 onExpandedChange = { viewModel.handleEvent(TournamentsContract.Event.ShowRegionDropdown(it)) },
@@ -525,17 +543,19 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                     value = state.selectedRegion?.name ?: strings.chooseRegion,
                     onValueChange = {},
                     readOnly = true,
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+                    isError = isError,
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
                     singleLine = true,
-                    leadingIcon = { Icon(Icons.Default.LocationOn, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f), modifier = Modifier.size(16.dp)) },
+                    leadingIcon = { Icon(Icons.Outlined.LocationOn, null, tint = (if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary).copy(alpha = 0.6f), modifier = Modifier.size(18.dp)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showRegionDropdown) },
                     modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
                         focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        errorBorderColor = MaterialTheme.colorScheme.error
                     )
                 )
                 ExposedDropdownMenu(
@@ -560,11 +580,12 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
     @Composable
     private fun DistrictDropdown(
         state: TournamentsContract.State,
-        viewModel: TournamentsViewModel
+        viewModel: TournamentsViewModel,
+        isError: Boolean = false
     ) {
         val strings = Localization.current
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(strings.chooseDistrict, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(strings.chooseDistrict, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
             ExposedDropdownMenuBox(
                 expanded = state.showDistrictDropdown,
                 onExpandedChange = { viewModel.handleEvent(TournamentsContract.Event.ShowDistrictDropdown(it)) },
@@ -574,17 +595,19 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                     value = state.selectedDistrict?.name ?: strings.chooseDistrict,
                     onValueChange = {},
                     readOnly = true,
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+                    isError = isError,
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
                     singleLine = true,
-                    leadingIcon = { Icon(Icons.Default.LocationOn, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f), modifier = Modifier.size(16.dp)) },
+                    leadingIcon = { Icon(Icons.Outlined.LocationOn, null, tint = (if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary).copy(alpha = 0.6f), modifier = Modifier.size(18.dp)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showDistrictDropdown) },
                     modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
                         focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        errorBorderColor = MaterialTheme.colorScheme.error
                     )
                 )
                 ExposedDropdownMenu(

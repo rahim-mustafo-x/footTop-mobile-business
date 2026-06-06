@@ -12,10 +12,13 @@ import uz.coder.foottopbusiness.data.network.dto.tournament.TournamentFilterDto
 import uz.coder.foottopbusiness.data.network.dto.tournament.TournamentRequestDto
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetDistrictsUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetRegionsUseCase
+import uz.coder.foottopbusiness.domain.usecase.stadium.GetStadiumsUseCase
 import uz.coder.foottopbusiness.domain.usecase.tournament.CreateTournamentUseCase
 import uz.coder.foottopbusiness.domain.usecase.tournament.UpdateTournamentUseCase
 import uz.coder.foottopbusiness.domain.usecase.tournament.GetTournamentsUseCase
 import uz.coder.foottopbusiness.core.platform.getCurrentLocation
+import uz.coder.foottopbusiness.core.platform.checkLocationPermissionStatus
+import uz.coder.foottopbusiness.core.platform.PermissionStatus
 import uz.coder.foottopbusiness.data.network.dto.stadium.LocationDto
 
 class TournamentsViewModel(
@@ -24,6 +27,7 @@ class TournamentsViewModel(
     private val updateTournamentUseCase: UpdateTournamentUseCase,
     private val getRegionsUseCase: GetRegionsUseCase,
     private val getDistrictsUseCase: GetDistrictsUseCase,
+    private val getStadiumsUseCase: GetStadiumsUseCase,
     private val preferencesManager: PreferencesManager,
 ) : BaseViewModel<TournamentsContract.State, TournamentsContract.Effect, TournamentsContract.Event>(
     initialState = TournamentsContract.State()
@@ -31,6 +35,7 @@ class TournamentsViewModel(
     init { 
         handleEvent(TournamentsContract.Event.Load)
         loadRegions()
+        loadStadiums()
     }
 
     override fun handleEvent(event: TournamentsContract.Event) {
@@ -54,13 +59,42 @@ class TournamentsViewModel(
                 loadTournaments(0)
             }
             is TournamentsContract.Event.SelectRegion -> onRegionSelected(event.region)
-            is TournamentsContract.Event.SelectDistrict -> updateState { copy(selectedDistrict = event.district, showDistrictDropdown = false) }
+            is TournamentsContract.Event.SelectDistrict -> updateState { copy(selectedDistrict = event.district, showDistrictDropdown = false, showErrors = false) }
             is TournamentsContract.Event.ShowRegionDropdown -> updateState { copy(showRegionDropdown = event.show) }
             is TournamentsContract.Event.ShowDistrictDropdown -> updateState { copy(showDistrictDropdown = event.show) }
-            is TournamentsContract.Event.Latitude -> updateState { copy(latitude = event.value) }
-            is TournamentsContract.Event.Longitude -> updateState { copy(longitude = event.value) }
-            TournamentsContract.Event.GetCurrentLocation -> fetchCurrentLocation()
+            is TournamentsContract.Event.ShowStadiumDropdown -> updateState { copy(showStadiumDropdown = event.show) }
+            is TournamentsContract.Event.ShowErrors -> updateState { copy(showErrors = event.show) }
+            is TournamentsContract.Event.SelectStadium -> {
+                val stadium = event.stadium
+                updateState { 
+                    copy(
+                        selectedStadium = stadium, 
+                        showStadiumDropdown = false,
+                        latitude = stadium.location?.latitude,
+                        longitude = stadium.location?.longitude,
+                        showErrors = false
+                    ) 
+                }
+            }
+            is TournamentsContract.Event.Latitude -> updateState { copy(latitude = event.value, showErrors = false) }
+            is TournamentsContract.Event.Longitude -> updateState { copy(longitude = event.value, showErrors = false) }
+            TournamentsContract.Event.GetCurrentLocation -> handleLocationRequest()
+            is TournamentsContract.Event.OnLocationPermissionResult -> {
+                updateState { copy(triggerLocationPermission = false) }
+                if (event.status == PermissionStatus.GRANTED) {
+                    fetchCurrentLocation()
+                } else {
+                    sendEffect(TournamentsContract.Effect.ShowToast("Joylashuv ruxsati berilmadi"))
+                }
+            }
+            is TournamentsContract.Event.TriggerLocationPermission -> updateState { copy(triggerLocationPermission = event.trigger) }
             is TournamentsContract.Event.Create -> {
+                if (event.name.isBlank() || event.startDate.isBlank() || event.endDate.isBlank() || state.value.selectedRegion == null || state.value.selectedDistrict == null) {
+                    updateState { copy(showErrors = true) }
+                    sendEffect(TournamentsContract.Effect.ShowToast("Iltimos, barcha majburiy maydonlarni to'ldiring"))
+                    return
+                }
+
                 updateState { copy(isCreating = true, showCreateDialog = false) }
                 executeAsync(
                     block = {
@@ -176,8 +210,30 @@ class TournamentsViewModel(
         )
     }
 
+    private fun loadStadiums() {
+        executeAsync(
+            block = { getStadiumsUseCase(size = 100).first() },
+            onSuccess = { pageData ->
+                updateState { copy(stadiums = pageData.content ?: emptyList()) }
+            }
+        )
+    }
+
+    private fun handleLocationRequest() {
+        executeAsync(
+            block = { checkLocationPermissionStatus() },
+            onSuccess = { status ->
+                if (status == PermissionStatus.GRANTED) {
+                    fetchCurrentLocation()
+                } else {
+                    updateState { copy(triggerLocationPermission = true) }
+                }
+            }
+        )
+    }
+
     private fun onRegionSelected(region: RegionDto) {
-        updateState { copy(selectedRegion = region, selectedDistrict = null, districts = emptyList(), showRegionDropdown = false) }
+        updateState { copy(selectedRegion = region, selectedDistrict = null, districts = emptyList(), showRegionDropdown = false, showErrors = false) }
         executeAsync(
             block = { getDistrictsUseCase(region.id).first() },
             onSuccess = { updateState { copy(districts = it) } }

@@ -5,47 +5,12 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Assessment
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.Dns
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Place
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -78,15 +43,12 @@ val LocalBottomBarVisible = staticCompositionLocalOf<MutableState<Boolean>> {
 @Composable
 fun MainScreen() {
     val bottomBarVisible = remember { mutableStateOf(true) }
-    val homeViewModel = koinInject<HomeViewModel>()
-    val sessionManager = koinInject<SessionManager>()
     val userSession = koinInject<UserSession>()
-    val homeState by homeViewModel.state.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val strings = Localization.current
 
     val currentRole by userSession.role.collectAsState()
     val isAdminOrOwner = currentRole == UserRole.SUPER_ADMIN || currentRole == UserRole.DISTRICT_ADMIN || currentRole == UserRole.OWNER || currentRole == UserRole.UNKNOWN
-    val strings = Localization.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
     CompositionLocalProvider(LocalBottomBarVisible provides bottomBarVisible) {
         TabNavigator(HomeTab) {
@@ -108,10 +70,9 @@ fun MainScreen() {
                         ) {
                             TabNavigationItem(HomeTab, if (currentRole == UserRole.OWNER) strings.tabHome else strings.tabPanel)
                             TabNavigationItem(StadiumTab, if (currentRole == UserRole.OWNER) strings.tabSchedule else strings.tabStadium)
+                            TabNavigationItem(HistoryTab, "Tarix")
                             
-                            // Show relevant tabs even if role is still loading (using persisted or defaults)
-                            // This prevents the navigation bar from being empty or flickering
-                            if (currentRole == UserRole.SUPER_ADMIN || currentRole == UserRole.DISTRICT_ADMIN || currentRole == UserRole.OWNER || currentRole == UserRole.UNKNOWN) {
+                            if (isAdminOrOwner) {
                                 TabNavigationItem(ReportsTab, strings.tabRevenue)
                             }
                         }
@@ -121,9 +82,7 @@ fun MainScreen() {
                 Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
                     CurrentTabContent(HomeTab)
                     CurrentTabContent(StadiumTab)
-                    /* if (isAdminOrOwner) {
-                        CurrentTabContent(CoachesTab)
-                    } */
+                    CurrentTabContent(HistoryTab)
                     if (isAdminOrOwner) {
                         CurrentTabContent(ReportsTab)
                     }
@@ -138,7 +97,6 @@ fun CurrentTabContent(tab: Tab) {
     val tabNavigator = LocalTabNavigator.current
     val isSelected = tabNavigator.current == tab
     
-    // Use an Alpha-based approach or similar to keep the state alive but invisible
     Box(modifier = Modifier.fillMaxSize(), propagateMinConstraints = true) {
         if (isSelected) {
             tab.Content()
@@ -157,16 +115,17 @@ private fun RowScope.TabNavigationItem(tab: Tab, label: String? = null) {
         icon = {
             Icon(
                 painter = tab.options.icon!!,
-                contentDescription = label ?: tab.options.title
+                contentDescription = label ?: tab.options.title,
+                modifier = Modifier.size(24.dp)
             )
         },
-        label = { Text(label ?: tab.options.title, fontSize = 10.sp) },
+        label = { Text(label ?: tab.options.title, fontSize = 11.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium) },
         colors = NavigationBarItemDefaults.colors(
             selectedIconColor = MaterialTheme.colorScheme.primary,
             selectedTextColor = MaterialTheme.colorScheme.primary,
             indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-            unselectedIconColor = Color.Gray,
-            unselectedTextColor = Color.Gray,
+            unselectedIconColor = Color.Gray.copy(alpha = 0.6f),
+            unselectedTextColor = Color.Gray.copy(alpha = 0.6f),
         )
     )
 }
@@ -175,7 +134,7 @@ internal object HomeTab : Tab {
     override val options: TabOptions
         @Composable
         get() {
-            val icon = rememberVectorPainter(Icons.Filled.GridView)
+            val icon = rememberVectorPainter(Icons.Outlined.GridView)
             return remember {
                 TabOptions(
                     index = 0u,
@@ -201,7 +160,7 @@ internal object StadiumTab : Tab {
     override val options: TabOptions
         @Composable
         get() {
-            val icon = rememberVectorPainter(Icons.Filled.Place)
+            val icon = rememberVectorPainter(Icons.Outlined.Place)
             return remember {
                 TabOptions(
                     index = 1u,
@@ -223,15 +182,15 @@ internal object StadiumTab : Tab {
     }
 }
 
-internal object CoachesTab : Tab {
+internal object HistoryTab : Tab {
     override val options: TabOptions
         @Composable
         get() {
-            val icon = rememberVectorPainter(Icons.Filled.Group)
+            val icon = rememberVectorPainter(Icons.Outlined.History)
             return remember {
                 TabOptions(
                     index = 2u,
-                    title = "Rollar",
+                    title = "Tarix",
                     icon = icon
                 )
             }
@@ -239,13 +198,9 @@ internal object CoachesTab : Tab {
 
     @Composable
     override fun Content() {
-        val visibility = LocalBottomBarVisible.current
-        Navigator(CoachesVoyager) { navigator ->
-            LaunchedEffect(navigator.size) {
-                visibility.value = navigator.size <= 1
-            }
-            CurrentScreen()
-        }
+        val homeViewModel = koinInject<HomeViewModel>()
+        val state by homeViewModel.state.collectAsState()
+        uz.coder.foottopbusiness.presentation.main.home.history.HistoryScreen(state)
     }
 }
 
@@ -253,7 +208,7 @@ internal object ReportsTab : Tab {
     override val options: TabOptions
         @Composable
         get() {
-            val icon = rememberVectorPainter(Icons.Filled.Assessment)
+            val icon = rememberVectorPainter(Icons.Outlined.Assessment)
             return remember {
                 TabOptions(
                     index = 3u,

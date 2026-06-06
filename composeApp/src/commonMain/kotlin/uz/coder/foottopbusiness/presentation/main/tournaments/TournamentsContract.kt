@@ -27,7 +27,14 @@ sealed interface TournamentsContract {
         val showRegionDropdown: Boolean = false,
         val showDistrictDropdown: Boolean = false,
         val latitude: Double? = null,
-        val longitude: Double? = null
+        val longitude: Double? = null,
+        val triggerLocationPermission: Boolean = false,
+
+        // Stadium selection
+        val stadiums: List<uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse> = emptyList(),
+        val selectedStadium: uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse? = null,
+        val showStadiumDropdown: Boolean = false,
+        val showErrors: Boolean = false
     ) : MviState
 
     sealed interface Effect : MviEffect {
@@ -48,9 +55,14 @@ sealed interface TournamentsContract {
         data class SelectDistrict(val district: uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto) : Event
         data class ShowRegionDropdown(val show: Boolean) : Event
         data class ShowDistrictDropdown(val show: Boolean) : Event
+        data class ShowStadiumDropdown(val show: Boolean) : Event
+        data class SelectStadium(val stadium: uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse) : Event
+        data class ShowErrors(val show: Boolean) : Event
         data class Latitude(val value: Double?) : Event
         data class Longitude(val value: Double?) : Event
         object GetCurrentLocation : Event
+        data class OnLocationPermissionResult(val status: uz.coder.foottopbusiness.core.platform.PermissionStatus) : Event
+        data class TriggerLocationPermission(val trigger: Boolean) : Event
 
         data class Create(
             val name: String,

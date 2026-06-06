@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.sp
 import org.koin.compose.koinInject
 import uz.coder.foottopbusiness.core.localization.ErrorMapper
 import uz.coder.foottopbusiness.core.localization.Localization
+import uz.coder.foottopbusiness.core.ui.shimmer
 import uz.coder.foottopbusiness.presentation.main.home.HomeContract
 import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
 
@@ -145,78 +146,102 @@ fun ReportsScreen() {
             }
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = padding.calculateTopPadding(), start = padding.calculateStartPadding(
-                    LayoutDirection.Ltr), end = padding.calculateRightPadding(LayoutDirection.Rtl))
-                .background(MaterialTheme.colorScheme.background),
-            contentPadding = PaddingValues(bottom = 32.dp, start = 20.dp, end = 20.dp, top = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item {
-                homeState.weeklyReport?.let { report ->
-                    IncomeOverviewCard(
-                        totalEarnings = report.weeklyRevenue,
-                        weeklyTotal = report.weeklyRevenue,
-                        totalUsers = homeState.dashboard?.usersCount ?: 0,
-                        growth = report.bookingsGrowthPercent
-                    )
-                    Spacer(Modifier.height(16.dp))
+        if (homeState.isLoadingDashboard || homeState.isLoadingWeeklyReport) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = padding.calculateTopPadding())
+                    .background(MaterialTheme.colorScheme.background),
+                contentPadding = PaddingValues(bottom = 32.dp, start = 20.dp, end = 20.dp, top = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                item {
+                    Box(modifier = Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(28.dp)).shimmer())
+                }
+                item {
+                    Box(modifier = Modifier.fillMaxWidth().height(240.dp).clip(RoundedCornerShape(24.dp)).shimmer())
+                }
+                item {
+                    Box(modifier = Modifier.width(150.dp).height(24.dp).clip(RoundedCornerShape(4.dp)).shimmer())
+                }
+                items(3) {
+                    Box(modifier = Modifier.fillMaxWidth().height(80.dp).clip(RoundedCornerShape(12.dp)).shimmer())
                 }
             }
-
-            item {
-                WeeklyRevenueChart(homeState.weeklyEarnings, homeState.weeklyLabels)
-            }
-
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        strings.dailyDetails,
-                        fontWeight = FontWeight.Black,
-                        fontSize = 20.sp,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    TextButton(onClick = { /* TODO */ }) {
-                        Text(
-                            strings.filter,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = padding.calculateTopPadding(), start = padding.calculateStartPadding(
+                        LayoutDirection.Ltr), end = padding.calculateRightPadding(LayoutDirection.Rtl))
+                    .background(MaterialTheme.colorScheme.background),
+                contentPadding = PaddingValues(bottom = 32.dp, start = 20.dp, end = 20.dp, top = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                item {
+                    homeState.weeklyReport?.let { report ->
+                        IncomeOverviewCard(
+                            totalEarnings = report.weeklyRevenue,
+                            weeklyTotal = report.weeklyRevenue,
+                            totalUsers = homeState.dashboard?.usersCount ?: 0,
+                            growth = report.bookingsGrowthPercent
                         )
+                        Spacer(Modifier.height(16.dp))
                     }
                 }
-            }
 
-            val recentMatches = homeState.matches
-                .filter { it.dateTime != null }
-                .sortedByDescending { it.dateTime }
-                .take(7)
-
-            items(recentMatches) { match ->
-                val datePart = match.dateTime?.split("T")?.firstOrNull() ?: ""
-                val total = (match.currentPlayers ?: 0) * (match.pricePerPlayer ?: 0.0)
-
-                ReportItem(
-                    title = match.title ?: "O'yin",
-                    subtitle = "$datePart • ${match.currentPlayers} ta bandlar • ${total.toInt()} so'm",
-                    icon = Icons.Default.BarChart,
-                    iconBgColor = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            if (recentMatches.isEmpty()) {
                 item {
-                    Text(
-                        strings.noDataYet,
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    WeeklyRevenueChart(homeState.weeklyEarnings, homeState.weeklyLabels)
+                }
+
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            strings.dailyDetails,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 20.sp,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        TextButton(onClick = { /* TODO */ }) {
+                            Text(
+                                strings.filter,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                val recentMatches = homeState.matches
+                    .filter { it.dateTime != null }
+                    .sortedByDescending { it.dateTime }
+                    .take(7)
+
+                items(recentMatches) { match ->
+                    val datePart = match.dateTime?.split("T")?.firstOrNull() ?: ""
+                    val total = (match.currentPlayers ?: 0) * (match.pricePerPlayer ?: 0.0)
+
+                    ReportItem(
+                        title = match.title ?: "O'yin",
+                        subtitle = "$datePart • ${match.currentPlayers} ta bandlar • ${total.toInt()} so'm",
+                        icon = Icons.Default.BarChart,
+                        iconBgColor = MaterialTheme.colorScheme.primary
                     )
+                }
+
+                if (recentMatches.isEmpty()) {
+                    item {
+                        Text(
+                            strings.noDataYet,
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }

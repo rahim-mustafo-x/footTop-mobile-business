@@ -87,8 +87,6 @@ class HomeViewModel(
                 loadMatches()
                 loadTournaments()
             }
-
-            is HomeContract.Event.ChangeTab -> updateState { copy(currentTab = event.index) }
             
             is HomeContract.Event.SetShowStadiumTable -> updateState { copy(showStadiumTable = event.show) }
 
