@@ -61,17 +61,34 @@ class HomeViewModel(
     )
 ) {
     init {
-        val currentUser = userSession.user.value
-        if (currentUser != null) {
-            val role = userSession.role.value
-            updateState { 
-                copy(
-                    user = currentUser,
-                    isAdmin = role == UserRole.SUPER_ADMIN || role == UserRole.DISTRICT_ADMIN,
-                    isOwner = role == UserRole.OWNER,
-                    userRole = role,
-                    isLoadingUser = false
-                ) 
+        viewModelScope.launch {
+            userSession.user.collect { currentUser ->
+                if (currentUser != null) {
+                    val role = userSession.role.value
+                    updateState { 
+                        copy(
+                            user = currentUser,
+                            isAdmin = role == UserRole.SUPER_ADMIN || role == UserRole.DISTRICT_ADMIN,
+                            isOwner = role == UserRole.OWNER,
+                            userRole = role,
+                            isLoadingUser = false
+                        ) 
+                    }
+                }
+            }
+        }
+        viewModelScope.launch {
+            userSession.role.collect { role ->
+                if (role != UserRole.UNKNOWN) {
+                    updateState { 
+                        copy(
+                            userRole = role,
+                            isAdmin = role == UserRole.SUPER_ADMIN || role == UserRole.DISTRICT_ADMIN,
+                            isOwner = role == UserRole.OWNER,
+                            isLoadingUser = false
+                        ) 
+                    }
+                }
             }
         }
         handleEvent(HomeContract.Event.Load)

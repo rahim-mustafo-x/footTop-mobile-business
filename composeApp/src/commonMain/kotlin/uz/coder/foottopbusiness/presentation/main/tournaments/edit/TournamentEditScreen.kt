@@ -34,6 +34,7 @@ import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
 import uz.coder.foottopbusiness.core.localization.Localization
+import uz.coder.foottopbusiness.core.platform.LocationPermissionLauncher
 import uz.coder.foottopbusiness.core.visualTransformation.AmountTransformation
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsContract
@@ -50,6 +51,13 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
         val viewModel = koinInject<TournamentsViewModel>()
         val state by viewModel.state.collectAsState()
         val strings = Localization.current
+
+        LocationPermissionLauncher(
+            trigger = state.triggerLocationPermission,
+            onResult = { status ->
+                viewModel.handleEvent(TournamentsContract.Event.OnLocationPermissionResult(status))
+            }
+        )
 
         var name by remember { mutableStateOf(tournament.name ?: "") }
         
@@ -246,6 +254,8 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                         isError = state.showErrors && name.isBlank()
                     )
 
+                    StadiumDropdown(state, viewModel)
+
                     RegionDropdown(state, viewModel, isError = state.showErrors && state.selectedRegion == null)
                     DistrictDropdown(state, viewModel, isError = state.showErrors && state.selectedDistrict == null)
 
@@ -259,7 +269,7 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                 }
 
                 // Location Card
-                PremiumEditCard(title = strings.location, icon = Icons.Outlined.Map) {
+                PremiumEditCard(title = strings.stadium, icon = Icons.Outlined.Map) {
                     LocationPicker(
                         latitude = latitude,
                         longitude = longitude,
@@ -272,14 +282,18 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                                 latitude = lat
                                 longitude = lng
                             })
-                        }
+                        },
+                        onGetCurrentLocation = { viewModel.handleEvent(TournamentsContract.Event.GetCurrentLocation) }
                     )
                 }
 
-                LaunchedEffect(state.latitude, state.longitude) {
+                LaunchedEffect(state.latitude, state.longitude, state.selectedStadium) {
                     if (state.latitude != null && state.longitude != null) {
                         latitude = state.latitude
                         longitude = state.longitude
+                    }
+                    state.selectedStadium?.let { stadium ->
+                        stadium.location?.address?.let { preciseAddress = it }
                     }
                 }
 
@@ -440,6 +454,58 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
                 }
                 
                 Spacer(Modifier.height(32.dp))
+            }
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    private fun StadiumDropdown(
+        state: TournamentsContract.State,
+        viewModel: TournamentsViewModel
+    ) {
+        val strings = Localization.current
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(strings.stadium, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
+            ExposedDropdownMenuBox(
+                expanded = state.showStadiumDropdown,
+                onExpandedChange = { 
+                    viewModel.handleEvent(TournamentsContract.Event.ShowStadiumDropdown(it))
+                    if (it) viewModel.handleEvent(TournamentsContract.Event.GetCurrentLocation)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = state.selectedStadium?.name ?: "Stadionni tanlang",
+                    onValueChange = {},
+                    readOnly = true,
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                    singleLine = true,
+                    leadingIcon = { Icon(Icons.Outlined.LocationOn, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f), modifier = Modifier.size(18.dp)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showStadiumDropdown) },
+                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                    )
+                )
+                ExposedDropdownMenu(
+                    expanded = state.showStadiumDropdown,
+                    onDismissRequest = { viewModel.handleEvent(TournamentsContract.Event.ShowStadiumDropdown(false)) },
+                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                ) {
+                    state.stadiums.forEach { stadium ->
+                        DropdownMenuItem(
+                            text = { Text(stadium.name ?: "") },
+                            onClick = {
+                                viewModel.handleEvent(TournamentsContract.Event.SelectStadium(stadium))
+                            }
+                        )
+                    }
+                }
             }
         }
     }

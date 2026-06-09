@@ -31,7 +31,8 @@ fun LocationPicker(
     onLatitudeChange: (String) -> Unit,
     onLongitudeChange: (String) -> Unit,
     onAddressChange: (String) -> Unit,
-    onSelectOnMap: () -> Unit
+    onSelectOnMap: () -> Unit,
+    onGetCurrentLocation: (() -> Unit)? = null
 ) {
     val strings = Localization.current
     
@@ -95,8 +96,11 @@ fun LocationPicker(
         
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(
-                onClick = onSelectOnMap,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
+                onClick = { 
+                    onGetCurrentLocation?.invoke()
+                    onSelectOnMap() 
+                },
+                modifier = Modifier.weight(1f).height(48.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -104,7 +108,7 @@ fun LocationPicker(
                 ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
             ) {
-                Icon(Icons.Default.Map, null, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.MyLocation, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(strings.location, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             }

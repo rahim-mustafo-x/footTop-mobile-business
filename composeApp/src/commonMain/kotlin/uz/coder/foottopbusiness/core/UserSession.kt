@@ -2,19 +2,42 @@ package uz.coder.foottopbusiness.core
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.data.network.dto.UserDto
 import uz.coder.foottopbusiness.domain.model.UserRole
 
-class UserSession {
+class UserSession(private val preferencesManager: PreferencesManager) {
     private val _user = MutableStateFlow<UserDto?>(null)
     val user = _user.asStateFlow()
 
     private val _role = MutableStateFlow(UserRole.UNKNOWN)
     val role = _role.asStateFlow()
 
+    init {
+        CoroutineScope(Dispatchers.Default).launch {
+            preferencesManager.role.collectLatest { roleName ->
+                if (roleName != null && _role.value == UserRole.UNKNOWN) {
+                    _role.value = UserRole.fromString(roleName)
+                }
+            }
+        }
+    }
+
     fun setUser(user: UserDto?) {
         _user.value = user
-        _role.value = if (user != null) determineRole(user) else UserRole.UNKNOWN
+        if (user != null) {
+            val determinedRole = determineRole(user)
+            _role.value = determinedRole
+            CoroutineScope(Dispatchers.Default).launch {
+                preferencesManager.setRole(determinedRole.roleName)
+            }
+        } else {
+            _role.value = UserRole.UNKNOWN
+        }
     }
 
     private fun determineRole(user: UserDto): UserRole {

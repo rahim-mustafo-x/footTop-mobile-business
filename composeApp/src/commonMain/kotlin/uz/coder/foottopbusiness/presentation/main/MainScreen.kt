@@ -44,47 +44,115 @@ val LocalBottomBarVisible = staticCompositionLocalOf<MutableState<Boolean>> {
 fun MainScreen() {
     val bottomBarVisible = remember { mutableStateOf(true) }
     val userSession = koinInject<UserSession>()
-    val strings = Localization.current
 
     val currentRole by userSession.role.collectAsState()
-    val isAdminOrOwner = currentRole == UserRole.SUPER_ADMIN || currentRole == UserRole.DISTRICT_ADMIN || currentRole == UserRole.OWNER || currentRole == UserRole.UNKNOWN
+    
+    // Show a loading screen while role is UNKNOWN to avoid "jumping" UI
+    if (currentRole == UserRole.UNKNOWN) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    val isAdminOrOwner = currentRole == UserRole.SUPER_ADMIN || currentRole == UserRole.DISTRICT_ADMIN || currentRole == UserRole.OWNER
     val snackbarHostState = remember { SnackbarHostState() }
 
     CompositionLocalProvider(LocalBottomBarVisible provides bottomBarVisible) {
-        TabNavigator(HomeTab) {
-            Scaffold(
-                modifier = Modifier.fillMaxSize(),
-                snackbarHost = { SnackbarHost(snackbarHostState) },
-                bottomBar = {
-                    AnimatedVisibility(
-                        visible = bottomBarVisible.value,
-                        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+        when (currentRole) {
+            UserRole.SUPER_ADMIN, UserRole.DISTRICT_ADMIN, UserRole.OWNER -> {
+                AdminOwnerMainContent(currentRole, isAdminOrOwner, bottomBarVisible, snackbarHostState)
+            }
+            UserRole.COACH -> {
+                CoachMainContent(bottomBarVisible, snackbarHostState)
+            }
+            else -> {
+                // Fallback for other roles or UNKNOWN (though UNKNOWN is handled above)
+                AdminOwnerMainContent(currentRole, isAdminOrOwner, bottomBarVisible, snackbarHostState)
+            }
+        }
+    }
+}
+
+@Composable
+fun AdminOwnerMainContent(
+    currentRole: UserRole,
+    isAdminOrOwner: Boolean,
+    bottomBarVisible: MutableState<Boolean>,
+    snackbarHostState: SnackbarHostState
+) {
+    val strings = Localization.current
+    TabNavigator(HomeTab) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            bottomBar = {
+                AnimatedVisibility(
+                    visible = bottomBarVisible.value,
+                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                ) {
+                    NavigationBar(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .windowInsetsPadding(WindowInsets.navigationBars),
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 8.dp
                     ) {
-                        NavigationBar(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .windowInsetsPadding(WindowInsets.navigationBars),
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            tonalElevation = 8.dp
-                        ) {
-                            TabNavigationItem(HomeTab, if (currentRole == UserRole.OWNER) strings.tabHome else strings.tabPanel)
-                            TabNavigationItem(StadiumTab, if (currentRole == UserRole.OWNER) strings.tabSchedule else strings.tabStadium)
-                            
-                            if (isAdminOrOwner) {
-                                TabNavigationItem(ReportsTab, strings.tabRevenue)
-                            }
+                        TabNavigationItem(HomeTab, if (currentRole == UserRole.OWNER) strings.tabHome else strings.tabPanel)
+                        TabNavigationItem(StadiumTab, if (currentRole == UserRole.OWNER) strings.tabSchedule else strings.tabStadium)
+                        
+                        if (isAdminOrOwner) {
+                            TabNavigationItem(ReportsTab, strings.tabRevenue)
                         }
                     }
                 }
-            ) { paddingValues ->
-                Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-                    CurrentTabContent(HomeTab)
-                    CurrentTabContent(StadiumTab)
-                    if (isAdminOrOwner) {
-                        CurrentTabContent(ReportsTab)
+            }
+        ) { paddingValues ->
+            Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+                CurrentTabContent(HomeTab)
+                CurrentTabContent(StadiumTab)
+                if (isAdminOrOwner) {
+                    CurrentTabContent(ReportsTab)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CoachMainContent(
+    bottomBarVisible: MutableState<Boolean>,
+    snackbarHostState: SnackbarHostState
+) {
+    val strings = Localization.current
+    // For now, coaches might have a simplified view or specific tabs
+    TabNavigator(HomeTab) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            bottomBar = {
+                AnimatedVisibility(
+                    visible = bottomBarVisible.value,
+                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                ) {
+                    NavigationBar(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .windowInsetsPadding(WindowInsets.navigationBars),
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 8.dp
+                    ) {
+                        TabNavigationItem(HomeTab, strings.tabHome)
+                        TabNavigationItem(StadiumTab, strings.tabSchedule)
                     }
                 }
+            }
+        ) { paddingValues ->
+            Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+                CurrentTabContent(HomeTab)
+                CurrentTabContent(StadiumTab)
             }
         }
     }

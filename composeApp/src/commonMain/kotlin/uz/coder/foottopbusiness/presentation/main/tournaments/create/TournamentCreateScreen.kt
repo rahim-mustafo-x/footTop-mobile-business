@@ -249,7 +249,7 @@ class TournamentCreateScreen : Screen {
                 }
 
                 // Location Card
-                PremiumCreateCard(title = strings.location, icon = Icons.Outlined.Map) {
+                PremiumCreateCard(title = strings.stadium, icon = Icons.Outlined.Map) {
                     LocationPicker(
                         latitude = latitude,
                         longitude = longitude,
@@ -262,7 +262,8 @@ class TournamentCreateScreen : Screen {
                                 latitude = lat
                                 longitude = lng
                             })
-                        }
+                        },
+                        onGetCurrentLocation = { viewModel.handleEvent(TournamentsContract.Event.GetCurrentLocation) }
                     )
                 }
 
@@ -518,10 +519,13 @@ class TournamentCreateScreen : Screen {
     ) {
         val strings = Localization.current
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(strings.location, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
+            Text(strings.stadium, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
             ExposedDropdownMenuBox(
                 expanded = state.showStadiumDropdown,
-                onExpandedChange = { viewModel.handleEvent(TournamentsContract.Event.ShowStadiumDropdown(it)) },
+                onExpandedChange = { 
+                    viewModel.handleEvent(TournamentsContract.Event.ShowStadiumDropdown(it))
+                    if (it) viewModel.handleEvent(TournamentsContract.Event.GetCurrentLocation)
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedTextField(

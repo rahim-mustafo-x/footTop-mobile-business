@@ -24,6 +24,7 @@ interface Language {
     val phoneNumber: String
     val fullName: String
     val location: String
+    val stadium: String
     val address: String
     val capacity: String
     val price: String
@@ -281,6 +282,7 @@ class EnLanguage : Language {
     override val phoneNumber = "Phone Number"
     override val fullName = "Full Name"
     override val location = "Location"
+    override val stadium = "Stadium"
     override val address = "Address"
     override val capacity = "Capacity"
     override val price = "Price"
@@ -526,6 +528,7 @@ class RuLanguage : Language {
     override val phoneNumber = "Номер телефона"
     override val fullName = "Полное имя"
     override val location = "Местоположение"
+    override val stadium = "Стадион"
     override val address = "Адрес"
     override val capacity = "Вместимость"
     override val price = "Цена"
@@ -771,6 +774,7 @@ class UzLanguage : Language {
     override val phoneNumber = "Telefon raqami"
     override val fullName = "To'liq ism"
     override val location = "Manzil"
+    override val stadium = "Stadion"
     override val address = "Aniq manzil"
     override val capacity = "Sig'imi"
     override val price = "Narxi"

@@ -61,7 +61,7 @@ import uz.coder.foottopbusiness.presentation.splash.SplashViewModel
 
 val appModule = module {
     // core
-    single { UserSession() }
+    single { UserSession(get()) }
     single { SessionManager(get()) }
     single { HttpClientFactory(get(), get()) }
     single { get<HttpClientFactory>().create(get()) }
