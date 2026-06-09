@@ -162,12 +162,17 @@ class StadiumDetailsViewModel(
                 refreshStadium()
             }
             is StadiumDetailsContract.Event.CreateBooking -> {
-                if (state.value.bookerName.isBlank() || state.value.bookerPhone.length < 9) {
+                val name = state.value.bookerName.trim()
+                val phone = state.value.bookerPhone.replace(Regex("[^0-9]"), "")
+                
+                // If user entered something in phone, it must be at least 9 digits
+                if (phone.isNotEmpty() && phone.length < 9) {
                     updateState { copy(showBookerErrors = true) }
-                    sendEffect(StadiumDetailsContract.Effect.ShowToast("Iltimos, ma'lumotlarni to'liq kiriting"))
+                    sendEffect(StadiumDetailsContract.Effect.ShowToast("Telefon raqamini to'liq kiriting"))
                     return
                 }
-                bookSelectedSlots(event)
+                
+                bookSelectedSlots(event.copy(name = name.takeIf { it.isNotBlank() }, phone = if (phone.isNotBlank()) "998$phone" else null))
             }
             StadiumDetailsContract.Event.DismissBookingResultDialog -> {
                 updateState { copy(showBookingResultDialog = false) }

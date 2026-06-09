@@ -64,7 +64,7 @@ val appModule = module {
     single { UserSession() }
     single { SessionManager(get()) }
     single { HttpClientFactory(get(), get()) }
-    single { get<HttpClientFactory>().create() }
+    single { get<HttpClientFactory>().create(get()) }
 
     // api services
     single { AuthApiService(get()) }

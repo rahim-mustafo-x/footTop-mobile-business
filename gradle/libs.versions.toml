@@ -28,6 +28,7 @@ coreKtx = "1.7.0"
 google-maps = "6.4.4"
 play-services-location = "21.3.0"
 maplibre-compose = "0.13.0"
+chucker = "4.3.1"
 
 
 [libraries]
@@ -35,6 +36,10 @@ maplibre-compose = "0.13.0"
 firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+
+# Chucker
+chucker-library = { module = "com.github.chuckerteam.chucker:library", version.ref = "chucker" }
+chucker-library-no-op = { module = "com.github.chuckerteam.chucker:library-no-op", version.ref = "chucker" }
 
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }

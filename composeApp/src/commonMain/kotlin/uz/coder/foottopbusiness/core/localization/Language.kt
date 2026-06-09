@@ -236,6 +236,7 @@ interface Language {
     val pitchName: String
     val field: String
     val showBooked: String
+    val showNames: String
     val statusBookedWord: String
     val statusBookedSentence: String
     val statusAvailableWord: String
@@ -253,6 +254,7 @@ interface Language {
     val coachInfo: String
     val experienceYears: String
     val reviews: String
+    val featureComingSoon: String
 }
 
 class EnLanguage : Language {
@@ -480,6 +482,7 @@ class EnLanguage : Language {
     override val pitchName = "Pitch Name"
     override val field = "Field"
     override val showBooked = "Show already booked slots"
+    override val showNames = "Show names"
     override val statusBookedWord = "Booked"
     override val statusBookedSentence = "This slot is already booked."
     override val statusAvailableWord = "Available"
@@ -496,6 +499,7 @@ class EnLanguage : Language {
     override val coachInfo = "Coach Information"
     override val experienceYears = "years"
     override val reviews = "Reviews"
+    override val featureComingSoon = "This feature will be added in future versions"
 }
 
 class RuLanguage : Language {
@@ -723,6 +727,7 @@ class RuLanguage : Language {
     override val pitchName = "Название поля"
     override val field = "Поле"
     override val showBooked = "Показать уже забронированные слоты"
+    override val showNames = "Показать имена"
     override val statusBookedWord = "Занято"
     override val statusBookedSentence = "Это время уже забронировано."
     override val statusAvailableWord = "Свободно"
@@ -739,6 +744,7 @@ class RuLanguage : Language {
     override val coachInfo = "Информация о тренере"
     override val experienceYears = "лет"
     override val reviews = "Отзывы"
+    override val featureComingSoon = "Эта функция будет добавлена в будущих версиях"
 }
 
 class UzLanguage : Language {
@@ -966,6 +972,7 @@ class UzLanguage : Language {
     override val pitchName = "Pitch nomi"
     override val field = "Maydon"
     override val showBooked = "Band qilingan vaqtlarni ko'rsatish"
+    override val showNames = "Ismlarni ko'rsatish"
     override val statusBookedWord = "Band"
     override val statusBookedSentence = "Ushbu vaqt allaqachon band qilingan."
     override val statusAvailableWord = "Bo'sh"
@@ -982,4 +989,5 @@ class UzLanguage : Language {
     override val coachInfo = "Murabbiy ma'lumotlari"
     override val experienceYears = "yil"
     override val reviews = "Sharhlar"
+    override val featureComingSoon = "Bu funksiya keyingi versiyalarda qo'shiladi"
 }

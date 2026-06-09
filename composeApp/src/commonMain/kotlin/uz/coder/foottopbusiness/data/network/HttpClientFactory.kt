@@ -1,6 +1,8 @@
 package uz.coder.foottopbusiness.data.network
 
 import io.ktor.client.HttpClient
+import io.ktor.client.HttpClientConfig
+import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.auth.Auth
@@ -37,10 +39,10 @@ class HttpClientFactory(
 
     private val ioScope = CoroutineScope(Dispatchers.Default)
 
-    fun create(): HttpClient {
+    fun create(engine: HttpClientEngine? = null): HttpClient {
         sessionManager.observeToken(ioScope)
 
-        return HttpClient {
+        val config: HttpClientConfig<*>.() -> Unit = {
             install(ContentNegotiation) {
                 json(Json {
                     prettyPrint = true
@@ -145,5 +147,7 @@ class HttpClientFactory(
                 url(BASE_URL)
             }
         }
+
+        return if (engine != null) HttpClient(engine, config) else HttpClient(config)
     }
 }

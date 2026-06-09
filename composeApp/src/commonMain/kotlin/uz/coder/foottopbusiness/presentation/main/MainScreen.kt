@@ -70,7 +70,6 @@ fun MainScreen() {
                         ) {
                             TabNavigationItem(HomeTab, if (currentRole == UserRole.OWNER) strings.tabHome else strings.tabPanel)
                             TabNavigationItem(StadiumTab, if (currentRole == UserRole.OWNER) strings.tabSchedule else strings.tabStadium)
-                            TabNavigationItem(HistoryTab, "Tarix")
                             
                             if (isAdminOrOwner) {
                                 TabNavigationItem(ReportsTab, strings.tabRevenue)
@@ -82,7 +81,6 @@ fun MainScreen() {
                 Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
                     CurrentTabContent(HomeTab)
                     CurrentTabContent(StadiumTab)
-                    CurrentTabContent(HistoryTab)
                     if (isAdminOrOwner) {
                         CurrentTabContent(ReportsTab)
                     }
@@ -179,28 +177,6 @@ internal object StadiumTab : Tab {
             }
             CurrentScreen()
         }
-    }
-}
-
-internal object HistoryTab : Tab {
-    override val options: TabOptions
-        @Composable
-        get() {
-            val icon = rememberVectorPainter(Icons.Outlined.History)
-            return remember {
-                TabOptions(
-                    index = 2u,
-                    title = "Tarix",
-                    icon = icon
-                )
-            }
-        }
-
-    @Composable
-    override fun Content() {
-        val homeViewModel = koinInject<HomeViewModel>()
-        val state by homeViewModel.state.collectAsState()
-        uz.coder.foottopbusiness.presentation.main.home.history.HistoryScreen(state)
     }
 }
 

@@ -71,6 +71,20 @@ fun AddStadiumScreen(viewModel: AddStadiumViewModel, onBack: () -> Unit) {
 
     var showOpenTimePicker by remember { mutableStateOf(false) }
     var showCloseTimePicker by remember { mutableStateOf(false) }
+    var showFeatureComingSoonDialog by remember { mutableStateOf(false) }
+
+    if (showFeatureComingSoonDialog) {
+        AlertDialog(
+            onDismissRequest = { showFeatureComingSoonDialog = false },
+            title = { Text(strings.addPhoto) },
+            text = { Text(strings.featureComingSoon) },
+            confirmButton = {
+                TextButton(onClick = { showFeatureComingSoonDialog = false }) {
+                    Text(strings.understand)
+                }
+            }
+        )
+    }
 
     if (showOpenTimePicker) {
         val initialHour = try { state.openTime.split(":")[0].toInt() } catch (_: Exception) { 8 }
@@ -346,7 +360,7 @@ fun AddStadiumScreen(viewModel: AddStadiumViewModel, onBack: () -> Unit) {
                 }
 
                 Button(
-                    onClick = { /* TODO: Image picker */ },
+                    onClick = { showFeatureComingSoonDialog = true },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(

@@ -24,11 +24,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -62,6 +66,44 @@ private enum class SlotRowState {
     AVAILABLE, SELECTED, BOOKED, PAST
 }
 
+class PhoneVisualTransformation : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        // Expected input: 991234567
+        // Output: (99) 123-45-67
+        val trimmed = if (text.text.length >= 9) text.text.substring(0, 9) else text.text
+        var out = ""
+        for (i in trimmed.indices) {
+            if (i == 0) out += "("
+            out += trimmed[i]
+            if (i == 1) out += ") "
+            if (i == 4) out += "-"
+            if (i == 6) out += "-"
+        }
+
+        val offsetMapping = object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int {
+                if (offset <= 0) return 0
+                if (offset <= 2) return offset + 1 // (XX
+                if (offset <= 5) return offset + 3 // (XX) XXX
+                if (offset <= 7) return offset + 4 // (XX) XXX-XX
+                if (offset <= 9) return offset + 5 // (XX) XXX-XX-XX
+                return 13
+            }
+
+            override fun transformedToOriginal(offset: Int): Int {
+                if (offset <= 1) return 0
+                if (offset <= 4) return offset - 1
+                if (offset <= 8) return offset - 3
+                if (offset <= 11) return offset - 4
+                if (offset <= 13) return offset - 5
+                return 9
+            }
+        }
+
+        return TransformedText(AnnotatedString(out), offsetMapping)
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit) {
@@ -74,7 +116,10 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
     val now: Instant = remember { Clock.System.now() }
     val scope = rememberCoroutineScope()
     val strings = Localization.current
-    var showBookedSlots by remember { mutableStateOf(true) }
+    var showBookedSlots by remember { mutableStateOf(false) }
+    var showNames by remember { mutableStateOf(false) }
+    var showBookingSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
@@ -128,6 +173,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (stadium != null) {
                 if (isOwnerless) {
@@ -183,7 +229,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                     Text("$durationMins min", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
                                 }
                                 Column(modifier = Modifier.weight(0.8f)) {
-                                    Text("Narx", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Spacer(Modifier.height(16.dp))
                                     Text("${totalPrice.toInt()} so'm", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
                                 }
                             }
@@ -191,20 +237,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                             Spacer(Modifier.height(12.dp))
 
                             Button(
-                                onClick = {
-                                    if (selectedEnd != null) {
-                                        viewModel.handleEvent(
-                                            StadiumDetailsContract.Event.CreateBooking(
-                                                stadiumId = currentStadium.id ?: 0,
-                                                startTime = selectedSlot?.start ?: "",
-                                                endTime = selectedEnd.toString(),
-                                                price = totalPrice,
-                                                name = state.bookerName.takeIf { it.isNotBlank() },
-                                                phone = if (state.bookerPhone.isNotBlank()) "998${state.bookerPhone}" else null
-                                            )
-                                        )
-                                    }
-                                },
+                                onClick = { showBookingSheet = true },
                                 shape = RoundedCornerShape(16.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                 modifier = Modifier.fillMaxWidth().height(56.dp)
@@ -290,9 +323,18 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                         )
                         IconButton(
                             onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.BackClick) },
-                            modifier = Modifier.statusBarsPadding().padding(8.dp).align(Alignment.TopStart).background(Color.Black.copy(0.3f), CircleShape)
+                            modifier = Modifier.statusBarsPadding().padding(12.dp).align(Alignment.TopStart).background(Color.Black.copy(0.3f), CircleShape)
                         ) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White)
+                        }
+
+                        if (canEdit) {
+                            IconButton(
+                                onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.EditClick) },
+                                modifier = Modifier.statusBarsPadding().padding(12.dp).align(Alignment.TopEnd).background(Color.Black.copy(0.3f), CircleShape)
+                            ) {
+                                Icon(Icons.Default.Edit, "Edit", tint = Color.White)
+                            }
                         }
                     }
                 }
@@ -323,10 +365,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                         
                         Spacer(Modifier.height(16.dp))
                         
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            InfoCard(icon = Icons.Default.Schedule, title = strings.workingHours, subtitle = "${stadium.openTime.toLocalDateTimeSafe()?.let { formatTimeFromDateTime(it) } ?: "08:00"} - ${stadium.closeTime.toLocalDateTimeSafe()?.let { formatTimeFromDateTime(it) } ?: "23:00"}", modifier = Modifier.weight(1f))
-                            InfoCard(icon = Icons.Default.Payments, title = strings.price, subtitle = "${stadium.pricePerHour?.toInt() ?: 0} ${strings.uzsPerHour}", modifier = Modifier.weight(1f))
-                        }
+                        BeautifulStadiumInfoCard(stadium, strings)
 
                         if (!isOwnerless) {
                             Spacer(Modifier.height(24.dp))
@@ -348,20 +387,31 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                SectionTitle(strings.freeSlots)
-                                SwitchItem(
-                                    label = strings.statusBookedWord,
-                                    checked = showBookedSlots,
-                                    onCheckedChange = { showBookedSlots = it },
-                                    modifier = Modifier.width(130.dp)
+                                Text(
+                                    strings.dailyDetails,
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 20.sp,
+                                    color = MaterialTheme.colorScheme.onBackground
                                 )
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(strings.booked, style = MaterialTheme.typography.labelSmall, fontSize = 9.sp)
+                                        Switch(
+                                            checked = showBookedSlots,
+                                            onCheckedChange = { showBookedSlots = it },
+                                            modifier = Modifier.scale(0.7f)
+                                        )
+                                    }
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(strings.showNames, style = MaterialTheme.typography.labelSmall, fontSize = 9.sp)
+                                        Switch(
+                                            checked = showNames,
+                                            onCheckedChange = { showNames = it },
+                                            modifier = Modifier.scale(0.7f)
+                                        )
+                                    }
+                                }
                             }
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                text = strings.showBooked,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                            )
                             Spacer(Modifier.height(12.dp))
 
                             if (state.isSlotsLoading) {
@@ -383,12 +433,17 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(end = 16.dp)) {
                                     items(stadiums.size) { index ->
                                         val isActive = selectedTabIndex == index
+                                        val displayName = if (showNames) {
+                                            stadiums[index].name ?: stadium.name ?: "${strings.field} ${index + 1}"
+                                        } else {
+                                            "${strings.field} ${index + 1}"
+                                        }
                                         Surface(
                                             modifier = Modifier.clickable { selectedTabIndex = index; viewModel.handleEvent(StadiumDetailsContract.Event.ClearSelection) },
                                             shape = RoundedCornerShape(10.dp),
                                             color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                                         ) {
-                                            Text(text = "${strings.field} ${index + 1}", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), color = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+                                            Text(text = displayName, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), color = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
                                         }
                                     }
                                 }
@@ -430,72 +485,134 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                             }
                         }
 
-                        // Booker Info (If selected)
-                        if (showSticky) {
-                            Spacer(Modifier.height(24.dp))
-                            
-                            val nameError = state.showBookerErrors && state.bookerName.isBlank()
-                            val phoneError = state.showBookerErrors && state.bookerPhone.length < 9
-                            val hasError = nameError || phoneError
-
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (hasError) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f) 
-                                                     else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                                ),
-                                border = if (hasError) BorderStroke(1.dp, MaterialTheme.colorScheme.error) else null
-                            ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    SectionTitle("Bron qiluvchi ma'lumotlari")
-                                    Spacer(Modifier.height(12.dp))
-                                    OutlinedTextField(
-                                        value = state.bookerName,
-                                        onValueChange = { viewModel.handleEvent(StadiumDetailsContract.Event.UpdateBookerName(it)) },
-                                        label = { Text("Ism") },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(12.dp),
-                                        isError = nameError,
-                                        supportingText = if (nameError) { { Text("Ismni kiriting") } } else null,
-                                        leadingIcon = { Icon(Icons.Default.Person, null, tint = if (nameError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary) }
-                                    )
-                                    Spacer(Modifier.height(8.dp))
-                                    OutlinedTextField(
-                                        value = state.bookerPhone,
-                                        onValueChange = { if (it.length <= 9) viewModel.handleEvent(StadiumDetailsContract.Event.UpdateBookerPhone(it)) },
-                                        label = { Text("Telefon") },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(12.dp),
-                                        prefix = { Text("+998 ") },
-                                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
-                                        isError = phoneError,
-                                        supportingText = if (phoneError) { { Text("Telefon raqamini to'liq kiriting") } } else null,
-                                        leadingIcon = { Icon(Icons.Default.Phone, null, tint = if (phoneError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary) }
-                                    )
-                                }
-                            }
-                        }
-
                         Spacer(Modifier.height(24.dp))
                         SectionTitle(strings.description)
                         Text(text = stadium.description ?: strings.noDataYet, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 20.sp)
                         
-                        if (canEdit) {
-                            Spacer(Modifier.height(16.dp))
-                            OutlinedButton(
-                                onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.EditClick) },
-                                modifier = Modifier.fillMaxWidth().height(56.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                            ) {
-                                Icon(Icons.Default.Edit, null)
-                                Spacer(Modifier.width(8.dp))
-                                Text(strings.editStadium, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                            }
-                        }
                         Spacer(Modifier.height(32.dp))
                     }
+                }
+            }
+        }
+    }
+
+    if (showBookingSheet && showSticky) {
+        val currentStadium = stadiums.getOrNull(selectedPitchIndex) ?: stadium!!
+        val price = currentStadium.pricePerHour ?: 0.0
+        val totalPrice = price * (durationMins / 60.0)
+        val currentSlots = currentStadium.slots ?: emptyList()
+        val selectedSlot = currentSlots.getOrNull(startIdx)
+        val startTime = selectedSlot?.start.toLocalDateTimeSafe()
+        val startTimeStr = startTime?.let { formatTimeFromDateTime(it) } ?: ""
+        val selectedEnd = startTime?.plusMinutes(durationMins)
+        val endTimeStr = selectedEnd?.let { formatTimeFromDateTime(it) } ?: ""
+
+        ModalBottomSheet(
+            onDismissRequest = { showBookingSheet = false },
+            sheetState = sheetState,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
+            dragHandle = { BottomSheetDefaults.DragHandle() }
+        ) {
+            var showUserInfo by remember { mutableStateOf(false) }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp)
+                    .navigationBarsPadding()
+            ) {
+                Text(
+                    text = "Bron qilish ma'lumotlari",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "Tanlangan vaqt: $startTimeStr – $endTimeStr",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(Modifier.height(24.dp))
+
+                Surface(
+                    onClick = { showUserInfo = !showUserInfo },
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Text("Mijoz ma'lumotlari (ixtiyoriy)", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
+                        }
+                        Icon(if (showUserInfo) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, null)
+                    }
+                }
+
+                if (showUserInfo) {
+                    Spacer(Modifier.height(16.dp))
+                    
+                    val phoneError = state.showBookerErrors && state.bookerPhone.isNotEmpty() && state.bookerPhone.length < 9
+
+                    OutlinedTextField(
+                        value = state.bookerName,
+                        onValueChange = { viewModel.handleEvent(StadiumDetailsContract.Event.UpdateBookerName(it)) },
+                        label = { Text("Mijoz ismi") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        leadingIcon = { Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.primary) }
+                    )
+                    
+                    Spacer(Modifier.height(16.dp))
+                    
+                    OutlinedTextField(
+                        value = state.bookerPhone,
+                        onValueChange = { if (it.length <= 9) viewModel.handleEvent(StadiumDetailsContract.Event.UpdateBookerPhone(it)) },
+                        label = { Text("Telefon raqami") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        prefix = { Text("+998 ") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        visualTransformation = PhoneVisualTransformation(),
+                        isError = phoneError,
+                        supportingText = if (phoneError) { { Text("Telefon raqamini to'liq kiriting") } } else null,
+                        leadingIcon = { Icon(Icons.Default.Phone, null, tint = if (phoneError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary) }
+                    )
+                }
+
+                Spacer(Modifier.height(32.dp))
+
+                Button(
+                    onClick = {
+                        if (selectedEnd != null) {
+                            viewModel.handleEvent(
+                                StadiumDetailsContract.Event.CreateBooking(
+                                    stadiumId = currentStadium.id ?: 0,
+                                    startTime = selectedSlot?.start ?: "",
+                                    endTime = selectedEnd.toString(),
+                                    price = totalPrice,
+                                    name = state.bookerName.takeIf { it.isNotBlank() },
+                                    phone = if (state.bookerPhone.isNotBlank()) "998${state.bookerPhone}" else null
+                                )
+                            )
+                        }
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    modifier = Modifier.fillMaxWidth().height(56.dp)
+                ) {
+                    Text(
+                        text = "Tasdiqlash (${totalPrice.toInt()} so'm)",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    )
                 }
             }
         }
@@ -830,14 +947,63 @@ private fun resolveSlotStateFixed(
 }
 
 @Composable
-fun InfoCard(icon: ImageVector, title: String, subtitle: String, modifier: Modifier = Modifier) {
-    Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(12.dp), modifier = modifier) {
-        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.width(8.dp))
-            Column {
-                Text(title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(subtitle, style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis)
+private fun BeautifulStadiumInfoCard(stadium: uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse, strings: uz.coder.foottopbusiness.core.localization.Language) {
+    OutlinedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.AccessTime, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text(strings.workingHours, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "${stadium.openTime.toLocalDateTimeSafe()?.let { formatTimeFromDateTime(it) } ?: "08:00"} - ${stadium.closeTime.toLocalDateTimeSafe()?.let { formatTimeFromDateTime(it) } ?: "23:00"}",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                    }
+                }
+            }
+            
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        color = Color(0xFF4CAF50).copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.Payments, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
+                        }
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text(strings.price, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("${stadium.pricePerHour?.toInt() ?: 0} ${strings.uzsPerHour}", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
+                    }
+                }
             }
         }
     }

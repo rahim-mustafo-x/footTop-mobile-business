@@ -2,6 +2,7 @@ package uz.coder.foottopbusiness.presentation.main.reports
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -179,19 +180,19 @@ fun ReportsScreen() {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
-                    homeState.weeklyReport?.let { report ->
-                        IncomeOverviewCard(
-                            totalEarnings = report.weeklyRevenue,
-                            weeklyTotal = report.weeklyRevenue,
-                            totalUsers = homeState.dashboard?.usersCount ?: 0,
-                            growth = report.bookingsGrowthPercent
-                        )
-                        Spacer(Modifier.height(16.dp))
+                    if (homeState.weeklyReport != null) {
+                        homeState.weeklyReport?.let { report ->
+                            IncomeOverviewCard(
+                                totalEarnings = report.weeklyRevenue,
+                                weeklyTotal = report.weeklyRevenue,
+                                totalUsers = homeState.dashboard?.usersCount ?: 0,
+                                growth = report.bookingsGrowthPercent
+                            )
+                        }
+                    } else {
+                        Box(modifier = Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(28.dp)).shimmer())
                     }
-                }
-
-                item {
-                    WeeklyRevenueChart(homeState.weeklyEarnings, homeState.weeklyLabels)
+                    Spacer(Modifier.height(16.dp))
                 }
 
                 item {
@@ -220,26 +221,26 @@ fun ReportsScreen() {
                 val recentMatches = homeState.matches
                     .filter { it.dateTime != null }
                     .sortedByDescending { it.dateTime }
-                    .take(7)
 
-                items(recentMatches) { match ->
-                    val datePart = match.dateTime?.split("T")?.firstOrNull() ?: ""
-                    val total = (match.currentPlayers ?: 0) * (match.pricePerPlayer ?: 0.0)
-
-                    ReportItem(
-                        title = match.title ?: "O'yin",
-                        subtitle = "$datePart • ${match.currentPlayers} ta bandlar • ${total.toInt()} so'm",
-                        icon = Icons.Default.BarChart,
-                        iconBgColor = MaterialTheme.colorScheme.primary
-                    )
-                }
-
-                if (recentMatches.isEmpty()) {
+                if (recentMatches.isEmpty() && !homeState.isLoadingMatches) {
                     item {
                         Text(
                             strings.noDataYet,
                             modifier = Modifier.fillMaxWidth().padding(16.dp),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    items(recentMatches) { match ->
+                        val datePart = match.dateTime?.split("T")?.firstOrNull() ?: ""
+                        val total = (match.currentPlayers ?: 0) * (match.pricePerPlayer ?: 0.0)
+
+                        ReportItem(
+                            title = match.title ?: "O'yin",
+                            subtitle = "$datePart • ${match.currentPlayers} ta bandlar • ${total.toInt()} so'm",
+                            icon = Icons.Default.BarChart,
+                            iconBgColor = MaterialTheme.colorScheme.primary,
+                            onClick = { /* Handle click */ }
                         )
                     }
                 }
@@ -257,47 +258,36 @@ private fun IncomeOverviewCard(totalEarnings: Double, weeklyTotal: Double, total
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
         elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            // Pattern or Gradient overlay
-            Canvas(modifier = Modifier.matchParentSize()) {
-                drawCircle(
-                    color = Color.White.copy(alpha = 0.05f),
-                    radius = size.width / 2,
-                    center = Offset(size.width * 0.9f, 0f)
-                )
+        Column(modifier = Modifier.padding(24.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.PieChart, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(strings.incomeOverview, color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
             }
+            Spacer(Modifier.height(8.dp))
+            val formattedEarnings = if (totalEarnings > 1000000) {
+                "${(totalEarnings / 1000000).toInt()}M UZS"
+            } else {
+                "${totalEarnings.toInt() / 1000}K UZS"
+            }
+            Text(formattedEarnings, color = Color.White, fontSize = 34.sp, fontWeight = FontWeight.Black)
             
-            Column(modifier = Modifier.padding(24.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.PieChart, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(strings.incomeOverview, color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
-                }
-                Spacer(Modifier.height(8.dp))
-                val formattedEarnings = if (totalEarnings > 1000000) {
-                    "${(totalEarnings / 1000000).toInt()}M UZS"
-                } else {
-                    "${totalEarnings.toInt() / 1000}K UZS"
-                }
-                Text(formattedEarnings, color = Color.White, fontSize = 34.sp, fontWeight = FontWeight.Black)
-                
-                Spacer(Modifier.height(24.dp))
-                
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color.Black.copy(alpha = 0.1f))
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    val weeklyFormatted = if (weeklyTotal > 1000000) "${(weeklyTotal / 1000000).toInt()}M" else "${(weeklyTotal / 1000).toInt()}K"
-                    SummaryStatSmall(strings.active.uppercase(), weeklyFormatted, Color.White) // Placeholder for "THIS WEEK"
-                    Box(modifier = Modifier.width(1.dp).height(30.dp).background(Color.White.copy(alpha = 0.2f)))
-                    SummaryStatSmall(strings.growth, "${if(growth >= 0) "+" else ""}$growth%", Color(0xFFB9F6CA))
-                    Box(modifier = Modifier.width(1.dp).height(30.dp).background(Color.White.copy(alpha = 0.2f)))
-                    SummaryStatSmall(strings.customers, totalUsers.toString(), Color.White)
-                }
+            Spacer(Modifier.height(24.dp))
+            
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.Black.copy(alpha = 0.1f))
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                val weeklyFormatted = if (weeklyTotal > 1000000) "${(weeklyTotal / 1000000).toInt()}M" else "${(weeklyTotal / 1000).toInt()}K"
+                SummaryStatSmall(strings.active.uppercase(), weeklyFormatted, Color.White) // Placeholder for "THIS WEEK"
+                Box(modifier = Modifier.width(1.dp).height(30.dp).background(Color.White.copy(alpha = 0.2f)))
+                SummaryStatSmall(strings.growth, "${if(growth >= 0) "+" else ""}$growth%", Color(0xFFB9F6CA))
+                Box(modifier = Modifier.width(1.dp).height(30.dp).background(Color.White.copy(alpha = 0.2f)))
+                SummaryStatSmall(strings.customers, totalUsers.toString(), Color.White)
             }
         }
     }
@@ -362,112 +352,116 @@ private fun WeeklyRevenueChart(
                 val max = weeklyEarnings.maxOrNull() ?: 1.0
                 weeklyEarnings.map { (it / max).toFloat().coerceIn(0.1f, 1f) }
             } else {
-                listOf(0.3f, 0.5f, 0.4f, 0.8f, 0.6f, 0.9f, 0.7f)
+                emptyList<Float>()
             }
             
-            val days = weeklyLabels.ifEmpty { listOf("Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya") }
-            val primaryColor = MaterialTheme.colorScheme.primary
+            if (data.isEmpty()) {
+                Box(modifier = Modifier.fillMaxWidth().height(180.dp).shimmer())
+            } else {
+                val days = weeklyLabels.ifEmpty { listOf("Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya") }
+                val primaryColor = MaterialTheme.colorScheme.primary
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
-                    .padding(horizontal = 4.dp)
-            ) {
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    val width = size.width
-                    val height = size.height
-                    val spacing = width / (data.size - 1)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .padding(horizontal = 4.dp)
+                ) {
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val width = size.width
+                        val height = size.height
+                        val spacing = width / (data.size - 1)
 
-                    val path = Path()
-                    val fillPath = Path()
+                        val path = Path()
+                        val fillPath = Path()
 
-                    data.forEachIndexed { index, value ->
-                        val x = index * spacing
-                        val y = height - (value * height)
+                        data.forEachIndexed { index, value ->
+                            val x = index * spacing
+                            val y = height - (value * height)
 
-                        if (index == 0) {
-                            path.moveTo(x, y)
-                            fillPath.moveTo(x, height)
-                            fillPath.lineTo(x, y)
-                        } else {
-                            val prevX = (index - 1) * spacing
-                            val prevY = height - (data[index - 1] * height)
+                            if (index == 0) {
+                                path.moveTo(x, y)
+                                fillPath.moveTo(x, height)
+                                fillPath.lineTo(x, y)
+                            } else {
+                                val prevX = (index - 1) * spacing
+                                val prevY = height - (data[index - 1] * height)
 
-                            // Smooth curve using cubic bezier
-                            val controlX1 = prevX + spacing / 2
-                            val controlX2 = x - spacing / 2
+                                // Smooth curve using cubic bezier
+                                val controlX1 = prevX + spacing / 2
+                                val controlX2 = x - spacing / 2
 
-                            path.cubicTo(controlX1, prevY, controlX2, y, x, y)
-                            fillPath.cubicTo(controlX1, prevY, controlX2, y, x, y)
+                                path.cubicTo(controlX1, prevY, controlX2, y, x, y)
+                                fillPath.cubicTo(controlX1, prevY, controlX2, y, x, y)
+                            }
                         }
-                    }
 
-                    fillPath.lineTo(width, height)
-                    fillPath.close()
+                        fillPath.lineTo(width, height)
+                        fillPath.close()
 
-                    // Draw gradient fill
-                    drawPath(
-                        path = fillPath,
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                primaryColor.copy(alpha = 0.3f),
-                                primaryColor.copy(alpha = 0.05f),
-                                Color.Transparent
+                        // Draw gradient fill
+                        drawPath(
+                            path = fillPath,
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    primaryColor.copy(alpha = 0.3f),
+                                    primaryColor.copy(alpha = 0.05f),
+                                    Color.Transparent
+                                )
                             )
                         )
-                    )
 
-                    // Draw the line
-                    drawPath(
-                        path = path,
-                        color = primaryColor,
-                        style = Stroke(
-                            width = 3.dp.toPx(),
-                            cap = StrokeCap.Round
-                        )
-                    )
-
-                    // Draw points
-                    data.forEachIndexed { index, value ->
-                        val x = index * spacing
-                        val y = height - (value * height)
-
-                        // Outer circle (glow)
-                        drawCircle(
-                            color = primaryColor.copy(alpha = 0.2f),
-                            radius = 8.dp.toPx(),
-                            center = Offset(x, y)
-                        )
-                        // Middle circle
-                        drawCircle(
-                            color = Color.White,
-                            radius = 5.dp.toPx(),
-                            center = Offset(x, y)
-                        )
-                        // Inner circle (center)
-                        drawCircle(
+                        // Draw the line
+                        drawPath(
+                            path = path,
                             color = primaryColor,
-                            radius = 3.dp.toPx(),
-                            center = Offset(x, y)
+                            style = Stroke(
+                                width = 3.dp.toPx(),
+                                cap = StrokeCap.Round
+                            )
                         )
+
+                        // Draw points
+                        data.forEachIndexed { index, value ->
+                            val x = index * spacing
+                            val y = height - (value * height)
+
+                            // Outer circle (glow)
+                            drawCircle(
+                                color = primaryColor.copy(alpha = 0.2f),
+                                radius = 8.dp.toPx(),
+                                center = Offset(x, y)
+                            )
+                            // Middle circle
+                            drawCircle(
+                                color = Color.White,
+                                radius = 5.dp.toPx(),
+                                center = Offset(x, y)
+                            )
+                            // Inner circle (center)
+                            drawCircle(
+                                color = primaryColor,
+                                radius = 3.dp.toPx(),
+                                center = Offset(x, y)
+                            )
+                        }
                     }
                 }
-            }
 
-            Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(20.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                days.forEachIndexed { index, day ->
-                    Text(
-                        day,
-                        fontSize = 12.sp,
-                        fontWeight = if (index == 5 || index == 6) FontWeight.Bold else FontWeight.Medium,
-                        color = if (index == 5 || index == 6) primaryColor else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    days.forEachIndexed { index, day ->
+                        Text(
+                            day,
+                            fontSize = 12.sp,
+                            fontWeight = if (index == 5 || index == 6) FontWeight.Bold else FontWeight.Medium,
+                            color = if (index == 5 || index == 6) primaryColor else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
@@ -512,9 +506,9 @@ private fun SummaryStat(label: String, value: String, color: Color) {
 }
 
 @Composable
-fun ReportItem(title: String, subtitle: String, icon: ImageVector, iconBgColor: Color) {
+fun ReportItem(title: String, subtitle: String, icon: ImageVector, iconBgColor: Color, onClick: () -> Unit = {}) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(0.dp)

@@ -52,6 +52,7 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.koin.android)
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.chucker.library)
 
             implementation(project.dependencies.platform(libs.firebase.bom))
             implementation(libs.firebase.analytics)
