@@ -3,12 +3,15 @@ package uz.coder.foottopbusiness.presentation.main.stadium.edit
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -43,16 +46,21 @@ class MapSelectionScreen(
                 )
             },
             floatingActionButton = {
-                if (selectedLat != null && selectedLng != null) {
+                if (selectedLat != null && selectedLng != null && selectedLat != 0.0) {
                     FloatingActionButton(
                         onClick = {
                             onSelected(selectedLat!!, selectedLng!!)
                             navigator.pop()
                         },
                         containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        shape = CircleShape
                     ) {
-                        Icon(Icons.Default.Check, contentDescription = "Confirm")
+                        Icon(
+                            imageVector = Icons.Default.Check, 
+                            contentDescription = "Confirm",
+                            modifier = Modifier.size(28.dp)
+                        )
                     }
                 }
             }

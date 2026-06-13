@@ -414,9 +414,11 @@ class HomeViewModel(
     }
 
     private fun loadDashboardStats() {
-        if (state.value.isAdmin) {
+        if (state.value.isAdmin || state.value.isOwner) {
             updateState { copy(isLoadingDashboard = true, isLoadingWeeklyReport = true) }
-            executeAsync {
+            executeAsync(
+                onError = { updateState { copy(isLoadingDashboard = false) } }
+            ) {
                 dashboardUseCase().collect { dashboard ->
                     val totalRev = dashboard.stadiumRevenues.sumOf { it.totalRevenue }
                     updateState {
@@ -431,7 +433,9 @@ class HomeViewModel(
                     }
                 }
             }
-            executeAsync {
+            executeAsync(
+                onError = { updateState { copy(isLoadingWeeklyReport = false) } }
+            ) {
                 weeklyReportUseCase().collect { report ->
                     updateState {
                         copy(
@@ -463,7 +467,7 @@ class HomeViewModel(
 
     private fun updateLocalStats() {
         val s = state.value
-        if (s.isAdmin) return // Admin uses dashboard API instead
+        if (s.isAdmin || s.isOwner) return // Admin uses dashboard API instead
 
         val totalEarnings = s.matches.sumOf { (it.currentPlayers ?: 0) * (it.pricePerPlayer ?: 0.0) }
         

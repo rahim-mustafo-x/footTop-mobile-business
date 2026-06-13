@@ -32,9 +32,9 @@ class AdminRepositoryImpl(private val apiService: AdminApiService) : AdminReposi
                     usersCount = dto.usersCount ?: 0
                 )
             )
+        } else if (response.success == false) {
+            throw Exception(response.message ?: "Dashboard stats loading failed")
         }
-    }.catch {
-        log("AdminRepository", "dashboard error: ${it.message}")
     }
 
     override fun weeklyRepo(): Flow<WeeklyReport> = flow {
@@ -59,9 +59,9 @@ class AdminRepositoryImpl(private val apiService: AdminApiService) : AdminReposi
                     weeklyRevenue = dto.weeklyRevenue ?: 0.0
                 )
             )
+        } else if (response.success == false) {
+            throw Exception(response.message ?: "Weekly report loading failed")
         }
-    }.catch {
-        log("AdminRepository", "weeklyRepo error: ${it.message}")
     }
 
     override fun createStaff(dto: CreateStaffUserDto): Flow<UserDto> = flow {

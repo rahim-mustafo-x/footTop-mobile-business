@@ -26,11 +26,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,10 +41,13 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,6 +62,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
 import uz.coder.foottopbusiness.core.localization.ErrorMapper
 import uz.coder.foottopbusiness.core.localization.Localization
@@ -72,6 +79,10 @@ fun ReportsScreen() {
     val homeState by homeViewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val strings = Localization.current
+
+    var showDatePicker by remember { mutableStateOf(value = false) }
+    val datePickerState = rememberDatePickerState()
+    var selectedFilterDate by remember { mutableStateOf<String?>(value = null) }
 
     androidx.compose.runtime.LaunchedEffect(Unit) {
         homeViewModel.effect.collect { effect ->
@@ -147,6 +158,32 @@ fun ReportsScreen() {
             }
         }
     ) { padding ->
+        if (showDatePicker) {
+            DatePickerDialog(
+                onDismissRequest = { showDatePicker = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            selectedFilterDate = Instant.fromEpochMilliseconds(millis)
+                                .toLocalDateTime(TimeZone.UTC).date.toString()
+                        }
+                        showDatePicker = false
+                    }) {
+                        Text(strings.save)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { 
+                        selectedFilterDate = null
+                        showDatePicker = false 
+                    }) {
+                        Text(strings.cancel)
+                    }
+                }
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
         if (homeState.isLoadingDashboard || homeState.isLoadingWeeklyReport) {
             LazyColumn(
                 modifier = Modifier
@@ -170,6 +207,7 @@ fun ReportsScreen() {
                 }
             }
         } else {
+            val currentFilterDate = selectedFilterDate
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -207,9 +245,9 @@ fun ReportsScreen() {
                             fontSize = 20.sp,
                             color = MaterialTheme.colorScheme.onBackground
                         )
-                        TextButton(onClick = { /* TODO */ }) {
+                        TextButton(onClick = { showDatePicker = true }) {
                             Text(
-                                strings.filter,
+                                currentFilterDate ?: strings.filter,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
@@ -219,7 +257,10 @@ fun ReportsScreen() {
                 }
 
                 val recentMatches = homeState.matches
-                    .filter { it.dateTime != null }
+                    .filter { match ->
+                        val matchDate = match.dateTime
+                        matchDate != null && (currentFilterDate == null || matchDate.startsWith(currentFilterDate))
+                    }
                     .sortedByDescending { it.dateTime }
 
                 if (recentMatches.isEmpty() && !homeState.isLoadingMatches) {
@@ -265,10 +306,10 @@ private fun IncomeOverviewCard(totalEarnings: Double, weeklyTotal: Double, total
                 Text(strings.incomeOverview, color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
             }
             Spacer(Modifier.height(8.dp))
-            val formattedEarnings = if (totalEarnings > 1000000) {
-                "${(totalEarnings / 1000000).toInt()}M UZS"
-            } else {
-                "${totalEarnings.toInt() / 1000}K UZS"
+            val formattedEarnings = when {
+                totalEarnings >= 1_000_000 -> "${(totalEarnings / 1_000_000).toInt()}M UZS"
+                totalEarnings >= 1_000 -> "${(totalEarnings / 1_000).toInt()}K UZS"
+                else -> "${totalEarnings.toInt()} UZS"
             }
             Text(formattedEarnings, color = Color.White, fontSize = 34.sp, fontWeight = FontWeight.Black)
             
@@ -282,7 +323,11 @@ private fun IncomeOverviewCard(totalEarnings: Double, weeklyTotal: Double, total
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                val weeklyFormatted = if (weeklyTotal > 1000000) "${(weeklyTotal / 1000000).toInt()}M" else "${(weeklyTotal / 1000).toInt()}K"
+                val weeklyFormatted = when {
+                    weeklyTotal >= 1_000_000 -> "${(weeklyTotal / 1_000_000).toInt()}M"
+                    weeklyTotal >= 1_000 -> "${(weeklyTotal / 1_000).toInt()}K"
+                    else -> "${weeklyTotal.toInt()}"
+                }
                 SummaryStatSmall(strings.active.uppercase(), weeklyFormatted, Color.White) // Placeholder for "THIS WEEK"
                 Box(modifier = Modifier.width(1.dp).height(30.dp).background(Color.White.copy(alpha = 0.2f)))
                 SummaryStatSmall(strings.growth, "${if(growth >= 0) "+" else ""}$growth%", Color(0xFFB9F6CA))

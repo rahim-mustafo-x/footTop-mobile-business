@@ -346,10 +346,6 @@ fun EditStadiumScreen(viewModel: EditStadiumViewModel, onBack: () -> Unit) {
                     LocationPicker(
                         latitude = state.latitude,
                         longitude = state.longitude,
-                        address = state.preciseAddress,
-                        onLatitudeChange = { viewModel.handleEvent(EditStadiumContract.Event.Latitude(it.toDoubleOrNull())) },
-                        onLongitudeChange = { viewModel.handleEvent(EditStadiumContract.Event.Longitude(it.toDoubleOrNull())) },
-                        onAddressChange = { viewModel.handleEvent(EditStadiumContract.Event.PreciseAddress(it)) },
                         onSelectOnMap = {
                             navigator.push(MapSelectionScreen(state.latitude, state.longitude) { lat, lng ->
                                 viewModel.handleEvent(EditStadiumContract.Event.Latitude(lat))

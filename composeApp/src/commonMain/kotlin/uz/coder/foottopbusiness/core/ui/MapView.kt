@@ -1,16 +1,24 @@
 package uz.coder.foottopbusiness.core.ui
 
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.PersonPinCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.maplibre.compose.map.MaplibreMap
 import org.maplibre.compose.camera.rememberCameraState
 import org.maplibre.compose.camera.CameraPosition
@@ -26,32 +34,46 @@ fun MapView(
     modifier: Modifier = Modifier,
     initialLatitude: Double?,
     initialLongitude: Double?,
+    enabled: Boolean = true,
     onLocationSelected: (Double, Double) -> Unit
 ) {
     val tashkentLat = 41.311081
     val tashkentLng = 69.240562
     val scope = rememberCoroutineScope()
 
-    val currentLat = initialLatitude ?: tashkentLat
-    val currentLng = initialLongitude ?: tashkentLng
+    var userLocation by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+    
+    // Use the projection to calculate screen positions of markers
+    // This allows them to stay pinned to their geo-coordinates as the map moves
+    
+    val initialLat = initialLatitude ?: userLocation?.first ?: tashkentLat
+    val initialLng = initialLongitude ?: userLocation?.second ?: tashkentLng
 
     val cameraState = rememberCameraState(
         firstPosition = CameraPosition(
-            target = Position(longitude = currentLng, latitude = currentLat),
-            zoom = 12.0
+            target = Position(longitude = initialLng, latitude = initialLat),
+            zoom = if (initialLatitude != null && initialLatitude != 0.0) 15.0 else 12.0
         )
     )
 
-    // Update camera when initial location changes (e.g. from GPS)
-    LaunchedEffect(initialLatitude, initialLongitude) {
-        if (initialLatitude != null && initialLongitude != null) {
-            cameraState.animateTo(
-                CameraPosition(
-                    target = Position(longitude = initialLongitude, latitude = initialLatitude),
-                    zoom = 15.0
-                ),
-                duration = 1000.milliseconds
-            )
+    // Automatically get user location once on entry
+    LaunchedEffect(Unit) {
+        if (enabled) {
+            val loc = getCurrentLocation()
+            loc?.let {
+                userLocation = it
+                // Only animate to user location if NO initial selection exists
+                if (initialLatitude == null || initialLatitude == 0.0) {
+                    cameraState.animateTo(
+                        CameraPosition(
+                            target = Position(longitude = it.second, latitude = it.first),
+                            zoom = 15.0
+                        ),
+                        duration = 1000.milliseconds
+                    )
+                    onLocationSelected(it.first, it.second)
+                }
+            }
         }
     }
 
@@ -61,55 +83,144 @@ fun MapView(
             baseStyle = BaseStyle.Uri("https://tiles.openfreemap.org/styles/liberty"),
             cameraState = cameraState,
             onMapClick = { position, _ ->
-                onLocationSelected(position.latitude, position.longitude)
-                ClickResult.Consume
+                if (enabled) {
+                    onLocationSelected(position.latitude, position.longitude)
+                    ClickResult.Consume
+                } else {
+                    ClickResult.Pass
+                }
             }
         )
 
-        // My Location FAB inside MapView
-        SmallFloatingActionButton(
-            onClick = {
-                scope.launch {
-                    val loc = getCurrentLocation()
-                    loc?.let {
-                        onLocationSelected(it.first, it.second)
-                        cameraState.animateTo(
-                            CameraPosition(
-                                target = Position(longitude = it.second, latitude = it.first),
-                                zoom = 15.0
-                            ),
-                            duration = 1000.milliseconds
+        // User Current GPS Location Marker (Blue)
+        userLocation?.let { (uLat, uLng) ->
+            val userPos = Position(longitude = uLng, latitude = uLat)
+            // projection?.screenLocationFromPosition keeps it pinned to geo-coordinates
+            val userOffset = cameraState.projection?.screenLocationFromPosition(userPos) ?: DpOffset.Zero
+            
+            if (userOffset != DpOffset.Zero) {
+                Icon(
+                    imageVector = Icons.Default.PersonPinCircle,
+                    contentDescription = "Siz shu yerdamisiz",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .absoluteOffset(
+                            x = userOffset.x - 18.dp,
+                            y = userOffset.y - 18.dp
                         )
-                    }
-                }
-            },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp),
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.primary,
-            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 2.dp)
-        ) {
-            Icon(Icons.Default.MyLocation, contentDescription = "My Location", modifier = Modifier.size(20.dp))
+                )
+            }
         }
 
-        // Custom Compose Marker Overlay
-        if (initialLatitude != null && initialLongitude != null) {
+        // Selected Location Marker (Red)
+        if (initialLatitude != null && initialLongitude != null && initialLatitude != 0.0) {
             val markerPosition = Position(longitude = initialLongitude, latitude = initialLatitude)
             val screenOffset = cameraState.projection?.screenLocationFromPosition(markerPosition) ?: DpOffset.Zero
             
             if (screenOffset != DpOffset.Zero) {
-                Icon(
-                    imageVector = Icons.Default.LocationOn,
-                    contentDescription = null,
-                    tint = Color.Red,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .absoluteOffset(
-                            x = screenOffset.x - 20.dp,
-                            y = screenOffset.y - 40.dp
-                        )
+                // Pulsing animation for the selected location
+                val infiniteTransition = rememberInfiniteTransition()
+                val pulseScale by infiniteTransition.animateFloat(
+                    initialValue = 0.5f,
+                    targetValue = 1.8f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(2000, easing = LinearOutSlowInEasing),
+                        repeatMode = RepeatMode.Restart
+                    )
                 )
+                val pulseAlpha by infiniteTransition.animateFloat(
+                    initialValue = 0.6f,
+                    targetValue = 0.0f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(2000, easing = LinearOutSlowInEasing),
+                        repeatMode = RepeatMode.Restart
+                    )
+                )
+
+                Box(
+                    modifier = Modifier.absoluteOffset(
+                        x = screenOffset.x - 50.dp,
+                        y = screenOffset.y - 75.dp
+                    ).width(100.dp),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    // Pulsing effect centered at the tip of the pin
+                    Canvas(modifier = Modifier.size(60.dp).align(Alignment.BottomCenter).offset(y = 30.dp)) {
+                        drawCircle(
+                            color = Color.Red,
+                            radius = (size.minDimension / 2) * pulseScale,
+                            alpha = pulseAlpha,
+                            style = Stroke(width = 3.dp.toPx())
+                        )
+                    }
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    ) {
+                        Surface(
+                            color = Color.Red,
+                            shape = RoundedCornerShape(8.dp),
+                            shadowElevation = 6.dp,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        ) {
+                            Text(
+                                "SIZ TANLAGAN JOY",
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                            )
+                        }
+                        
+                        Box(contentAlignment = Alignment.Center) {
+                            // Shadow/Circle background for the pin
+                            Surface(
+                                modifier = Modifier.size(24.dp).offset(y = 12.dp),
+                                color = Color.Black.copy(alpha = 0.25f),
+                                shape = CircleShape
+                            ) {}
+                            
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = "Tanlangan joy",
+                                tint = Color.Red,
+                                modifier = Modifier.size(52.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // My Location FAB (Bottom Right)
+        if (enabled) {
+            SmallFloatingActionButton(
+                onClick = {
+                    scope.launch {
+                        val loc = getCurrentLocation()
+                        loc?.let {
+                            userLocation = it
+                            cameraState.animateTo(
+                                CameraPosition(
+                                    target = Position(longitude = it.second, latitude = it.first),
+                                    zoom = 15.0
+                                ),
+                                duration = 1000.milliseconds
+                            )
+                            onLocationSelected(it.first, it.second)
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.primary,
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
+            ) {
+                Icon(Icons.Default.MyLocation, contentDescription = "Mening joylashuvim", modifier = Modifier.size(20.dp))
             }
         }
     }

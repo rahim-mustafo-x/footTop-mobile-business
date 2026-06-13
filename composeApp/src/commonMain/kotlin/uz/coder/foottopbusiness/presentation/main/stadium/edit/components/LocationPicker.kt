@@ -1,14 +1,11 @@
 package uz.coder.foottopbusiness.presentation.main.stadium.edit.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.GpsFixed
-import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.*
@@ -27,11 +24,11 @@ import uz.coder.foottopbusiness.core.ui.MapView
 fun LocationPicker(
     latitude: Double?,
     longitude: Double?,
-    address: String,
-    onLatitudeChange: (String) -> Unit,
-    onLongitudeChange: (String) -> Unit,
-    onAddressChange: (String) -> Unit,
     onSelectOnMap: () -> Unit,
+    address: String = "",
+    onLatitudeChange: ((String) -> Unit)? = null,
+    onLongitudeChange: ((String) -> Unit)? = null,
+    onAddressChange: ((String) -> Unit)? = null,
     onGetCurrentLocation: (() -> Unit)? = null
 ) {
     val strings = Localization.current
@@ -79,39 +76,79 @@ fun LocationPicker(
                 }
             }
         }
-        
-        OutlinedTextField(
-            value = address,
-            onValueChange = onAddressChange,
-            label = { Text(strings.preciseAddress) },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            placeholder = { Text(strings.addressPlaceholder) },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-            ),
-            leadingIcon = { Icon(Icons.Default.Map, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)) }
-        )
-        
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(
-                onClick = { 
-                    onGetCurrentLocation?.invoke()
-                    onSelectOnMap() 
-                },
-                modifier = Modifier.weight(1f).height(48.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+
+        if (onLatitudeChange != null && onLongitudeChange != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.MyLocation, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(strings.location, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                OutlinedTextField(
+                    value = latitude?.toString() ?: "",
+                    onValueChange = onLatitudeChange,
+                    label = { Text("Lat", fontSize = 10.sp) },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp),
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    )
+                )
+                OutlinedTextField(
+                    value = longitude?.toString() ?: "",
+                    onValueChange = onLongitudeChange,
+                    label = { Text("Long", fontSize = 10.sp) },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp),
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    )
+                )
+                if (onGetCurrentLocation != null) {
+                    IconButton(
+                        onClick = onGetCurrentLocation,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                    ) {
+                        Icon(
+                            Icons.Default.MyLocation,
+                            null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
             }
+        }
+
+        if (onAddressChange != null) {
+            OutlinedTextField(
+                value = address,
+                onValueChange = onAddressChange,
+                label = { Text(strings.preciseAddress, fontSize = 12.sp) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                leadingIcon = {
+                    Icon(
+                        Icons.Outlined.LocationOn,
+                        null,
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                },
+                textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
+            )
         }
         
         // Real Map Preview
@@ -133,14 +170,12 @@ fun LocationPicker(
                     modifier = Modifier.fillMaxSize(),
                     initialLatitude = latitude,
                     initialLongitude = longitude,
-                    onLocationSelected = { lat, lng ->
-                        onLatitudeChange(lat.toString())
-                        onLongitudeChange(lng.toString())
-                    }
+                    enabled = false,
+                    onLocationSelected = { _, _ -> }
                 )
                 
                 // Overlay to indicate it's clickable and show status
-                if (latitude == null || longitude == null) {
+                if (latitude == null || longitude == null || latitude == 0.0) {
                     Surface(
                         color = Color.Black.copy(alpha = 0.4f),
                         modifier = Modifier.fillMaxSize()
