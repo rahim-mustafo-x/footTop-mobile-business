@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -45,6 +44,9 @@ import uz.coder.foottopbusiness.presentation.main.stadium.addstadium.AddStadiumV
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsVoyager
 import uz.coder.foottopbusiness.presentation.main.booking.list.BookingListVoyager
 import uz.coder.foottopbusiness.core.platform.NotificationPermissionLauncher
+import uz.coder.foottopbusiness.core.ui.Info
+import uz.coder.foottopbusiness.core.ui.Success
+import uz.coder.foottopbusiness.core.ui.Warning
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -132,12 +134,13 @@ fun HomeScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        contentWindowInsets = WindowInsets.systemBars,
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(padding)
         ) {
             if (state.isLoadingUser && state.userRole == UserRole.UNKNOWN) {
                 HomeShimmer()
@@ -166,9 +169,7 @@ fun HomeScreen(
                             onAddCoach = { navigator.push(uz.coder.foottopbusiness.presentation.main.home.user.UserCreateScreen()) },
                             onProfileClick = { navigator.push(SettingsVoyager) },
                             onNotificationClick = {
-                                // Owners are restricted from sending system notifications as per latest requirements
                                 viewModel.handleEvent(HomeContract.Event.CheckNotificationPermission)
-                                // We keep the icon action for now but we could also hide the icon in MalaebHeader
                             },
                             onShowBookings = { navigator.push(BookingListVoyager()) }
                         )
@@ -233,6 +234,7 @@ private fun AdminHomeTab(
 
 @Composable
 private fun SectionHeader(title: String, onAction: (() -> Unit)? = null) {
+    val strings = Localization.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -246,7 +248,7 @@ private fun SectionHeader(title: String, onAction: (() -> Unit)? = null) {
         )
         if (onAction != null) {
             Text(
-                "Barchasi",
+                strings.seeAll,
                 color = MaterialTheme.colorScheme.primary,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
@@ -265,14 +267,14 @@ private fun DashboardGrid(state: HomeContract.State) {
                 value = "${state.activeStadiums}",
                 subValue = strings.stadiums,
                 icon = Icons.Outlined.SportsSoccer,
-                color = Color(0xFF4CAF50),
+                color = Success,
                 modifier = Modifier.weight(1f)
             )
             StatCard(
                 value = "${state.totalUsers}",
                 subValue = strings.users,
                 icon = Icons.Outlined.Groups,
-                color = Color(0xFF2196F3),
+                color = Info,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -281,14 +283,14 @@ private fun DashboardGrid(state: HomeContract.State) {
                 value = "${state.totalTournaments}",
                 subValue = strings.tournaments,
                 icon = Icons.Outlined.EmojiEvents,
-                color = Color(0xFFFF9800),
+                color = Warning,
                 modifier = Modifier.weight(1f)
             )
             StatCard(
                 value = if (state.totalEarnings > 1000000) "${(state.totalEarnings / 1000000).toInt()}M" else "${state.totalEarnings.toInt()}",
                 subValue = strings.revenue,
                 icon = Icons.Outlined.AttachMoney,
-                color = Color(0xFFE91E63),
+                color = MaterialTheme.colorScheme.tertiary,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -297,7 +299,6 @@ private fun DashboardGrid(state: HomeContract.State) {
 
 @Composable
 private fun MalaebHeader(state: HomeContract.State, onProfileClick: () -> Unit, onNotificationClick: () -> Unit) {
-    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val strings = Localization.current
     Box(
         modifier = Modifier
@@ -311,7 +312,7 @@ private fun MalaebHeader(state: HomeContract.State, onProfileClick: () -> Unit, 
                     )
                 )
             )
-            .padding(top = statusBarPadding, start = 24.dp, end = 24.dp, bottom = 32.dp)
+            .padding(start = 24.dp, end = 24.dp, bottom = 32.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
@@ -320,14 +321,14 @@ private fun MalaebHeader(state: HomeContract.State, onProfileClick: () -> Unit, 
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    strings.tabHome,
+                    strings.welcome,
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
                 )
                 Text(
-                    strings.tabHome,
+                    state.user?.fullName ?: strings.tabHome,
                     color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Black,
@@ -426,7 +427,7 @@ private fun QuickActionsGrid(
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             QuickActionItem(strings.addStadium, Icons.Outlined.Home, primary, Modifier.weight(1f), onAddStadium)
-            QuickActionItem("Bronlar", Icons.Outlined.CalendarToday, primary, Modifier.weight(1f), onShowBookings)
+            QuickActionItem(strings.bookings, Icons.Outlined.CalendarToday, primary, Modifier.weight(1f), onShowBookings)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             if (onAddUser != null) {
@@ -575,7 +576,7 @@ private fun UserHomeTab(
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    Icon(Icons.Default.Refresh, null)
+                    Icon(Icons.Default.Refresh, contentDescription = strings.refresh)
                     Spacer(Modifier.width(8.dp))
                     Text(strings.refresh)
                 }
@@ -639,8 +640,8 @@ private fun ScheduleList(state: HomeContract.State) {
                 } ?: "00:00"
 
                 ReportItem(
-                    title = "$time - ${match.title ?: "Jamoa"}",
-                    subtitle = "Maydon #${match.stadiumId ?: 1} • ${match.pricePerPlayer ?: 0.0} UZS",
+                    title = "$time - ${match.title ?: strings.team}",
+                    subtitle = "${strings.field} #${match.stadiumId ?: 1} • ${match.pricePerPlayer ?: 0.0} so'm",
                     icon = Icons.Outlined.SportsSoccer,
                     iconBgColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                     onClick = { /* Navigation or Action */ }
@@ -699,7 +700,7 @@ private fun BenefitItem(text: String) {
         Icon(
             Icons.Default.Check, 
             null, 
-            tint = Color(0xFF4CAF50), 
+            tint = Success, 
             modifier = Modifier.size(20.dp)
         )
         Text(text, style = MaterialTheme.typography.bodyMedium)
@@ -740,7 +741,7 @@ private fun TournamentDetailScreen(tournament: TournamentResponseDto, onBack: ()
                 title = { Text(strings.tournamentDetails) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = strings.back)
                     }
                 }
             )
@@ -787,11 +788,11 @@ private fun TournamentDetailScreen(tournament: TournamentResponseDto, onBack: ()
             }
 
             item {
-                InfoSection("Mukofotlar", tournament.prizes ?: strings.noDataYet, Icons.Default.EmojiEvents)
+                InfoSection(strings.prizes, tournament.prizes ?: strings.noDataYet, Icons.Default.EmojiEvents)
             }
 
             item {
-                InfoSection("Qoidalar", tournament.rules ?: strings.noDataYet, Icons.Default.Description)
+                InfoSection(strings.rules, tournament.rules ?: strings.noDataYet, Icons.Default.Description)
             }
             
             item { Spacer(Modifier.height(32.dp)) }

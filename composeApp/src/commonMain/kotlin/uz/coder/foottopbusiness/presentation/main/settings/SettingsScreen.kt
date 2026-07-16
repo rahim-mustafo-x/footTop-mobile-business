@@ -89,6 +89,9 @@ import uz.coder.foottopbusiness.presentation.main.settings.editprofile.EditProfi
 
 import uz.coder.foottopbusiness.core.visualTransformation.formatPhoneNumber
 import uz.coder.foottopbusiness.core.platform.NotificationPermissionLauncher
+import uz.coder.foottopbusiness.core.ui.Info
+import uz.coder.foottopbusiness.core.ui.Success
+import uz.coder.foottopbusiness.core.ui.Warning
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -191,7 +194,11 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     if (state.isChangingPassword) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
                     } else {
-                        Text(strings.save)
+                        if (state.oldPassword.isNotBlank() && state.newPassword.isNotBlank() && state.confirmPassword.isNotBlank()) {
+                           Text(strings.save)
+                        } else {
+                           Text(strings.save)
+                        }
                     }
                 }
             },
@@ -316,7 +323,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { navigator.pop() }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = strings.back)
                 }
                 Text(
                     strings.profileAndSettings,
@@ -446,7 +453,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 
                 SettingsItem(
                     icon = Icons.Default.Edit,
-                    iconTint = Color(0xFF4CAF50),
+                    iconTint = Success,
                     title = strings.editProfile,
                     subtitle = strings.editProfileSubtitle,
                     onClick = { navigator.push(EditProfileVoyager) }
@@ -454,7 +461,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
 
                 SettingsItem(
                     icon = Icons.Default.Lock,
-                    iconTint = Color(0xFF2196F3),
+                    iconTint = Info,
                     title = strings.changePassword,
                     subtitle = strings.changePasswordSubtitle,
                     onClick = { viewModel.handleEvent(SettingsContract.Event.ShowChangePassword) }
@@ -462,7 +469,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
 
                 SettingsItem(
                     icon = Icons.Default.Notifications,
-                    iconTint = Color(0xFF673AB7),
+                    iconTint = MaterialTheme.colorScheme.primary,
                     title = strings.notifications,
                     subtitle = if (state.notificationsEnabled) strings.active else strings.inactive,
                     onClick = { viewModel.handleEvent(SettingsContract.Event.CheckNotificationPermission) }
@@ -472,7 +479,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
 
                 SettingsItem(
                     icon = Icons.AutoMirrored.Filled.Help,
-                    iconTint = Color(0xFFFF9800),
+                    iconTint = Warning,
                     title = strings.helpAndContact,
                     subtitle = strings.helpAndContactSubtitle,
                     onClick = { uriHandler.openUri("https://t.me/rahim_mustafo_x") }
@@ -488,7 +495,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
 
                 SettingsItem(
                     icon = Icons.Default.Info,
-                    iconTint = Color(0xFF9C27B0),
+                    iconTint = MaterialTheme.colorScheme.tertiary,
                     title = strings.aboutApp,
                     subtitle = "${strings.version} ${platform.version}",
                     onClick = { viewModel.handleEvent(SettingsContract.Event.ShowAboutApp) }
@@ -512,6 +519,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 12.dp)
+                        .clip(RoundedCornerShape(20.dp))
                         .clickable { showLogoutSheet = true },
                     shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(
@@ -611,7 +619,7 @@ private fun BenefitItem(text: String) {
         Icon(
             Icons.Default.Check, 
             null, 
-            tint = Color(0xFF4CAF50), 
+            tint = Success, 
             modifier = Modifier.size(20.dp)
         )
         Text(text, style = MaterialTheme.typography.bodyMedium)
@@ -665,6 +673,7 @@ private fun SettingsItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),

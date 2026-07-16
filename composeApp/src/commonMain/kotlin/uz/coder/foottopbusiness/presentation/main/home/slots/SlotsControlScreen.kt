@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -49,7 +48,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -59,23 +57,15 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.toInstant
 import uz.coder.foottopbusiness.core.formatAsTime
+import uz.coder.foottopbusiness.core.isOverlap
 import uz.coder.foottopbusiness.core.localization.Localization
+import uz.coder.foottopbusiness.core.plusMinutes
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.presentation.main.home.HomeContract
 import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
 
 // ─── Utilities ──────────────────────────────────────────────────────────────
-
-fun isOverlap(s1: LocalDateTime, e1: LocalDateTime, s2: LocalDateTime, e2: LocalDateTime): Boolean {
-    return s1 < e2 && e1 > s2
-}
-
-fun LocalDateTime.plusMinutes(minutes: Int): LocalDateTime {
-    val tz = TimeZone.currentSystemDefault()
-    return this.toInstant(tz).plus(minutes, DateTimeUnit.MINUTE).toLocalDateTime(tz)
-}
 
 fun durationMinutes(key: String): Int = when(key) {
     "SIXTY" -> 60
@@ -88,6 +78,7 @@ fun durationMinutes(key: String): Int = when(key) {
 @Composable
 fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, viewModel: HomeViewModel) {
     val navigator = LocalNavigator.currentOrThrow
+    val strings = Localization.current
     
     val next5Days = remember {
         val now = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
@@ -97,19 +88,16 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stadium.name ?: "Slotlar", fontWeight = FontWeight.Bold) },
+                title = { Text(stadium.name ?: strings.stadium, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { 
                         viewModel.handleEvent(HomeContract.Event.ClearStadiumForSlots)
                         navigator.pop()
                     }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = strings.back)
                     }
                 }
             )
-        },
-        bottomBar = {
-            // Booking action is intentionally disabled for available slots list.
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -155,8 +143,8 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                         )
                         Spacer(Modifier.height(4.dp))
                         val label = when(dateStr) {
-                            next5Days[0] -> "Bugun"
-                            next5Days[1] -> "Ertaga"
+                            next5Days[0] -> strings.today
+                            next5Days[1] -> strings.tomorrow
                             else -> ""
                         }
                         if (label.isNotEmpty()) {
@@ -171,14 +159,14 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
             }
 
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                Text("Available Slots", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Text(strings.freeSlots, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                 Spacer(Modifier.height(8.dp))
                 
             state.stadiumSlots.firstOrNull { it.third }?.let { (start, _, _) ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.AccessTime, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(6.dp))
-                        Text("Earliest available: ", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        Text("${strings.nearestSlot}: ", fontSize = 14.sp, fontWeight = FontWeight.Medium)
                         Text(start.formatAsTime(), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
                 }
@@ -193,17 +181,16 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.AutoMirrored.Filled.EventNote, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.outlineVariant)
                         Spacer(Modifier.height(16.dp))
-                        Text("Ushbu kunga ma'lumot topilmadi", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(strings.noSlotsToday, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             } else {
                 val durationMins = durationMinutes(state.selectedDuration)
                 val selectedStart = state.selectedSlot?.first
                 val selectedEnd = selectedStart?.plusMinutes(durationMins)
-                val strings = Localization.current
 
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
+                    columns = GridCells.Adaptive(minSize = 100.dp),
                     contentPadding = PaddingValues(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -216,12 +203,12 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                         val isPartiallySelected = selectedStart != null && selectedEnd != null &&
                                                  isOverlap(selectedStart, selectedEnd, start, end)
                         
-                        val successColor = MaterialTheme.colorScheme.primary
-                        val errorColor = Color(0xFFEF5350)
+                        val primaryColor = MaterialTheme.colorScheme.primary
+                        val errorColor = MaterialTheme.colorScheme.error
                         
-                        val baseColor = if (!available) errorColor else if (isPartiallySelected) MaterialTheme.colorScheme.onPrimary else successColor
-                        val bgColor = if (!available) errorColor.copy(alpha = 0.1f) else if (isPartiallySelected) successColor else successColor.copy(alpha = 0.1f)
-                        val borderColor = if (isPartiallySelected) successColor else baseColor.copy(alpha = 0.3f)
+                        val baseColor = if (!available) errorColor else if (isPartiallySelected) MaterialTheme.colorScheme.onPrimary else primaryColor
+                        val bgColor = if (!available) errorColor.copy(alpha = 0.1f) else if (isPartiallySelected) primaryColor else primaryColor.copy(alpha = 0.1f)
+                        val borderColor = if (isPartiallySelected) primaryColor else baseColor.copy(alpha = 0.3f)
 
                         Box(
                             modifier = Modifier
@@ -247,7 +234,7 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(start.formatAsTime(), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = baseColor)
-                                Text(if (available) "Bo'sh" else "Band", fontSize = 12.sp, color = baseColor.copy(alpha = 0.8f))
+                                Text(if (available) strings.free else strings.booked, fontSize = 12.sp, color = baseColor.copy(alpha = 0.8f))
                             }
                         }
                     }
@@ -259,13 +246,11 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    LegendItem("Bo'sh", MaterialTheme.colorScheme.primary)
+                    LegendItem(strings.free, MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.width(16.dp))
-                    LegendItem("Band", MaterialTheme.colorScheme.error)
+                    LegendItem(strings.booked, MaterialTheme.colorScheme.error)
                     Spacer(Modifier.width(16.dp))
-                    LegendItem("Sig'maydi", MaterialTheme.colorScheme.outline)
-                    Spacer(Modifier.width(16.dp))
-                    LegendItem("O'tib ketgan", MaterialTheme.colorScheme.outline)
+                    LegendItem(strings.past, MaterialTheme.colorScheme.outline)
                 }
             }
         }
@@ -277,7 +262,6 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
             
             var fullName by remember { mutableStateOf("") }
             var phone by remember { mutableStateOf("") }
-            val strings = Localization.current
             val durationText = when(state.selectedDuration) {
                 "SIXTY" -> "60 min"
                 "NINETY" -> "90 min"

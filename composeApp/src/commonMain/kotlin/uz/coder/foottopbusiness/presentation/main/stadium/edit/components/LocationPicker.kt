@@ -15,10 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.ui.MapView
+import uz.coder.foottopbusiness.core.ui.Success
 
 @Composable
 fun LocationPicker(
@@ -52,7 +54,7 @@ fun LocationPicker(
             if (latitude != null && longitude != null && latitude != 0.0 && longitude != 0.0) {
                 Spacer(Modifier.weight(1f))
                 Surface(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    color = Success.copy(alpha = 0.1f),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Row(
@@ -62,13 +64,13 @@ fun LocationPicker(
                         Icon(
                             Icons.Default.CheckCircle,
                             null,
-                            tint = Color(0xFF4CAF50),
+                            tint = Success,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
                             "GPS: ${latitude.toString().take(7)}, ${longitude.toString().take(7)}",
-                            color = Color(0xFF4CAF50),
+                            color = Success,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -119,7 +121,7 @@ fun LocationPicker(
                     ) {
                         Icon(
                             Icons.Default.MyLocation,
-                            null,
+                            contentDescription = strings.location,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
@@ -182,10 +184,11 @@ fun LocationPicker(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
-                                "Joylashuvni tanlash uchun bosing",
+                                strings.clickToSelectLocation,
                                 color = Color.White,
                                 fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center
                             )
                         }
                     }

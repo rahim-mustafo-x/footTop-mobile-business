@@ -256,6 +256,46 @@ interface Language {
     val experienceYears: String
     val reviews: String
     val featureComingSoon: String
+
+    val today: String
+    val tomorrow: String
+
+    val seeAll: String
+    val bookings: String
+    val prizes: String
+    val rules: String
+    val team: String
+
+    val bookingListTitle: String
+    val noBookingsYet: String
+    val cancelBookingConfirm: String
+    val cancelBooking: String
+    val cancelReason: String
+    val totalPriceLabel: String
+    val unknownUser: String
+    val kelgusi: String
+    val faol: String
+    val yakunlangan: String
+    val bekorQilingan: String
+
+    val clickToSelectLocation: String
+
+    val callViaPhone: String
+    val bookingInfo: String
+    val selectedTime: String
+    val customerInfoOptional: String
+    val customerName: String
+    val enterFullPhone: String
+    val confirm: String
+    val time: String
+
+    val serverError: String
+    val sessionExpired: String
+    val noPermission: String
+    val notFound: String
+    val conflict: String
+    val badRequest: String
+    val unknownNetworkError: String
 }
 
 class EnLanguage : Language {
@@ -502,6 +542,46 @@ class EnLanguage : Language {
     override val experienceYears = "years"
     override val reviews = "Reviews"
     override val featureComingSoon = "This feature will be added in future versions"
+
+    override val today = "Today"
+    override val tomorrow = "Tomorrow"
+
+    override val seeAll = "See all"
+    override val bookings = "Bookings"
+    override val prizes = "Prizes"
+    override val rules = "Rules"
+    override val team = "Team"
+
+    override val bookingListTitle = "Booking List"
+    override val noBookingsYet = "No bookings yet"
+    override val cancelBookingConfirm = "Are you sure you want to cancel this booking?"
+    override val cancelBooking = "Cancel Booking"
+    override val cancelReason = "Cancel Reason"
+    override val totalPriceLabel = "Total price"
+    override val unknownUser = "Unknown user"
+    override val kelgusi = "Upcoming"
+    override val faol = "Active"
+    override val yakunlangan = "Completed"
+    override val bekorQilingan = "Cancelled"
+
+    override val clickToSelectLocation = "Click to select location"
+
+    override val callViaPhone = "Call via phone"
+    override val bookingInfo = "Booking Information"
+    override val selectedTime = "Selected Time"
+    override val customerInfoOptional = "Customer Info (Optional)"
+    override val customerName = "Customer Name"
+    override val enterFullPhone = "Enter full phone number"
+    override val confirm = "Confirm"
+    override val time = "Time"
+
+    override val serverError = "Server Error"
+    override val sessionExpired = "Session expired. Please log in again."
+    override val noPermission = "You don't have permission for this action"
+    override val notFound = "Data not found"
+    override val conflict = "Data already exists or conflict occurred"
+    override val badRequest = "Bad request"
+    override val unknownNetworkError = "Network error"
 }
 
 class RuLanguage : Language {
@@ -748,6 +828,46 @@ class RuLanguage : Language {
     override val experienceYears = "лет"
     override val reviews = "Отзывы"
     override val featureComingSoon = "Эта функция будет добавлена в будущих версиях"
+
+    override val today = "Сегодня"
+    override val tomorrow = "Завтра"
+
+    override val seeAll = "Все"
+    override val bookings = "Бронирования"
+    override val prizes = "Призы"
+    override val rules = "Правила"
+    override val team = "Команда"
+
+    override val bookingListTitle = "Список бронирований"
+    override val noBookingsYet = "Бронирований пока нет"
+    override val cancelBookingConfirm = "Вы уверены, что хотите отменить это бронирование?"
+    override val cancelBooking = "Отменить бронирование"
+    override val cancelReason = "Причина отмены"
+    override val totalPriceLabel = "Общая цена"
+    override val unknownUser = "Неизвестный пользователь"
+    override val kelgusi = "Предстоящие"
+    override val faol = "Активные"
+    override val yakunlangan = "Завершенные"
+    override val bekorQilingan = "Отмененные"
+
+    override val clickToSelectLocation = "Нажмите, чтобы выбрать местоположение"
+
+    override val callViaPhone = "Связаться по телефону"
+    override val bookingInfo = "Информация о бронировании"
+    override val selectedTime = "Выбранное время"
+    override val customerInfoOptional = "Информация о клиенте (опционально)"
+    override val customerName = "Имя клиента"
+    override val enterFullPhone = "Введите полный номер телефона"
+    override val confirm = "Подтвердить"
+    override val time = "Время"
+
+    override val serverError = "Ошибка сервера"
+    override val sessionExpired = "Сессия истекла. Пожалуйста, войдите снова."
+    override val noPermission = "У вас нет разрешения на это действие"
+    override val notFound = "Данные не найдены"
+    override val conflict = "Данные уже существуют или возник конфликт"
+    override val badRequest = "Неверный запрос"
+    override val unknownNetworkError = "Ошибка сети"
 }
 
 class UzLanguage : Language {
@@ -994,4 +1114,44 @@ class UzLanguage : Language {
     override val experienceYears = "yil"
     override val reviews = "Sharhlar"
     override val featureComingSoon = "Bu funksiya keyingi versiyalarda qo'shiladi"
+
+    override val today = "Bugun"
+    override val tomorrow = "Ertaga"
+
+    override val seeAll = "Barchasi"
+    override val bookings = "Bronlar"
+    override val prizes = "Mukofotlar"
+    override val rules = "Qoidalar"
+    override val team = "Jamoa"
+
+    override val bookingListTitle = "Bronlar ro'yxati"
+    override val noBookingsYet = "Hozircha bronlar yo'q"
+    override val cancelBookingConfirm = "Haqiqatan ham ushbu bronni bekor qilmoqchimisiz?"
+    override val cancelBooking = "Bronni bekor qilish"
+    override val cancelReason = "Bekor qilish sababi"
+    override val totalPriceLabel = "Umumiy narx"
+    override val unknownUser = "Noma'lum foydalanuvchi"
+    override val kelgusi = "Kelgusi"
+    override val faol = "Faol"
+    override val yakunlangan = "Yakunlangan"
+    override val bekorQilingan = "Bekor qilingan"
+
+    override val clickToSelectLocation = "Joylashuvni tanlash uchun bosing"
+
+    override val callViaPhone = "Telefon orqali bog'lanish"
+    override val bookingInfo = "Bron qilish ma'lumotlari"
+    override val selectedTime = "Tanlangan vaqt"
+    override val customerInfoOptional = "Mijoz ma'lumotlari (ixtiyoriy)"
+    override val customerName = "Mijoz ismi"
+    override val enterFullPhone = "Telefon raqamini to'liq kiriting"
+    override val confirm = "Tasdiqlash"
+    override val time = "Vaqt"
+
+    override val serverError = "Server Xatoligi"
+    override val sessionExpired = "Sessiya muddati tugadi. Iltimos, qayta kiring."
+    override val noPermission = "Sizda bu amalni bajarish uchun ruxsat yo'q"
+    override val notFound = "Ma'lumot topilmadi"
+    override val conflict = "Bunday ma'lumot allaqachon mavjud yoki ziddiyat yuzaga keldi"
+    override val badRequest = "Xato so'rov yuborildi"
+    override val unknownNetworkError = "Tarmoq xatosi"
 }

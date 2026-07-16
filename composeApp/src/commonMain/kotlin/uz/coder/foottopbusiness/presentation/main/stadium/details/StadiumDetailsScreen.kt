@@ -60,6 +60,7 @@ import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.stadium.edit.EditStadiumVoyager
 import kotlin.time.Clock
 import uz.coder.foottopbusiness.core.platform.NotificationPermissionLauncher
+import uz.coder.foottopbusiness.core.ui.Success
 
 // --- Slot state enum ---
 private enum class SlotRowState {
@@ -186,13 +187,13 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                             Button(
                                 onClick = { stadium.phone?.let { makePhoneCall(it) } },
                                 shape = RoundedCornerShape(20.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
+                                colors = ButtonDefaults.buttonColors(containerColor = Success),
                                 modifier = Modifier.fillMaxWidth().height(60.dp)
                             ) {
                                 Icon(Icons.Default.Phone, null)
                                 Spacer(Modifier.width(8.dp))
                                 Text(
-                                    text = "Telefon orqali bog'lanish",
+                                    text = strings.callViaPhone,
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                                 )
                             }
@@ -220,12 +221,12 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                 horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text("Vaqt", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(strings.time, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text("$startTimeStr – $endTimeStr", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
                                 }
                                 Box(modifier = Modifier.width(1.dp).height(24.dp).background(MaterialTheme.colorScheme.outlineVariant))
                                 Column(modifier = Modifier.weight(0.6f)) {
-                                    Text("Davomiylik", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(strings.duration, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text("$durationMins min", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
                                 }
                                 Column(modifier = Modifier.weight(0.8f)) {
@@ -325,7 +326,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                             onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.BackClick) },
                             modifier = Modifier.statusBarsPadding().padding(12.dp).align(Alignment.TopStart).background(Color.Black.copy(0.3f), CircleShape)
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White)
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, strings.back, tint = Color.White)
                         }
 
                         if (canEdit) {
@@ -333,7 +334,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                 onClick = { viewModel.handleEvent(StadiumDetailsContract.Event.EditClick) },
                                 modifier = Modifier.statusBarsPadding().padding(12.dp).align(Alignment.TopEnd).background(Color.Black.copy(0.3f), CircleShape)
                             ) {
-                                Icon(Icons.Default.Edit, "Edit", tint = Color.White)
+                                Icon(Icons.Default.Edit, strings.edit, tint = Color.White)
                             }
                         }
                     }
@@ -358,7 +359,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                     checked = stadium.isActive == true,
                                     onCheckedChange = { viewModel.handleEvent(StadiumDetailsContract.Event.ToggleActive(it)) },
                                     enabled = !state.isUpdatingStatus,
-                                    colors = SwitchDefaults.colors(checkedTrackColor = Color(0xFF4CAF50))
+                                    colors = SwitchDefaults.colors(checkedTrackColor = Success)
                                 )
                             }
                         }
@@ -524,14 +525,14 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     .navigationBarsPadding()
             ) {
                 Text(
-                    text = "Bron qilish ma'lumotlari",
+                    text = strings.bookingInfo,
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "Tanlangan vaqt: $startTimeStr – $endTimeStr",
+                    text = "${strings.selectedTime}: $startTimeStr – $endTimeStr",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -551,7 +552,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                             Spacer(Modifier.width(12.dp))
-                            Text("Mijoz ma'lumotlari (ixtiyoriy)", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
+                            Text(strings.customerInfoOptional, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
                         }
                         Icon(if (showUserInfo) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, null)
                     }
@@ -565,7 +566,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     OutlinedTextField(
                         value = state.bookerName,
                         onValueChange = { viewModel.handleEvent(StadiumDetailsContract.Event.UpdateBookerName(it)) },
-                        label = { Text("Mijoz ismi") },
+                        label = { Text(strings.customerName) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         leadingIcon = { Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.primary) }
@@ -576,14 +577,14 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     OutlinedTextField(
                         value = state.bookerPhone,
                         onValueChange = { if (it.length <= 9) viewModel.handleEvent(StadiumDetailsContract.Event.UpdateBookerPhone(it)) },
-                        label = { Text("Telefon raqami") },
+                        label = { Text(strings.phoneNumber) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         prefix = { Text("+998 ") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         visualTransformation = PhoneVisualTransformation(),
                         isError = phoneError,
-                        supportingText = if (phoneError) { { Text("Telefon raqamini to'liq kiriting") } } else null,
+                        supportingText = if (phoneError) { { Text(strings.enterFullPhone) } } else null,
                         leadingIcon = { Icon(Icons.Default.Phone, null, tint = if (phoneError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary) }
                     )
                 }
@@ -610,7 +611,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     modifier = Modifier.fillMaxWidth().height(56.dp)
                 ) {
                     Text(
-                        text = "Tasdiqlash (${totalPrice.toInt()} so'm)",
+                        text = "${strings.confirm} (${totalPrice.toInt()} so'm)",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                     )
                 }
@@ -693,7 +694,7 @@ private fun BenefitItem(text: String) {
         Icon(
             Icons.Default.Check, 
             null, 
-            tint = Color(0xFF4CAF50), 
+            tint = Success, 
             modifier = Modifier.size(20.dp)
         )
         Text(text, style = MaterialTheme.typography.bodyMedium)
@@ -762,7 +763,7 @@ private fun SlotListItem(
     }
 
     val statusColor = when (rowState) {
-        SlotRowState.AVAILABLE -> Color(0xFF4CAF50)
+        SlotRowState.AVAILABLE -> Success
         SlotRowState.SELECTED -> MaterialTheme.colorScheme.primary
         SlotRowState.BOOKED -> MaterialTheme.colorScheme.error
         SlotRowState.PAST -> MaterialTheme.colorScheme.outline
@@ -990,12 +991,12 @@ private fun BeautifulStadiumInfoCard(stadium: uz.coder.foottopbusiness.data.netw
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
-                        color = Color(0xFF4CAF50).copy(alpha = 0.1f),
+                        color = Success.copy(alpha = 0.1f),
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.size(40.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.Payments, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
+                            Icon(Icons.Default.Payments, null, tint = Success, modifier = Modifier.size(20.dp))
                         }
                     }
                     Spacer(Modifier.width(12.dp))
@@ -1059,7 +1060,7 @@ fun BookingResultDialog(message: String, isSuccess: Boolean, onDismiss: () -> Un
     val strings = Localization.current
     ModalBottomSheet(onDismissRequest = onDismiss, shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)) {
         Column(Modifier.padding(24.dp).navigationBarsPadding().padding(bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(if (isSuccess) Icons.Default.CheckCircle else Icons.Default.Error, null, tint = if (isSuccess) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error, modifier = Modifier.size(64.dp))
+            Icon(if (isSuccess) Icons.Default.CheckCircle else Icons.Default.Error, null, tint = if (isSuccess) Success else MaterialTheme.colorScheme.error, modifier = Modifier.size(64.dp))
             Spacer(Modifier.height(16.dp))
             Text(if (isSuccess) strings.success else strings.error, style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
             Text(message, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 16.dp))

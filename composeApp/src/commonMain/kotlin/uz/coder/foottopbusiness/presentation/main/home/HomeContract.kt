@@ -91,6 +91,7 @@ sealed interface HomeContract {
         object Stadium: Effect
         object Match: Effect
         object Tournament: Effect
+        object NavigateBack : Effect
     }
 
     sealed interface Event : MviEvent {

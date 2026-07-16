@@ -10,7 +10,7 @@ plugins {
 }
 
 android {
-    namespace = "uz.coder.foottopbusiness.android"
+    namespace = "wuz.coder.foottopbusiness.android"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {

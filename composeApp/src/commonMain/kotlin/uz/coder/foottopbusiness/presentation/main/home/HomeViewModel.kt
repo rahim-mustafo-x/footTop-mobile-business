@@ -235,6 +235,7 @@ class HomeViewModel(
                     },
                     onSuccess = {
                         sendEffect(ShowToast("Muvaffaqiyatli band qilindi: ${event.name}"))
+                        sendEffect(NavigateBack)
                         loadSlots(stadium.id ?: return@executeAsync, s.selectedDate, s.selectedDuration)
                         // Check for notification permission after successful booking
                         handleEvent(HomeContract.Event.CheckNotificationPermission)

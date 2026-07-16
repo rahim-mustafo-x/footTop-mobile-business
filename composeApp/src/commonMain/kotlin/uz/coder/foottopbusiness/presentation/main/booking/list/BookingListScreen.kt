@@ -36,7 +36,9 @@ import uz.coder.foottopbusiness.core.ui.shimmer
 import uz.coder.foottopbusiness.core.visualTransformation.formatPhoneNumber
 
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import uz.coder.foottopbusiness.core.ui.Error
+import uz.coder.foottopbusiness.core.ui.Success
+import uz.coder.foottopbusiness.core.ui.Warning
 import uz.coder.foottopbusiness.presentation.main.booking.details.BookingDetailsScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,16 +59,16 @@ fun BookingListScreen(viewModel: BookingListViewModel, onBack: () -> Unit) {
             }
         }
     }
-    val tabs = listOf("Barchasi", "Kelgusi", "Faol", "Yakunlangan", "Bekor qilingan")
+    val tabs = listOf(strings.seeAll, strings.kelgusi, strings.faol, strings.yakunlangan, strings.bekorQilingan)
 
     Scaffold(
         topBar = {
             Column(modifier = Modifier.background(MaterialTheme.colorScheme.primary)) {
                 TopAppBar(
-                    title = { Text("Bronlar ro'yxati", fontWeight = FontWeight.Bold) },
+                    title = { Text(strings.bookingListTitle, fontWeight = FontWeight.Bold) },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = strings.back)
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -125,7 +127,7 @@ fun BookingListScreen(viewModel: BookingListViewModel, onBack: () -> Unit) {
                 
                 if (bookings.isEmpty()) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Hozircha bronlar yo'q", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(strings.noBookingsYet, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 } else {
                     LazyColumn(
@@ -149,10 +151,10 @@ fun BookingListScreen(viewModel: BookingListViewModel, onBack: () -> Unit) {
     if (state.showCancelDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.handleEvent(BookingListContract.Event.DismissCancelDialog) },
-            title = { Text("Bronni bekor qilish") },
+            title = { Text(strings.cancelBooking) },
             text = {
                 Column {
-                    Text("Haqiqatan ham ushbu bronni bekor qilmoqchimisiz?")
+                    Text(strings.cancelBookingConfirm)
                     Spacer(Modifier.height(16.dp))
                     
                     val isError = state.cancelReason.isBlank()
@@ -169,8 +171,8 @@ fun BookingListScreen(viewModel: BookingListViewModel, onBack: () -> Unit) {
                         OutlinedTextField(
                             value = state.cancelReason,
                             onValueChange = { viewModel.handleEvent(BookingListContract.Event.UpdateCancelReason(it)) },
-                            label = { Text("Bekor qilish sababi (shart)") },
-                            modifier = Modifier.fillMaxWidth().padding(if (isError) 4.dp else 0.dp),
+                            label = { Text(strings.cancelReason) },
+                            modifier = Modifier.fillMaxWidth(),
                             minLines = 3,
                             isError = isError,
                             shape = RoundedCornerShape(12.dp)
@@ -187,12 +189,12 @@ fun BookingListScreen(viewModel: BookingListViewModel, onBack: () -> Unit) {
                     },
                     enabled = state.cancelReason.isNotBlank()
                 ) {
-                    Text("Bekor qilish")
+                    Text(strings.cancelBooking)
                 }
             },
             dismissButton = {
                 OutlinedButton(onClick = { viewModel.handleEvent(BookingListContract.Event.DismissCancelDialog) }) {
-                    Text("Orqaga")
+                    Text(strings.back)
                 }
             }
         )
@@ -201,11 +203,13 @@ fun BookingListScreen(viewModel: BookingListViewModel, onBack: () -> Unit) {
 
 @Composable
 fun BookingItem(booking: BookingResponseDto, onCancelClick: () -> Unit, onClick: () -> Unit) {
+    val strings = Localization.current
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -214,9 +218,9 @@ fun BookingItem(booking: BookingResponseDto, onCancelClick: () -> Unit, onClick:
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val statusColor = when (booking.status) {
-                    "CONFIRMED" -> Color(0xFF4CAF50)
-                    "PENDING" -> Color(0xFFFFA000)
-                    "CANCELLED" -> Color(0xFFF44336)
+                    "CONFIRMED" -> Success
+                    "PENDING" -> Warning
+                    "CANCELLED" -> Error
                     else -> MaterialTheme.colorScheme.onSurfaceVariant
                 }
                 Surface(
@@ -233,7 +237,7 @@ fun BookingItem(booking: BookingResponseDto, onCancelClick: () -> Unit, onClick:
                 
                 if (booking.status != "CANCELLED") {
                     IconButton(onClick = onCancelClick) {
-                        Icon(Icons.Default.Close, contentDescription = "Cancel", tint = Color.Red)
+                        Icon(Icons.Default.Close, contentDescription = strings.cancel, tint = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -243,7 +247,7 @@ fun BookingItem(booking: BookingResponseDto, onCancelClick: () -> Unit, onClick:
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Person, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(8.dp))
-                Text(booking.name ?: "Noma'lum foydalanuvchi", fontWeight = FontWeight.Bold)
+                Text(booking.name ?: strings.unknownUser, fontWeight = FontWeight.Bold)
             }
             
             if (!booking.phone.isNullOrBlank()) {
@@ -271,7 +275,7 @@ fun BookingItem(booking: BookingResponseDto, onCancelClick: () -> Unit, onClick:
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Umumiy narx:", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(strings.totalPriceLabel + ":", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("${booking.totalPrice?.toInt() ?: 0} so'm", fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
             }
         }

@@ -30,6 +30,7 @@ import cafe.adriel.voyager.navigator.Navigator
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import uz.coder.foottopbusiness.core.SessionManager
+import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.presentation.auth.login.LoginVoyager
 import uz.coder.foottopbusiness.presentation.splash.SplashVoyager
 
@@ -40,6 +41,7 @@ fun AppNavigation() {
     val isTokenValid by sessionManager.isTokenValid.collectAsState(initial = true)
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val strings = Localization.current
     var showServerErrorDialog by remember { mutableStateOf(false) }
     var serverErrorMessage by remember { mutableStateOf("") }
 
@@ -63,7 +65,7 @@ fun AppNavigation() {
                 },
                 title = {
                     Text(
-                        text = "Server Xatoligi",
+                        text = strings.serverError,
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -74,7 +76,7 @@ fun AppNavigation() {
                     Button(
                         onClick = { showServerErrorDialog = false }
                     ) {
-                        Text("Tushunarli")
+                        Text(strings.understand)
                     }
                 }
             )
@@ -85,13 +87,13 @@ fun AppNavigation() {
                 LaunchedEffect(Unit) {
                     sessionManager.networkError.collect { error ->
                         val baseMessage = when (error.code) {
-                            401 -> "Sessiya muddati tugadi. Iltimos, qayta kiring."
-                            403 -> "Sizda bu amalni bajarish uchun ruxsat yo'q (403)"
-                            404 -> "Ma'lumot topilmadi (404)"
-                            409 -> "Bunday ma'lumot allaqachon mavjud yoki ziddiyat yuzaga keldi (409)"
-                            400 -> "Xato so'rov yuborildi (400)"
-                            500 -> "Serverda xatolik yuz berdi (500)"
-                            else -> "Tarmoq xatosi: ${error.code}"
+                            401 -> strings.sessionExpired
+                            403 -> "${strings.noPermission} (403)"
+                            404 -> "${strings.notFound} (404)"
+                            409 -> "${strings.conflict} (409)"
+                            400 -> "${strings.badRequest} (400)"
+                            500 -> "${strings.serverError} (500)"
+                            else -> "${strings.unknownNetworkError}: ${error.code}"
                         }
                         val displayMessage = when {
                             !error.details.isNullOrEmpty() -> {

@@ -121,7 +121,7 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = state.username,
                     onValueChange = { viewModel.handleEvent(LoginContract.Event.UsernameChanged(it)) },
-                    placeholder = { Text("username", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
+                    placeholder = { Text(strings.username, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     singleLine = true,
@@ -152,7 +152,7 @@ fun LoginScreen(
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
                                 imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                                contentDescription = null
                             )
                         }
                     },

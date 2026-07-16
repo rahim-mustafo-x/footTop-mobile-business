@@ -330,6 +330,7 @@ class StadiumDetailsViewModel(
                         bookerPhone = ""
                     ) 
                 }
+                sendEffect(StadiumDetailsContract.Effect.NavigateBack)
                 checkNotificationPermission()
                 refreshStadium()
             },
