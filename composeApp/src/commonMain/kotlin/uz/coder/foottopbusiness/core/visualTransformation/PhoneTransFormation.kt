@@ -5,72 +5,102 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 
-class PhoneTransformation : VisualTransformation {
-    override fun filter(text: AnnotatedString): TransformedText {
-        val digits = text.text.filter { it.isDigit() }.take(9)
+/** Telefon raqamida ko'rsatiladigan maksimal raqamlar soni. */
+private const val PhoneDigits = 9
 
-        val formatted = buildString {
-            append("+998")
-            if (digits.isNotEmpty()) {
-                append(" (")
-                append(digits.take(2))
-                if (digits.length >= 2) append(")")
+/**
+ * Telefon raqamini "(99) 123-45-67" ko'rinishida formatlaydi.
+ *
+ * Offset xaritasi HAQIQIY matn uzunligidan hisoblanadi.
+ *
+ * Ilgari xarita qattiq chegaralar bilan yozilgan edi
+ * (`if (offset <= 4) return offset - 1`) va faqat to'liq 9 xonali raqam uchun
+ * to'g'ri ishlardi. Qisqaroq matnda Compose diapazondan tashqari qiymat olib,
+ * ilovani yiqitardi:
+ * "OffsetMapping.transformedToOriginal returned invalid mapping: 4 -> 3
+ *  is not in range of original text [0, 2]"
+ *
+ * @param prefix formatlangan matn oldiga qo'shiladigan qism. Maydonning o'zida
+ *   `prefix = { Text("+998 ") }` bo'lsa, bu yerda bo'sh qoldiring - aks holda
+ *   kod ikki marta chiqadi.
+ */
+class PhoneTransformation(private val prefix: String = "") : VisualTransformation {
+
+    override fun filter(text: AnnotatedString): TransformedText {
+        val original = text.text
+        val out = StringBuilder(prefix)
+
+        // map[i] = asl matndagi i-belgidan oldingi kursor pozitsiyasining
+        // formatlangan matndagi o'rni. Uzunligi original.length + 1 -
+        // oxirgi element kursor matn oxirida turgan holat uchun.
+        val map = IntArray(original.length + 1)
+
+        for (i in original.indices) {
+            if (i >= PhoneDigits) {
+                // 9 tadan ortiq belgilar ko'rsatilmaydi, lekin ular uchun ham
+                // xaritada o'rin bo'lishi shart
+                map[i] = out.length
+                continue
             }
-            if (digits.length > 2) {
-                append(" ")
-                append(digits.substring(2, (5).coerceAtMost(digits.length)))
-            }
-            if (digits.length > 5) {
-                append("-")
-                append(digits.substring(5, (7).coerceAtMost(digits.length)))
-            }
-            if (digits.length > 7) {
-                append("-")
-                append(digits.substring(7, (9).coerceAtMost(digits.length)))
-            }
+            if (i == 0) out.append("(")
+            map[i] = out.length
+            out.append(original[i])
+            if (i == 1) out.append(") ")
+            if (i == 4) out.append("-")
+            if (i == 6) out.append("-")
         }
+        map[original.length] = out.length
 
         val offsetMapping = object : OffsetMapping {
-            override fun originalToTransformed(offset: Int): Int {
-                if (offset <= 0) return formatted.length.coerceAtMost(6)
-                if (offset <= 2) return offset + 6
-                if (offset <= 5) return offset + 8
-                if (offset <= 7) return offset + 9
-                if (offset <= 9) return offset + 10
-                return formatted.length
-            }
+            override fun originalToTransformed(offset: Int): Int =
+                map[offset.coerceIn(0, original.length)]
 
             override fun transformedToOriginal(offset: Int): Int {
-                if (offset <= 6) return 0
-                if (offset <= 8) return offset - 6
-                if (offset <= 9) return 2
-                if (offset <= 13) return (offset - 8).coerceAtMost(5)
-                if (offset <= 14) return 5
-                if (offset <= 16) return (offset - 9).coerceAtMost(7)
-                if (offset <= 17) return 7
-                if (offset <= 19) return (offset - 10).coerceAtMost(9)
-                return 9
+                val clamped = offset.coerceIn(0, out.length)
+                // clamped'dan oldinda nechta asl belgi borligini topamiz
+                var result = 0
+                for (i in 0..original.length) {
+                    if (map[i] <= clamped) result = i else break
+                }
+                return result
             }
         }
 
-        return TransformedText(AnnotatedString(formatted), offsetMapping)
+        return TransformedText(AnnotatedString(out.toString()), offsetMapping)
+    }
+}
+
+/** "+998 " kodi bilan to'liq ko'rinish: "+998 (99) 123-45-67". */
+fun phoneTransformationWithCode() = PhoneTransformation(prefix = "+998 ")
+
+/**
+ * Raqamni `tel:` URI uchun normallashtiradi.
+ *
+ * Backend telefonni turli ko'rinishda saqlaydi: "992314567" (9 xona) yoki
+ * "998995083767" (kod bilan). `tel:` URI'siga esa to'liq, xalqaro formatdagi
+ * raqam kerak - aks holda Intent'ga hech qaysi ilova javob bermaydi.
+ *
+ * @return "+998901234567" ko'rinishida, yoki raqam yaroqsiz bo'lsa null
+ */
+fun normalizePhoneForDial(phone: String?): String? {
+    val digits = phone?.filter { it.isDigit() }.orEmpty()
+    return when {
+        digits.isEmpty() -> null
+        digits.length == 9 -> "+998$digits"
+        digits.startsWith("998") -> "+$digits"
+        else -> "+$digits"
     }
 }
 
 fun formatPhoneNumber(phone: String?): String {
     if (phone.isNullOrBlank()) return "+998 (__) ___-__-__"
     val digits = phone.filter { it.isDigit() }
-    val cleanDigits = if (digits.length == 12 && digits.startsWith("998")) {
-        digits.substring(3)
-    } else if (digits.length == 9) {
-        digits
-    } else {
-        return phone
+    val cleanDigits = when {
+        digits.length == 12 && digits.startsWith("998") -> digits.substring(3)
+        digits.length == 9 -> digits
+        else -> return phone
     }
-    
-    return try {
-        "+998 (${cleanDigits.substring(0, 2)}) ${cleanDigits.substring(2, 5)}-${cleanDigits.substring(5, 7)}-${cleanDigits.substring(7, 9)}"
-    } catch (e: Exception) {
-        phone
-    }
+
+    return "+998 (${cleanDigits.substring(0, 2)}) ${cleanDigits.substring(2, 5)}-" +
+        "${cleanDigits.substring(5, 7)}-${cleanDigits.substring(7, 9)}"
 }

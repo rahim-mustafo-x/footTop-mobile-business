@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.style.TextAlign
 
 import uz.coder.foottopbusiness.core.localization.Localization
+import uz.coder.foottopbusiness.core.ui.GradientHeader
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,51 +60,12 @@ fun SendNotificationScreen(viewModel: SendNotificationViewModel) {
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                            )
-                        )
-                    )
-                    .padding(top = statusBarPadding, start = 8.dp, end = 24.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 24.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = { navigator.pop() },
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = Color.White.copy(alpha = 0.2f),
-                            contentColor = Color.White
-                        ),
-                        modifier = Modifier.clip(RoundedCornerShape(12.dp))
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                    Spacer(Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            strings.notifications,
-                            color = Color.White,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.ExtraBold
-                        )
-                        Text(
-                            strings.notifyUsers,
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-            }
+            GradientHeader(
+                title = strings.notifications,
+                subtitle = strings.notifyUsers,
+                titleFontSize = 22.sp,
+                onBack = { navigator.pop() }
+            )
         }
     ) { padding ->
         Column(

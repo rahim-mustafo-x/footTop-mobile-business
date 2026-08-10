@@ -15,9 +15,11 @@ expect fun shareApp(text: String)
 
 expect fun rateApp()
 
-expect fun openFile(path: String)
+/** Faylni tashqi ilovada ochadi. Ochib bo'lmasa (mos ilova yo'q) false qaytaradi. */
+expect fun openFile(path: String): Boolean
 
-expect fun makePhoneCall(phoneNumber: String)
+/** Terish ilovasini ochadi. Ochib bo'lmasa (raqam yaroqsiz yoki ilova yo'q) false. */
+expect fun makePhoneCall(phoneNumber: String): Boolean
 
 expect fun openAppSettings()
 

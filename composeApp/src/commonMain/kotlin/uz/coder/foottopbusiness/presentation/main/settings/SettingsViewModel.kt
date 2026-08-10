@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import uz.coder.foottopbusiness.core.UserSession
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
 import uz.coder.foottopbusiness.core.platform.PermissionStatus
 import uz.coder.foottopbusiness.core.platform.checkNotificationPermissionStatus
@@ -12,16 +13,26 @@ import uz.coder.foottopbusiness.core.platform.requestNotificationPermission
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.data.network.dto.UserDto
 import uz.coder.foottopbusiness.domain.usecase.auth.ChangePasswordUseCase
+import uz.coder.foottopbusiness.domain.usecase.auth.LogoutUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
 
 class SettingsViewModel(
     private val preferencesManager: PreferencesManager,
     private val getUserUseCase: GetUserUseCase,
     private val changePasswordUseCase: ChangePasswordUseCase,
+    private val logoutUseCase: LogoutUseCase,
+    private val userSession: UserSession,
 ) : BaseViewModel<SettingsContract.State, SettingsContract.Effect, SettingsContract.Event>(
     initialState = SettingsContract.State()
 ) {
-    init { handleEvent(SettingsContract.Event.Load) }
+    init {
+        handleEvent(SettingsContract.Event.Load)
+        // Rol yagona manbadan - UserSession'dan olinadi. Ilgari ekranlar
+        // user.roles ni o'zlari string bo'yicha tekshirib, har xil natija berardi.
+        viewModelScope.launch {
+            userSession.role.collect { role -> updateState { copy(userRole = role) } }
+        }
+    }
 
     override fun handleEvent(event: SettingsContract.Event) {
         when (event) {
@@ -34,7 +45,12 @@ class SettingsViewModel(
                         getUserUseCase(userId.toLong()).collect { result = it }
                         result
                     },
-                    onSuccess = { updateState { copy(user = it, isLoadingUser = false) } },
+                    onSuccess = { user ->
+                        updateState { copy(user = user, isLoadingUser = false) }
+                        // Yangi ma'lumot kelganda sessiyadagi rolni ham yangilaymiz
+                        // (null bo'lsa sessiyani tozalab yubormaslik uchun tekshiramiz).
+                        if (user != null) userSession.setUser(user)
+                    },
                     onError = { updateState { copy(isLoadingUser = false) } }
                 )
             }
@@ -59,10 +75,10 @@ class SettingsViewModel(
                 openAppSettings()
             }
             SettingsContract.Event.Logout -> executeAsync(
-                block = {
-                    preferencesManager.setAuthorised(false)
-                    preferencesManager.setToken("")
-                },
+                // LogoutUseCase butun sessiyani tozalaydi (token, userId, rol).
+                // Ilgari bu yerda faqat authorised=false va token="" qilinardi,
+                // shuning uchun eski foydalanuvchining roli prefs'da qolib ketardi.
+                block = { logoutUseCase() },
                 onSuccess = { sendEffect(SettingsContract.Effect.NavigateToAuth) }
             )
             SettingsContract.Event.ShowAboutApp -> {
@@ -85,8 +101,7 @@ class SettingsViewModel(
                     executeAsync(
                         block = {
                             // TODO: Add DeleteAccountUseCase
-                            preferencesManager.setAuthorised(false)
-                            preferencesManager.setToken("")
+                            logoutUseCase()
                         },
                         onSuccess = {
                             updateState { copy(isDeleting = false, showDeleteAccountDialog = false) }

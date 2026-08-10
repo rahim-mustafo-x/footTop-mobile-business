@@ -4,6 +4,7 @@ import uz.coder.foottopbusiness.core.mvi.MviEffect
 import uz.coder.foottopbusiness.core.mvi.MviEvent
 import uz.coder.foottopbusiness.core.mvi.MviState
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
+import uz.coder.foottopbusiness.domain.model.UserRole
 
 sealed interface StadiumContract {
     data class State(
@@ -16,6 +17,7 @@ sealed interface StadiumContract {
         val error: String? = null,
         val stadiumToDelete: StadiumResponse? = null,
         val hasError: Boolean = false,
+        val userRole: UserRole = UserRole.UNKNOWN,
         val isOwner: Boolean = false
     ) : MviState
 

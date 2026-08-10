@@ -10,6 +10,9 @@ data class TournamentRequestDto(
     @SerialName("name") val name: String,
     @SerialName("organizerId") val organizerId: Long,
     @SerialName("districtId") val districtId: Long? = null,
+    // Turnir o'tadigan asosiy stadion. Turnir bir nechta stadionda o'tishi mumkin,
+    // lekin backend hozircha bittasini saqlaydi - ilova asosiysini yuboradi.
+    @SerialName("stadiumId") val stadiumId: Long? = null,
     @SerialName("startDate") val startDate: String,       // "yyyy-MM-dd"
     @SerialName("endDate") val endDate: String,           // "yyyy-MM-dd"
     @SerialName("sportType") val sportType: String = "FOOTBALL",

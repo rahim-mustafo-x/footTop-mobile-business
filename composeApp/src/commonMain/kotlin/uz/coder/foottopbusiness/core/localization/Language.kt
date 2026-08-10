@@ -160,6 +160,20 @@ interface Language {
     val tabRevenue: String
     val tabRoles: String
     val tabCoaches: String
+    val tabUsers: String
+    val tabBookings: String
+
+    // Bron yaratish - stadion egasining tezkor amali
+    val createBooking: String
+    val selectStadiumForBooking: String
+    val noStadiumsToBook: String
+
+    // Kirish nazorati - vakolati yo'q yoki roli aniqlanmagan foydalanuvchi
+    val retry: String
+    val accessDeniedTitle: String
+    val accessDeniedDesc: String
+    val roleNotLoadedTitle: String
+    val roleNotLoadedDesc: String
 
     // Add Coach / User
     val addCoach: String
@@ -200,6 +214,41 @@ interface Language {
     val unknown: String
     val fieldCount: String
     val uzsPerHour: String
+    val currency: String
+    val download: String
+    val history: String
+    val allFinishedMatches: String
+    val fileSaveError: String
+    val fileSaved: String
+    val bookingDetails: String
+    val bookingNotFound: String
+    val bookedTime: String
+    val cannotOpenDialer: String
+    val close: String
+    val call: String
+
+    // Rol nomlari - UI'da rol nishonchasi (badge) va rol tanlash ro'yxatida
+    // ishlatiladi. Ilgari bu nomlar UserCreateScreen ichida qattiq yozilgan edi.
+    val roleSuperAdmin: String
+    val roleDistrictAdmin: String
+    val roleOwner: String
+    val roleCoach: String
+    val rolePlayer: String
+    val roleUnknown: String
+    val roleSuperAdminDesc: String
+    val roleDistrictAdminDesc: String
+    val roleOwnerDesc: String
+    val roleCoachDesc: String
+    val rolePlayerDesc: String
+
+    // Rol ko'lami - sarlavha ostida "qaysi doirada ishlayapman" degan javob
+    val scopeWholeSystem: String
+    val scopeNoDistrict: String
+
+    // Sanoq iboralari - tillarda so'z tartibi va qo'shimchalar har xil,
+    // shuning uchun oddiy birlashtirish emas, funksiya
+    fun stadiumCount(count: Int): String
+    fun tournamentCount(count: Int): String
     val underRepair: String
     val closed: String
 
@@ -232,6 +281,16 @@ interface Language {
     val free: String
     val booked: String
     val past: String
+    /** Slot bo'sh, lekin tanlangan davomiylik unga sig'maydi */
+    val slotNotEnough: String
+    /** Turnir o'tadigan stadionlar ro'yxati (bir nechta bo'lishi mumkin) */
+    val tournamentStadiums: String
+    /** Ro'yxatdagi asosiy stadion nishonchasi */
+    val primaryStadium: String
+    val setAsPrimaryStadium: String
+    val selectAtLeastOneStadium: String
+    /** Backend hozircha bitta stadionni saqlashi haqida ogohlantirish */
+    val onlyPrimaryStadiumSaved: String
     val selected: String
     val bookNow: String
     val pitchName: String
@@ -395,6 +454,33 @@ class EnLanguage : Language {
     override val tabRevenue = "Revenue"
     override val tabRoles = "Roles"
     override val tabCoaches = "Coaches"
+    override val tabUsers = "Users"
+    override val tabBookings = "Bookings"
+
+    override val createBooking = "New booking"
+    override val selectStadiumForBooking = "Select a stadium"
+    override val noStadiumsToBook = "You have no stadiums to book yet"
+
+    override val retry = "Try again"
+    override val accessDeniedTitle = "This app is for staff"
+    override val accessDeniedDesc = "Your account has the Player role. Management features are available to administrators, stadium owners and coaches. Use the FootTop app to book a field."
+    override val roleNotLoadedTitle = "Could not determine your role"
+    override val roleNotLoadedDesc = "Check your internet connection and try again. If the problem persists, sign in again."
+
+    override val roleSuperAdmin = "Super Admin"
+    override val roleDistrictAdmin = "District Admin"
+    override val roleOwner = "Stadium Owner"
+    override val roleCoach = "Coach"
+    override val rolePlayer = "Player"
+    override val roleUnknown = "Role undefined"
+    override val roleSuperAdminDesc = "Full system control"
+    override val roleDistrictAdminDesc = "Management within a district"
+    override val roleOwnerDesc = "Controls own stadiums"
+    override val roleCoachDesc = "Coach cabinet"
+    override val rolePlayerDesc = "Match participant"
+
+    override val scopeWholeSystem = "Whole system"
+    override val scopeNoDistrict = "District not assigned"
 
     override val profileAndSettings = "Profile and Settings"
     override val personal = "PERSONAL"
@@ -489,6 +575,20 @@ class EnLanguage : Language {
     override val unknown = "Unknown"
     override val fieldCount = "fields"
     override val uzsPerHour = "UZS/hr"
+    override val currency = "UZS"
+    override val download = "Download"
+    override val history = "History"
+    override val allFinishedMatches = "All finished matches"
+    override val fileSaveError = "Failed to save the file"
+    override val fileSaved = "File saved"
+    override val bookingDetails = "Booking details"
+    override val bookingNotFound = "Booking details not found"
+    override val bookedTime = "Booked time"
+    override val cannotOpenDialer = "Could not open the dialer"
+    override val close = "Close"
+    override val call = "Call"
+    override fun stadiumCount(count: Int) = if (count == 1) "1 stadium" else "$count stadiums"
+    override fun tournamentCount(count: Int) = if (count == 1) "1 tournament" else "$count tournaments"
     override val underRepair = "Under Repair"
     override val closed = "Closed"
 
@@ -519,6 +619,12 @@ class EnLanguage : Language {
     override val free = "Free"
     override val booked = "Booked"
     override val past = "Past"
+    override val slotNotEnough = "Doesn't fit"
+    override val tournamentStadiums = "Stadiums"
+    override val primaryStadium = "Primary"
+    override val setAsPrimaryStadium = "Set as primary"
+    override val selectAtLeastOneStadium = "Select at least one stadium"
+    override val onlyPrimaryStadiumSaved = "For now only the primary stadium is saved on the server"
     override val selected = "Selected"
     override val bookNow = "Book Now"
     override val pitchName = "Pitch Name"
@@ -681,6 +787,33 @@ class RuLanguage : Language {
     override val tabRevenue = "Доход"
     override val tabRoles = "Роли"
     override val tabCoaches = "Тренеры"
+    override val tabUsers = "Люди"
+    override val tabBookings = "Брони"
+
+    override val createBooking = "Новая бронь"
+    override val selectStadiumForBooking = "Выберите стадион"
+    override val noStadiumsToBook = "У вас пока нет стадионов для брони"
+
+    override val retry = "Повторить"
+    override val accessDeniedTitle = "Это приложение для сотрудников"
+    override val accessDeniedDesc = "У вашего аккаунта роль «Игрок». Управление доступно администраторам, владельцам стадионов и тренерам. Для брони поля используйте приложение FootTop."
+    override val roleNotLoadedTitle = "Не удалось определить вашу роль"
+    override val roleNotLoadedDesc = "Проверьте подключение к интернету и повторите. Если проблема остаётся, войдите заново."
+
+    override val roleSuperAdmin = "Супер админ"
+    override val roleDistrictAdmin = "Админ района"
+    override val roleOwner = "Владелец стадиона"
+    override val roleCoach = "Тренер"
+    override val rolePlayer = "Игрок"
+    override val roleUnknown = "Роль не определена"
+    override val roleSuperAdminDesc = "Полный контроль системы"
+    override val roleDistrictAdminDesc = "Управление в пределах района"
+    override val roleOwnerDesc = "Управляет своими стадионами"
+    override val roleCoachDesc = "Кабинет тренера"
+    override val rolePlayerDesc = "Участник матчей"
+
+    override val scopeWholeSystem = "Вся система"
+    override val scopeNoDistrict = "Район не назначен"
 
     override val profileAndSettings = "Профиль и Настройки"
     override val personal = "ЛИЧНОЕ"
@@ -775,6 +908,20 @@ class RuLanguage : Language {
     override val unknown = "Неизвестно"
     override val fieldCount = "поля"
     override val uzsPerHour = "сумм/ч"
+    override val currency = "сум"
+    override val download = "Скачать"
+    override val history = "История"
+    override val allFinishedMatches = "Все завершённые матчи"
+    override val fileSaveError = "Не удалось сохранить файл"
+    override val fileSaved = "Файл сохранён"
+    override val bookingDetails = "Детали бронирования"
+    override val bookingNotFound = "Детали бронирования не найдены"
+    override val bookedTime = "Забронированное время"
+    override val cannotOpenDialer = "Не удалось открыть набор номера"
+    override val close = "Закрыть"
+    override val call = "Позвонить"
+    override fun stadiumCount(count: Int) = "$count стадионов"
+    override fun tournamentCount(count: Int) = "$count турниров"
     override val underRepair = "На ремонте"
     override val closed = "Закрыто"
 
@@ -805,6 +952,12 @@ class RuLanguage : Language {
     override val free = "Свободно"
     override val booked = "Занято"
     override val past = "Прошло"
+    override val slotNotEnough = "Не хватает"
+    override val tournamentStadiums = "Стадионы"
+    override val primaryStadium = "Основной"
+    override val setAsPrimaryStadium = "Сделать основным"
+    override val selectAtLeastOneStadium = "Выберите хотя бы один стадион"
+    override val onlyPrimaryStadiumSaved = "Пока на сервере сохраняется только основной стадион"
     override val selected = "Выбрано"
     override val bookNow = "Забронировать"
     override val pitchName = "Название поля"
@@ -966,7 +1119,34 @@ class UzLanguage : Language {
     override val tabSchedule = "Jadval"
     override val tabRevenue = "Daromad"
     override val tabRoles = "Rollar"
-    override val tabCoaches = "Coachlar"
+    override val tabCoaches = "Murabbiylar"
+    override val tabUsers = "Xodimlar"
+    override val tabBookings = "Bronlar"
+
+    override val createBooking = "Bron qilish"
+    override val selectStadiumForBooking = "Stadionni tanlang"
+    override val noStadiumsToBook = "Bron qilish uchun stadioningiz yo'q"
+
+    override val retry = "Qayta urinish"
+    override val accessDeniedTitle = "Bu ilova xodimlar uchun"
+    override val accessDeniedDesc = "Hisobingiz \"O'yinchi\" rolida. Boshqaruv imkoniyatlari administrator, stadion egasi va murabbiylar uchun. Maydon bron qilish uchun FootTop ilovasidan foydalaning."
+    override val roleNotLoadedTitle = "Rolingizni aniqlab bo'lmadi"
+    override val roleNotLoadedDesc = "Internet aloqasini tekshirib, qayta urinib ko'ring. Muammo saqlanib qolsa, hisobingizga qaytadan kiring."
+
+    override val roleSuperAdmin = "Super admin"
+    override val roleDistrictAdmin = "Tuman admini"
+    override val roleOwner = "Stadion egasi"
+    override val roleCoach = "Murabbiy"
+    override val rolePlayer = "O'yinchi"
+    override val roleUnknown = "Rol aniqlanmagan"
+    override val roleSuperAdminDesc = "Butun tizim nazorati"
+    override val roleDistrictAdminDesc = "Tuman bo'yicha boshqaruv"
+    override val roleOwnerDesc = "O'z stadionlarini boshqaradi"
+    override val roleCoachDesc = "Murabbiy kabineti"
+    override val rolePlayerDesc = "O'yinlar ishtirokchisi"
+
+    override val scopeWholeSystem = "Butun tizim"
+    override val scopeNoDistrict = "Tuman biriktirilmagan"
 
     override val profileAndSettings = "Profil va Sozlamalar"
     override val personal = "SHAXSIY"
@@ -1061,6 +1241,20 @@ class UzLanguage : Language {
     override val unknown = "Noma'lum"
     override val fieldCount = "maydon"
     override val uzsPerHour = "so'm/s"
+    override val currency = "so'm"
+    override val download = "Yuklab olish"
+    override val history = "Tarix"
+    override val allFinishedMatches = "Barcha yakunlangan o'yinlar"
+    override val fileSaveError = "Faylni saqlashda xatolik"
+    override val fileSaved = "Fayl saqlandi"
+    override val bookingDetails = "Bron ma'lumotlari"
+    override val bookingNotFound = "Bron ma'lumotlari topilmadi"
+    override val bookedTime = "Bron qilingan vaqt"
+    override val cannotOpenDialer = "Terish ilovasini ochib bo'lmadi"
+    override val close = "Yopish"
+    override val call = "Qo'ng'iroq"
+    override fun stadiumCount(count: Int) = "$count ta stadion"
+    override fun tournamentCount(count: Int) = "$count ta turnir"
     override val underRepair = "Ta'mirda"
     override val closed = "Yopiq"
 
@@ -1091,6 +1285,12 @@ class UzLanguage : Language {
     override val free = "Bo'sh"
     override val booked = "Band"
     override val past = "O'tgan"
+    override val slotNotEnough = "Sig'maydi"
+    override val tournamentStadiums = "Stadionlar"
+    override val primaryStadium = "Asosiy"
+    override val setAsPrimaryStadium = "Asosiy qilish"
+    override val selectAtLeastOneStadium = "Kamida bitta stadion tanlang"
+    override val onlyPrimaryStadiumSaved = "Hozircha serverda faqat asosiy stadion saqlanadi"
     override val selected = "Tanlangan"
     override val bookNow = "Bron qilish"
     override val pitchName = "Pitch nomi"

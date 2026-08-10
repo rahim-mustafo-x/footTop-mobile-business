@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import uz.coder.foottopbusiness.core.localization.Localization
+import uz.coder.foottopbusiness.core.ui.GradientHeader
+import uz.coder.foottopbusiness.core.ui.HeaderIconButton
 import uz.coder.foottopbusiness.core.ui.shimmer
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.data.network.dto.tournament.TournamentFilterDto
@@ -61,60 +63,22 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                            )
-                        )
+            GradientHeader(
+                title = strings.tournaments,
+                subtitle = strings.tournamentCount(state.tournaments.size),
+                actions = {
+                    HeaderIconButton(
+                        icon = Icons.Default.FilterList,
+                        onClick = { showFilterSheet = true },
+                        contentDescription = strings.filter
                     )
-                    .padding(top = statusBarPadding + 16.dp, start = 24.dp, end = 24.dp, bottom = 32.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            strings.tournaments,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Black
-                        )
-                        Text(
-                            "${state.tournaments.size} ta turnir",
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        IconButton(
-                            onClick = { showFilterSheet = true },
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f))
-                        ) {
-                            Icon(Icons.Default.FilterList, contentDescription = "Filter", tint = MaterialTheme.colorScheme.onPrimary)
-                        }
-                        IconButton(
-                            onClick = { navigator.push(TournamentCreateScreen()) },
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f))
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = "Add", tint = MaterialTheme.colorScheme.onPrimary)
-                        }
-                    }
+                    HeaderIconButton(
+                        icon = Icons.Default.Add,
+                        onClick = { navigator.push(TournamentCreateScreen()) },
+                        contentDescription = strings.createTournament
+                    )
                 }
-            }
+            )
         }
     ) { padding ->
         Column(

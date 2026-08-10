@@ -16,11 +16,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,6 +42,8 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.koin.compose.koinInject
 import uz.coder.foottopbusiness.core.images.appIcon
+import uz.coder.foottopbusiness.core.localization.Localization
+import uz.coder.foottopbusiness.core.ui.AccessGateScreen
 import uz.coder.foottopbusiness.core.ui.Base64Image
 import uz.coder.foottopbusiness.presentation.auth.login.LoginVoyager
 import uz.coder.foottopbusiness.presentation.main.MainVoyager
@@ -48,6 +53,8 @@ object SplashVoyager : Screen {
     override fun Content() {
         val viewModel = koinInject<SplashViewModel>()
         val navigator = LocalNavigator.currentOrThrow
+        val strings = Localization.current
+        val uiState by viewModel.uiState.collectAsState()
 
         LaunchedEffect(Unit) {
             viewModel.navigationEvent.collect { event ->
@@ -58,7 +65,17 @@ object SplashVoyager : Screen {
             }
         }
 
-        SplashScreenContent()
+        when (uiState) {
+            SplashUiState.Loading -> SplashScreenContent()
+            SplashUiState.ProfileLoadFailed -> AccessGateScreen(
+                icon = Icons.Outlined.CloudOff,
+                accentColor = MaterialTheme.colorScheme.error,
+                title = strings.roleNotLoadedTitle,
+                description = strings.roleNotLoadedDesc,
+                onRetry = { viewModel.retry() },
+                onLogout = { viewModel.logout() }
+            )
+        }
     }
 }
 

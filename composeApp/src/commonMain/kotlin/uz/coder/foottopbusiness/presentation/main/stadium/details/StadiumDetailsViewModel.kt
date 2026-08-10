@@ -20,6 +20,7 @@ import uz.coder.foottopbusiness.domain.usecase.booking.GetBookingsByStadiumIdUse
 import uz.coder.foottopbusiness.data.network.dto.booking.BookingRequestDto
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.Job
+import uz.coder.foottopbusiness.core.isOverlap
 import uz.coder.foottopbusiness.core.toLocalDateTimeSafe
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
@@ -103,18 +104,15 @@ class StadiumDetailsViewModel(
             }
             is StadiumDetailsContract.Event.SlotClick -> {
                 val s = state.value
-                val isStaff = s.userRole == UserRole.SUPER_ADMIN || s.userRole == UserRole.DISTRICT_ADMIN || s.userRole == UserRole.OWNER
-                if (event.slot.status == "BOOKED" && isStaff) {
-                    fetchBookingDetails(event.slot)
-                } else {
-                    updateState { copy(selectedSlot = event.slot, showSlotActionDialog = true) }
+                val canSeeDetails = s.userRole == UserRole.SUPER_ADMIN ||
+                    s.userRole == UserRole.DISTRICT_ADMIN ||
+                    s.userRole == UserRole.OWNER
+                if (event.slot.status == "BOOKED" && canSeeDetails) {
+                    fetchBookingDetails(event.slot, event.stadiumId)
                 }
             }
-            StadiumDetailsContract.Event.DismissSlotDialog -> {
-                updateState { copy(showSlotActionDialog = false, selectedSlot = null) }
-            }
-            is StadiumDetailsContract.Event.BookSlot -> {
-                bookSlot()
+            StadiumDetailsContract.Event.DismissBookingDetails -> {
+                updateState { copy(showBookingDetailsDialog = false, bookingDetails = emptyList()) }
             }
             is StadiumDetailsContract.Event.SelectDate -> {
                 updateState { copy(selectedDate = event.date) }
@@ -172,7 +170,9 @@ class StadiumDetailsViewModel(
                     return
                 }
                 
-                bookSelectedSlots(event.copy(name = name.takeIf { it.isNotBlank() }, phone = if (phone.isNotBlank()) "998$phone" else null))
+                // Backend telefonni 9 xonali ko'rinishda kutadi ("901234567"),
+                // shuning uchun "998" prefiksi qo'shilmaydi
+                bookSelectedSlots(event.copy(name = name.takeIf { it.isNotBlank() }, phone = phone.takeIf { it.isNotBlank() }))
             }
             StadiumDetailsContract.Event.DismissBookingResultDialog -> {
                 updateState { copy(showBookingResultDialog = false) }
@@ -249,29 +249,52 @@ class StadiumDetailsViewModel(
         }
     }
 
-    private fun fetchBookingDetails(slot: SlotDto) {
-        // Since we don't have a direct "get booking by slot id" we might need to fetch all bookings for this stadium and date
-        val s = state.value
-        val stadiumId = s.stadium?.id?.toLong() ?: return
-        val date = s.selectedDate ?: return
+    /**
+     * Slot bo'yicha bron tafsilotini yuklaydi.
+     *
+     * "Slot ID bo'yicha bron olish" endpointi yo'q, shuning uchun shu stadion va
+     * sana bo'yicha barcha bronlarni olib, slotga to'g'ri kelganini topamiz.
+     *
+     * DIQQAT: bronni slot boshlanish vaqti bo'yicha AYNAN tenglik bilan qidirib
+     * bo'lmaydi. Slotlar 30 daqiqa qadam bilan, 60 daqiqalik oynalar - backend
+     * bron bilan KESISHGAN har bir slotni BOOKED deb belgilaydi. Masalan
+     * 16:30-17:30 broni 17:00-18:00 slotini ham band qiladi, lekin 17:00 da
+     * boshlanadigan bron yo'q. Shuning uchun kesishma bo'yicha qidiramiz.
+     *
+     * [stadiumId] aynan bosilgan maydonniki - stadionda bir nechta maydon
+     * bo'lishi mumkin, state'dagi `stadium` esa har doim ham o'sha emas.
+     */
+    private fun fetchBookingDetails(slot: SlotDto, stadiumId: Int) {
+        val date = state.value.selectedDate ?: return
+        val slotStart = slot.start.toLocalDateTimeSafe()
+        val slotEnd = slot.end.toLocalDateTimeSafe()
 
+        updateState {
+            copy(
+                showBookingDetailsDialog = true,
+                isLoadingBookingDetails = true,
+                bookingDetails = emptyList()
+            )
+        }
         executeAsync(
-            onLoading = { updateState { copy(isLoading = true) } },
-            block = {
-                getBookingsByStadiumIdUseCase(stadiumId, date).first()
-            },
+            block = { getBookingsByStadiumIdUseCase(stadiumId.toLong(), date).first() },
             onSuccess = { bookings ->
-                updateState { copy(isLoading = false) }
-                // Match the booking by start time since SlotDto doesn't have an ID
-                val booking = bookings.firstOrNull { it.startTime == slot.start }
-                if (booking != null) {
-                     sendEffect(StadiumDetailsContract.Effect.ShowToast("Band qilingan: ${booking.name ?: "Noma'lum"} (${booking.phone ?: "-"})"))
+                val matches = if (slotStart == null || slotEnd == null) {
+                    emptyList()
                 } else {
-                     sendEffect(StadiumDetailsContract.Effect.ShowToast("Bron ma'lumotlari topilmadi"))
+                    bookings.filter { booking ->
+                        // Bekor qilingan bron slotni band qilmaydi
+                        if (booking.status == "CANCELLED") return@filter false
+                        val bookingStart = booking.startTime.toLocalDateTimeSafe()
+                        val bookingEnd = booking.endTime.toLocalDateTimeSafe()
+                        bookingStart != null && bookingEnd != null &&
+                            isOverlap(slotStart, slotEnd, bookingStart, bookingEnd)
+                    }.sortedBy { it.startTime }
                 }
+                updateState { copy(isLoadingBookingDetails = false, bookingDetails = matches) }
             },
             onError = {
-                updateState { copy(isLoading = false) }
+                updateState { copy(isLoadingBookingDetails = false, showBookingDetailsDialog = false) }
                 sendEffect(StadiumDetailsContract.Effect.ShowToast("Bron ma'lumotlarini yuklashda xatolik"))
             }
         )
@@ -286,7 +309,17 @@ class StadiumDetailsViewModel(
             onLoading = { updateState { copy(isLoading = true) } },
             block = { cancelBookingUseCase(id, reason).first() },
             onSuccess = {
-                updateState { copy(isLoading = false, showCancelDialog = false) }
+                updateState {
+                    copy(
+                        isLoading = false,
+                        showCancelDialog = false,
+                        bookingToCancel = null,
+                        cancelReason = "",
+                        // Bron bekor qilindi - tafsilot oynasi ham yopilsin
+                        showBookingDetailsDialog = false,
+                        bookingDetails = emptyList()
+                    )
+                }
                 sendEffect(StadiumDetailsContract.Effect.ShowToast("Bron bekor qilindi"))
                 refreshStadium()
             },
@@ -347,41 +380,20 @@ class StadiumDetailsViewModel(
         )
     }
 
-    private fun bookSlot() {
-        val slot = state.value.selectedSlot ?: return
-        updateState { copy(isBooking = true) }
-        executeAsync(
-            block = {
-                val userId = preferencesManager.userId.first().toLong()
-                val request = BookingRequestDto(
-                    userId = userId,
-                    stadiumId = state.value.stadium?.id?.toLong(),
-                    startTime = slot.start,
-                    endTime = slot.end,
-                    totalPrice = state.value.stadium?.pricePerHour,
-                    status = "PENDING",
-                    paymentMethod = "CASH"
-                )
-                createBookingUseCase(request).first()
-            },
-            onSuccess = {
-                updateState { copy(isBooking = false, showSlotActionDialog = false, selectedSlot = null) }
-                sendEffect(StadiumDetailsContract.Effect.ShowToast("Vaqt muvaffaqiyatli band qilindi"))
-                refreshStadium()
-            },
-            onError = {
-                updateState { copy(isBooking = false) }
-                sendEffect(StadiumDetailsContract.Effect.ShowToast("Band qilishda xatolik yuz berdi: ${it.message}"))
-            }
-        )
-    }
-
     private fun updateStatus(isActive: Boolean) {
         val currentStadium = state.value.stadium ?: return
         updateState { copy(isUpdatingStatus = true) }
 
         executeAsync(
             block = {
+                // DIQQAT: updateStadium PUT - to'liq almashtirish. Bu yerda uzatilmagan
+                // har bir maydon serverda tozalanadi. Shuning uchun stadionda mavjud
+                // bo'lgan hamma narsani qaytadan uzatamiz.
+                //
+                // TODO: regionId, districtId va rasmlar StadiumResponse'da yo'q,
+                // shuning uchun ular hamon saqlanmaydi. To'g'ri yechim - backendda
+                // faqat holatni o'zgartiradigan PATCH endpoint, yoki bu maydonlarni
+                // stadion javobiga qo'shish.
                 var updated: StadiumResponse? = null
                 stadiumRepository.updateStadium(
                     id = currentStadium.id ?: return@executeAsync null,
@@ -396,7 +408,12 @@ class StadiumDetailsViewModel(
                     imageUrl = "",
                     regionId = 13,
                     districtId = 193,
-                    isActive = isActive
+                    isActive = isActive,
+                    ownerId = currentStadium.ownerId,
+                    phone = currentStadium.phone,
+                    latitude = currentStadium.location?.latitude,
+                    longitude = currentStadium.location?.longitude,
+                    address = currentStadium.location?.address
                 ).collect { updated = it }
                 updated
             },

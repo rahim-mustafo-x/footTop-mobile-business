@@ -1,32 +1,35 @@
 package uz.coder.foottopbusiness.presentation.main.stadium
 
-import kotlinx.coroutines.flow.first
+import uz.coder.foottopbusiness.core.UserSession
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
-import uz.coder.foottopbusiness.data.local.PreferencesManager
+import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.domain.usecase.stadium.DeleteStadiumUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetStadiumsUseCase
-import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
 
 class StadiumViewModel(
     private val getStadiumsUseCase: GetStadiumsUseCase,
     private val deleteStadiumUseCase: DeleteStadiumUseCase,
-    private val getUserUseCase: GetUserUseCase,
-    private val preferencesManager: PreferencesManager,
+    private val userSession: UserSession,
 ) : BaseViewModel<StadiumContract.State, StadiumContract.Effect, StadiumContract.Event>(
     initialState = StadiumContract.State()
 ) {
     init {
         handleEvent(StadiumContract.Event.Load)
-        loadUserRole()
+        observeRole()
     }
 
-    private fun loadUserRole() {
+    /**
+     * Rol yagona manbadan olinadi.
+     *
+     * Ilgari bu yerda `roles.any { it.name == "STADIUM_OWNER" || "OWNER" }`
+     * tekshiruvi turardi, backend esa "ROLE_OWNER" qaytaradi - shuning uchun
+     * stadion egasiga hech qachon `isOwner = true` bo'lmasdi va u "Jadval"
+     * o'rniga admin ko'rinishini ("Stadionlar" + qo'shish tugmasi) ko'rardi.
+     */
+    private fun observeRole() {
         executeAsync {
-            val userId = preferencesManager.userId.first()
-            if (userId == 0) return@executeAsync
-            getUserUseCase(userId.toLong()).collect { result ->
-                val isOwner = result.roles?.any { it.name == "STADIUM_OWNER" || it.name == "OWNER" } ?: false
-                updateState { copy(isOwner = isOwner) }
+            userSession.role.collect { role ->
+                updateState { copy(userRole = role, isOwner = role == UserRole.OWNER) }
             }
         }
     }

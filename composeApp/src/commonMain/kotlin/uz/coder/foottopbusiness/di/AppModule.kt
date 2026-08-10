@@ -48,6 +48,7 @@ import uz.coder.foottopbusiness.presentation.auth.login.LoginViewModel
 import uz.coder.foottopbusiness.presentation.main.booking.list.BookingListViewModel
 import uz.coder.foottopbusiness.presentation.main.coaches.CoachesViewModel
 import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
+import uz.coder.foottopbusiness.presentation.main.reports.ReportsViewModel
 import uz.coder.foottopbusiness.presentation.main.home.user.UserCreateViewModel
 import uz.coder.foottopbusiness.presentation.main.settings.SettingsViewModel
 import uz.coder.foottopbusiness.presentation.main.settings.editprofile.EditProfileViewModel
@@ -57,6 +58,7 @@ import uz.coder.foottopbusiness.presentation.main.stadium.addstadium.AddStadiumV
 import uz.coder.foottopbusiness.presentation.main.stadium.details.StadiumDetailsViewModel
 import uz.coder.foottopbusiness.presentation.main.stadium.edit.EditStadiumViewModel
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsViewModel
+import uz.coder.foottopbusiness.presentation.main.AccessViewModel
 import uz.coder.foottopbusiness.presentation.splash.SplashViewModel
 
 val appModule = module {
@@ -128,17 +130,19 @@ val appModule = module {
 
 
     // viewModels
-    factory { SplashViewModel(get(), get(), get(), get()) }
+    factory { SplashViewModel(get(), get(), get(), get(), get()) }
+    factory { AccessViewModel(get(), get(), get(), get()) }
     factory { LoginViewModel(get(), get(), get(), get()) }
-    factory { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    factory { StadiumViewModel(get(), get(), get(), get()) }
+    factory { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    factory { ReportsViewModel(get(), get(), get()) }
+    factory { StadiumViewModel(get(), get(), get()) }
     factory { AddStadiumViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { (stadium: StadiumResponse) -> EditStadiumViewModel(stadium, get(), get(), get(), get(), get()) }
     factory { (stadium: StadiumResponse) -> StadiumDetailsViewModel(stadium, get(), get(), get(), get(), get()) }
     factory { BookingListViewModel(get(), get()) }
     factory { CoachesViewModel(get(), get(), get()) }
     factory { TournamentsViewModel(get(), get(), get(), get(), get(), get(), get()) }
-    factory { SettingsViewModel(get(), get(), get()) }
+    factory { SettingsViewModel(get(), get(), get(), get(), get()) }
     factory { EditProfileViewModel(get(), get()) }
     factory { SendNotificationViewModel(get()) }
     factory { UserCreateViewModel(get(), get(), get(), get(), get(), get()) }
