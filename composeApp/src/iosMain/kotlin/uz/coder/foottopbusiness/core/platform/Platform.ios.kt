@@ -6,6 +6,7 @@ import platform.UIKit.UIApplication
 import platform.StoreKit.SKStoreReviewController
 import platform.UserNotifications.*
 import platform.Foundation.NSURL
+import uz.coder.foottopbusiness.core.visualTransformation.normalizePhoneForDial
 import platform.Foundation.NSBundle
 import platform.UIKit.UIApplicationOpenSettingsURLString
 import kotlin.coroutines.resume
@@ -46,16 +47,18 @@ actual fun rateApp() {
     SKStoreReviewController.requestReview()
 }
 
-actual fun openFile(path: String) {
-    // Basic implementation for iOS to open a file
-    // In a real app, you might use UIDocumentInteractionController
+actual fun openFile(path: String): Boolean {
+    // TODO: UIDocumentInteractionController orqali ochish
+    // Hozircha qo'llab-quvvatlanmaydi - chaqiruvchi false'ga qarab xabar ko'rsatadi
+    return false
 }
 
-actual fun makePhoneCall(phoneNumber: String) {
-    val url = NSURL(string = "tel:$phoneNumber")
-    if (UIApplication.sharedApplication.canOpenURL(url)) {
-        UIApplication.sharedApplication.openURL(url)
-    }
+actual fun makePhoneCall(phoneNumber: String): Boolean {
+    val dialNumber = normalizePhoneForDial(phoneNumber) ?: return false
+    val url = NSURL(string = "tel:$dialNumber")
+    if (!UIApplication.sharedApplication.canOpenURL(url)) return false
+    UIApplication.sharedApplication.openURL(url)
+    return true
 }
 
 actual fun openAppSettings() {

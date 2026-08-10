@@ -23,7 +23,9 @@ import androidx.compose.ui.unit.sp
 import kotlinx.datetime.LocalDateTime
 import uz.coder.foottopbusiness.core.formatAsDate
 import uz.coder.foottopbusiness.core.formatAsTime
+import uz.coder.foottopbusiness.core.Money
 import uz.coder.foottopbusiness.core.localization.Localization
+import uz.coder.foottopbusiness.core.ui.GradientHeader
 import uz.coder.foottopbusiness.core.ui.shimmer
 import uz.coder.foottopbusiness.data.network.dto.MatchResponseDto
 import uz.coder.foottopbusiness.presentation.main.home.HomeContract
@@ -36,36 +38,10 @@ fun HistoryScreen(state: HomeContract.State) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                            )
-                        )
-                    )
-                    .padding(top = statusBarPadding + 16.dp, start = 24.dp, end = 24.dp, bottom = 32.dp)
-            ) {
-                Column {
-                    Text(
-                        "Tarix",
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Black
-                    )
-                    Text(
-                        "Barcha yakunlangan o'yinlar",
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
+            GradientHeader(
+                title = strings.history,
+                subtitle = strings.allFinishedMatches
+            )
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -136,6 +112,7 @@ fun HistoryScreen(state: HomeContract.State) {
 
 @Composable
 private fun MatchHistoryItem(match: MatchResponseDto, onClick: () -> Unit) {
+    val strings = Localization.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -186,7 +163,7 @@ private fun MatchHistoryItem(match: MatchResponseDto, onClick: () -> Unit) {
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
-                    "${match.pricePerPlayer?.toInt()} so'm",
+                    Money.withCurrency(match.pricePerPlayer ?: 0.0, strings.currency),
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Black,

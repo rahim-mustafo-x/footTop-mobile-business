@@ -16,6 +16,7 @@ import androidx.core.net.toUri
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.tasks.await
 import uz.coder.foottopbusiness.core.context.ContextProvider
+import uz.coder.foottopbusiness.core.visualTransformation.normalizePhoneForDial
 import kotlin.system.exitProcess
 
 class AndroidPlatform : Platform {
@@ -63,28 +64,44 @@ actual fun rateApp() {
     }
 }
 
-actual fun openFile(path: String) {
-    val context = ContextProvider.getContext()
-    val file = java.io.File(path)
-    val uri = androidx.core.content.FileProvider.getUriForFile(
-        context,
-        "${context.packageName}.fileprovider",
-        file
-    )
-    val intent = Intent(Intent.ACTION_VIEW).apply {
-        setDataAndType(uri, "text/csv")
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+actual fun openFile(path: String): Boolean {
+    return try {
+        val context = ContextProvider.getContext()
+        val file = java.io.File(path)
+        val uri = androidx.core.content.FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "text/csv")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
+        true
+    } catch (e: Exception) {
+        // Qurilmada CSV ochadigan ilova bo'lmasligi mumkin (emulyatorda odatda yo'q).
+        // Ilgari bu ActivityNotFoundException'ni hech kim ushlamasdi va ilova yiqilardi.
+        false
     }
-    context.startActivity(intent)
 }
 
-actual fun makePhoneCall(phoneNumber: String) {
-    val context = ContextProvider.getContext()
-    val intent = Intent(Intent.ACTION_DIAL, phoneNumber.toUri()).apply {
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+actual fun makePhoneCall(phoneNumber: String): Boolean {
+    // "tel:" sxemasi shart. Ilgari xom raqam toUri() qilingani uchun Intent
+    // ma'lumotsiz qolib, ActivityNotFoundException bilan ilova yiqilardi.
+    val dialNumber = normalizePhoneForDial(phoneNumber) ?: return false
+    return try {
+        val context = ContextProvider.getContext()
+        val intent = Intent(Intent.ACTION_DIAL, "tel:$dialNumber".toUri()).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
+        true
+    } catch (e: Exception) {
+        // Qurilmada telefon ilovasi bo'lmasligi mumkin (ba'zi emulyatorlarda)
+        false
     }
-    context.startActivity(intent)
 }
 
 actual fun openAppSettings() {

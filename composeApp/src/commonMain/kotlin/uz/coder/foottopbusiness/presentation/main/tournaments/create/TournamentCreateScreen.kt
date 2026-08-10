@@ -1,4 +1,4 @@
-package uz.coder.foottopbusiness.presentation.main.tournaments.create
+﻿package uz.coder.foottopbusiness.presentation.main.tournaments.create
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -34,10 +34,13 @@ import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
 import uz.coder.foottopbusiness.core.localization.Localization
+import uz.coder.foottopbusiness.core.ui.GradientHeader
 import uz.coder.foottopbusiness.core.platform.LocationPermissionLauncher
 import uz.coder.foottopbusiness.core.visualTransformation.AmountTransformation
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsContract
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsViewModel
+import uz.coder.foottopbusiness.presentation.main.tournaments.components.DerivedLocationSummary
+import uz.coder.foottopbusiness.presentation.main.tournaments.components.StadiumMultiSelect
 import uz.coder.foottopbusiness.presentation.main.stadium.edit.components.LocationPicker
 import uz.coder.foottopbusiness.presentation.main.stadium.edit.MapSelectionScreen
 import kotlinx.datetime.Instant
@@ -161,57 +164,11 @@ class TournamentCreateScreen : Screen {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             topBar = {
-                val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.primary,
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                                )
-                            )
-                        )
-                        .padding(top = statusBarPadding, start = 24.dp, end = 24.dp, bottom = 32.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Surface(
-                            onClick = { navigator.pop() },
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f),
-                            modifier = Modifier.size(46.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.ArrowBack,
-                                    null,
-                                    tint = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
-                        Spacer(Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                strings.createTournament,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Black
-                            )
-                            Text(
-                                strings.technicalInfo,
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-                }
+                GradientHeader(
+                    title = strings.createTournament,
+                    subtitle = strings.technicalInfo,
+                    onBack = { navigator.pop() }
+                )
             }
         ) { padding ->
             Column(
@@ -223,7 +180,7 @@ class TournamentCreateScreen : Screen {
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 // Info Card
-                val infoError = state.showErrors && (name.isBlank() || state.selectedRegion == null || state.selectedDistrict == null)
+                val infoError = state.showErrors && (name.isBlank() || state.selectedStadiums.isEmpty())
                 PremiumCreateCard(title = strings.management, icon = Icons.Outlined.EmojiEvents, isError = infoError) {
                     TournamentInputField(
                         value = name,
@@ -234,10 +191,15 @@ class TournamentCreateScreen : Screen {
                         isError = state.showErrors && name.isBlank()
                     )
 
-                    StadiumDropdown(state, viewModel)
+                    StadiumMultiSelect(
+                        state,
+                        viewModel,
+                        isError = state.showErrors && state.selectedStadiums.isEmpty()
+                    )
 
-                    RegionDropdown(state, viewModel, isError = state.showErrors && state.selectedRegion == null)
-                    DistrictDropdown(state, viewModel, isError = state.showErrors && state.selectedDistrict == null)
+                    // Viloyat/tuman asosiy stadiondan kelib chiqadi - qo'lda
+                    // tanlanmaydi, shunchaki tasdiq sifatida ko'rsatiladi
+                    DerivedLocationSummary(state)
 
                     TournamentInputField(
                         value = address,
@@ -248,33 +210,30 @@ class TournamentCreateScreen : Screen {
                     )
                 }
 
-                // Location Card
-                PremiumCreateCard(title = strings.stadium, icon = Icons.Outlined.Map) {
+                // Location Card - koordinata asosiy stadiondan keladi, kerak
+                // bo'lsa xaritadan aniqlashtirish mumkin. Qo'lda Lat/Long
+                // kiritish maydonlari olib tashlandi: ular xato manbai edi
+                // (noto'g'ri kiritish jimgina null bo'lib ketardi).
+                PremiumCreateCard(title = strings.locationInfo, icon = Icons.Outlined.Map) {
                     LocationPicker(
                         latitude = latitude,
                         longitude = longitude,
                         address = address,
-                        onLatitudeChange = { latitude = it.toDoubleOrNull() },
-                        onLongitudeChange = { longitude = it.toDoubleOrNull() },
-                        onAddressChange = { address = it },
                         onSelectOnMap = {
                             navigator.push(MapSelectionScreen(latitude, longitude) { lat, lng ->
                                 latitude = lat
                                 longitude = lng
                             })
-                        },
-                        onGetCurrentLocation = { viewModel.handleEvent(TournamentsContract.Event.GetCurrentLocation) }
+                        }
                     )
                 }
 
-                LaunchedEffect(state.latitude, state.longitude, state.selectedStadium) {
+                LaunchedEffect(state.latitude, state.longitude, state.primaryStadium) {
                     if (state.latitude != null && state.longitude != null) {
                         latitude = state.latitude
                         longitude = state.longitude
                     }
-                    state.selectedStadium?.let { stadium ->
-                        stadium.location?.address?.let { address = it }
-                    }
+                    state.primaryStadium?.location?.address?.let { address = it }
                 }
 
                 // Date and Time Card
@@ -381,18 +340,10 @@ class TournamentCreateScreen : Screen {
                             return if (parts.size == 3) "${parts[2]}-${parts[1]}-${parts[0]}" else d
                         }
                         
-                        val formattedAddress = buildString {
-                            state.selectedRegion?.let { append(it.name) }
-                            state.selectedDistrict?.let { 
-                                if (isNotEmpty()) append(", ")
-                                append(it.name) 
-                            }
-                            if (address.isNotBlank()) {
-                                if (isNotEmpty()) append(", ")
-                                append(address)
-                            }
-                        }
-
+                        // Ilgari bu yerda "Viloyat, Tuman, manzil" birlashtirilardi,
+                        // tahrirlashda esa split(", ").last() bilan ajratilardi va
+                        // vergulli manzilning bir qismi yo'qolardi. Viloyat/tuman
+                        // allaqachon districtId orqali ketadi.
                         viewModel.handleEvent(
                             TournamentsContract.Event.Create(
                                 name,
@@ -400,7 +351,7 @@ class TournamentCreateScreen : Screen {
                                 formatToApi(endDate),
                                 maxTeams.toIntOrNull() ?: 0,
                                 entryFee.toDoubleOrNull() ?: 0.0,
-                                formattedAddress.takeIf { it.isNotBlank() },
+                                address.takeIf { it.isNotBlank() },
                                 startTime.takeIf { it.isNotBlank() },
                                 endTime.takeIf { it.isNotBlank() },
                                 latitude = latitude,
@@ -511,161 +462,6 @@ class TournamentCreateScreen : Screen {
         }
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    private fun StadiumDropdown(
-        state: TournamentsContract.State,
-        viewModel: TournamentsViewModel
-    ) {
-        val strings = Localization.current
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(strings.stadium, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
-            ExposedDropdownMenuBox(
-                expanded = state.showStadiumDropdown,
-                onExpandedChange = { 
-                    viewModel.handleEvent(TournamentsContract.Event.ShowStadiumDropdown(it))
-                    if (it) viewModel.handleEvent(TournamentsContract.Event.GetCurrentLocation)
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                OutlinedTextField(
-                    value = state.selectedStadium?.name ?: "Stadionni tanlang",
-                    onValueChange = {},
-                    readOnly = true,
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-                    singleLine = true,
-                    leadingIcon = { Icon(Icons.Outlined.LocationOn, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f), modifier = Modifier.size(18.dp)) },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showStadiumDropdown) },
-                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                    )
-                )
-                ExposedDropdownMenu(
-                    expanded = state.showStadiumDropdown,
-                    onDismissRequest = { viewModel.handleEvent(TournamentsContract.Event.ShowStadiumDropdown(false)) },
-                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
-                ) {
-                    state.stadiums.forEach { stadium ->
-                        DropdownMenuItem(
-                            text = { Text(stadium.name ?: "") },
-                            onClick = {
-                                viewModel.handleEvent(TournamentsContract.Event.SelectStadium(stadium))
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    private fun RegionDropdown(
-        state: TournamentsContract.State,
-        viewModel: TournamentsViewModel,
-        isError: Boolean = false
-    ) {
-        val strings = Localization.current
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(strings.chooseRegion, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
-            ExposedDropdownMenuBox(
-                expanded = state.showRegionDropdown,
-                onExpandedChange = { viewModel.handleEvent(TournamentsContract.Event.ShowRegionDropdown(it)) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                OutlinedTextField(
-                    value = state.selectedRegion?.name ?: strings.chooseRegion,
-                    onValueChange = {},
-                    readOnly = true,
-                    isError = isError,
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-                    singleLine = true,
-                    leadingIcon = { Icon(Icons.Outlined.LocationOn, null, tint = (if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary).copy(alpha = 0.6f), modifier = Modifier.size(18.dp)) },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showRegionDropdown) },
-                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        errorBorderColor = MaterialTheme.colorScheme.error
-                    )
-                )
-                ExposedDropdownMenu(
-                    expanded = state.showRegionDropdown,
-                    onDismissRequest = { viewModel.handleEvent(TournamentsContract.Event.ShowRegionDropdown(false)) },
-                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
-                ) {
-                    state.regions.forEach { region ->
-                        DropdownMenuItem(
-                            text = { Text(region.name) },
-                            onClick = {
-                                viewModel.handleEvent(TournamentsContract.Event.SelectRegion(region))
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    private fun DistrictDropdown(
-        state: TournamentsContract.State,
-        viewModel: TournamentsViewModel,
-        isError: Boolean = false
-    ) {
-        val strings = Localization.current
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(strings.chooseDistrict, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
-            ExposedDropdownMenuBox(
-                expanded = state.showDistrictDropdown,
-                onExpandedChange = { viewModel.handleEvent(TournamentsContract.Event.ShowDistrictDropdown(it)) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                OutlinedTextField(
-                    value = state.selectedDistrict?.name ?: strings.chooseDistrict,
-                    onValueChange = {},
-                    readOnly = true,
-                    isError = isError,
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-                    singleLine = true,
-                    leadingIcon = { Icon(Icons.Outlined.LocationOn, null, tint = (if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary).copy(alpha = 0.6f), modifier = Modifier.size(18.dp)) },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showDistrictDropdown) },
-                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable).fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        errorBorderColor = MaterialTheme.colorScheme.error
-                    )
-                )
-                ExposedDropdownMenu(
-                    expanded = state.showDistrictDropdown,
-                    onDismissRequest = { viewModel.handleEvent(TournamentsContract.Event.ShowDistrictDropdown(false)) },
-                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
-                ) {
-                    state.districts.forEach { district ->
-                        DropdownMenuItem(
-                            text = { Text(district.name ?: "") },
-                            onClick = {
-                                viewModel.handleEvent(TournamentsContract.Event.SelectDistrict(district))
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    }
 }
 
 @Composable

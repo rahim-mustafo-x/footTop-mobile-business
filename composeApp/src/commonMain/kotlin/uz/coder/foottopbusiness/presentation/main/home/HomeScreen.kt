@@ -34,9 +34,17 @@ import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.core.localization.Localization
+import uz.coder.foottopbusiness.core.Money
+import uz.coder.foottopbusiness.core.ui.AppCard
+import uz.coder.foottopbusiness.core.ui.GradientHeader
+import uz.coder.foottopbusiness.core.ui.HeaderIconButton
+import uz.coder.foottopbusiness.core.ui.QuickActionCard
+import uz.coder.foottopbusiness.core.ui.RoleBadge
+import uz.coder.foottopbusiness.core.ui.scopeText
+import uz.coder.foottopbusiness.core.ui.StatCard
+import uz.coder.foottopbusiness.core.ui.StatCardHeight
 import uz.coder.foottopbusiness.core.ui.shimmer
 import uz.coder.foottopbusiness.core.toLocalDateTimeSafe
-import uz.coder.foottopbusiness.presentation.main.home.history.HistoryScreen
 import uz.coder.foottopbusiness.presentation.main.reports.ReportItem
 import uz.coder.foottopbusiness.presentation.main.settings.SettingsVoyager
 import uz.coder.foottopbusiness.presentation.main.settings.notification.SendNotificationVoyager
@@ -58,11 +66,11 @@ fun HomeScreen(
     val navigator = LocalNavigator.currentOrThrow
     val snackbarHostState = remember { SnackbarHostState() }
     var lastBackPressTime by remember { mutableStateOf(0L) }
+    var showStadiumPicker by remember { mutableStateOf(false) }
 
     BackHandler(enabled = true) {
         when {
             state.selectedTournament != null -> viewModel.handleEvent(HomeContract.Event.ClearTournament)
-            state.selectedMatch != null -> viewModel.handleEvent(HomeContract.Event.ClearMatch)
             state.selectedStadiumForTime != null -> viewModel.handleEvent(HomeContract.Event.ClearStadiumForSlots)
             else -> {
                 val currentTime = kotlin.time.Clock.System.now().toEpochMilliseconds()
@@ -76,6 +84,8 @@ fun HomeScreen(
         }
     }
 
+    // Yagona collector: effect Channel asosida, shuning uchun uni faqat
+    // shu yerda o'qiymiz (HomeVoyager'da takroriy collect bo'lmasin).
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
@@ -114,6 +124,17 @@ fun HomeScreen(
         )
     }
 
+    if (showStadiumPicker) {
+        StadiumPickerSheet(
+            stadiums = state.stadiums,
+            onDismiss = { showStadiumPicker = false },
+            onSelect = { stadium ->
+                showStadiumPicker = false
+                navigateToSlotsControl(stadium)
+            }
+        )
+    }
+
     NotificationPermissionLauncher(
         trigger = state.triggerNotificationRequest,
         onResult = { status ->
@@ -121,11 +142,11 @@ fun HomeScreen(
         }
     )
 
-    LaunchedEffect(state.selectedStadiumForTime) {
-        state.selectedStadiumForTime?.let {
-            navigateToSlotsControl(it)
-        }
-    }
+    // Diqqat: bu yerda `selectedStadiumForTime` bo'yicha avtomatik o'tish
+    // qilinmaydi. O'sha state'ni SlotsControlVoyager'ning o'zi o'rnatadi -
+    // agar tizim "orqaga" tugmasi bilan chiqilsa u tozalanmay qoladi va
+    // HomeScreen qayta ko'rinishi bilanoq ekranni cheksiz qayta ochib
+    // yuborardi. O'tish faqat aniq amal orqali - stadion tanlanganda.
 
     state.selectedTournament?.let { t ->
         TournamentDetailScreen(t, onBack = { viewModel.handleEvent(HomeContract.Event.ClearTournament) })
@@ -134,7 +155,9 @@ fun HomeScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = WindowInsets.systemBars,
+        // Gradient header status bar ostiga cho'ziladi va tepa bo'shliqni
+        // GradientHeader o'zi hisoblaydi - shuning uchun bu yerda faqat pastki inset
+        contentWindowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Bottom),
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(
@@ -142,7 +165,10 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            if (state.isLoadingUser && state.userRole == UserRole.UNKNOWN) {
+            // Rol aniqlanmagan bo'lsa haqiqiy sarlavhani chizmaymiz: aks holda
+            // bir zumga "rol aniqlanmagan" nishonchali, ko'lam qatorisiz
+            // header chiqib, keyin rol kelganda balandligi o'zgarib ketadi.
+            if (state.userRole == UserRole.UNKNOWN) {
                 HomeShimmer()
             } else {
                 when (state.userRole) {
@@ -171,7 +197,16 @@ fun HomeScreen(
                             onNotificationClick = {
                                 viewModel.handleEvent(HomeContract.Event.CheckNotificationPermission)
                             },
-                            onShowBookings = { navigator.push(BookingListVoyager()) }
+                            onShowBookings = { navigator.push(BookingListVoyager()) },
+                            onCreateBooking = {
+                                // Bitta stadion bo'lsa tanlash oynasi ortiqcha
+                                val onlyStadium = state.stadiums.singleOrNull()
+                                if (onlyStadium != null) {
+                                    navigateToSlotsControl(onlyStadium)
+                                } else {
+                                    showStadiumPicker = true
+                                }
+                            }
                         )
                     }
 
@@ -265,14 +300,14 @@ private fun DashboardGrid(state: HomeContract.State) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatCard(
                 value = "${state.activeStadiums}",
-                subValue = strings.stadiums,
+                label = strings.stadiums,
                 icon = Icons.Outlined.SportsSoccer,
                 color = Success,
                 modifier = Modifier.weight(1f)
             )
             StatCard(
                 value = "${state.totalUsers}",
-                subValue = strings.users,
+                label = strings.users,
                 icon = Icons.Outlined.Groups,
                 color = Info,
                 modifier = Modifier.weight(1f)
@@ -281,14 +316,14 @@ private fun DashboardGrid(state: HomeContract.State) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatCard(
                 value = "${state.totalTournaments}",
-                subValue = strings.tournaments,
+                label = strings.tournaments,
                 icon = Icons.Outlined.EmojiEvents,
                 color = Warning,
                 modifier = Modifier.weight(1f)
             )
             StatCard(
-                value = if (state.totalEarnings > 1000000) "${(state.totalEarnings / 1000000).toInt()}M" else "${state.totalEarnings.toInt()}",
-                subValue = strings.revenue,
+                value = Money.compact(state.totalEarnings),
+                label = strings.revenue,
                 icon = Icons.Outlined.AttachMoney,
                 color = MaterialTheme.colorScheme.tertiary,
                 modifier = Modifier.weight(1f)
@@ -300,119 +335,91 @@ private fun DashboardGrid(state: HomeContract.State) {
 @Composable
 private fun MalaebHeader(state: HomeContract.State, onProfileClick: () -> Unit, onNotificationClick: () -> Unit) {
     val strings = Localization.current
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primary,
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                    )
-                )
-            )
-            .padding(start = 24.dp, end = 24.dp, bottom = 32.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    strings.welcome,
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.2.sp
-                )
-                Text(
-                    state.user?.fullName ?: strings.tabHome,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Black,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+    GradientHeader(
+        // Ilgari bu yerda faqat "Xush kelibsiz" turardi va foydalanuvchi
+        // o'zining qaysi rolda ekanini UI'dan bilolmasdi.
+        badge = { RoleBadge(state.userRole, onGradient = true) },
+        title = state.user?.fullName ?: strings.tabHome,
+        subtitle = state.userRole.scopeText(strings, state.user, state.activeStadiums),
+        titleFontSize = 24.sp,
+        actions = {
+            if (state.isAdmin) {
+                HeaderIconButton(
+                    icon = Icons.Outlined.Notifications,
+                    onClick = onNotificationClick,
+                    contentDescription = strings.notifications,
+                    shape = CircleShape
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                if (state.isAdmin) {
-                    HeaderIconButton(icon = Icons.Outlined.Notifications, onClick = onNotificationClick)
-                }
-                HeaderIconButton(icon = Icons.Outlined.Person, onClick = onProfileClick)
-            }
-        }
-    }
-}
-
-@Composable
-private fun HeaderIconButton(icon: ImageVector, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f),
-        modifier = Modifier.size(46.dp)
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                icon,
-                null,
-                tint = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.size(24.dp)
+            HeaderIconButton(
+                icon = Icons.Outlined.Person,
+                onClick = onProfileClick,
+                contentDescription = strings.profile,
+                shape = CircleShape
             )
         }
-    }
+    )
 }
 
+/**
+ * "Bron qilish" bosilganda stadionni tanlash paneli.
+ *
+ * Bron qilish oqimi ([SlotsControlVoyager]) stadionsiz ochilmaydi, egada esa
+ * bir nechta stadion bo'lishi mumkin - shuning uchun oraliq tanlov kerak.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun StatCard(
-    value: String,
-    subValue: String,
-    icon: ImageVector,
-    color: Color,
-    modifier: Modifier
+private fun StadiumPickerSheet(
+    stadiums: List<StadiumResponse>,
+    onDismiss: () -> Unit,
+    onSelect: (StadiumResponse) -> Unit
 ) {
-    Card(
-        modifier = modifier.height(130.dp),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+    val strings = Localization.current
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState()
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier.padding(16.dp).fillMaxSize(),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = color.copy(alpha = 0.1f),
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(icon, null, tint = color, modifier = Modifier.size(22.dp))
-                    }
-                }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                strings.selectStadiumForBooking,
+                fontWeight = FontWeight.Black,
+                fontSize = 20.sp,
+                color = MaterialTheme.colorScheme.onSurface
+            )
 
-                Column {
-                    Text(
-                        value,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Black
-                    )
-                    Text(
-                        subValue,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
+            if (stadiums.isEmpty()) {
+                Text(
+                    strings.noStadiumsToBook,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                stadiums.forEach { stadium ->
+                    ReportItem(
+                        title = stadium.name ?: strings.stadium,
+                        subtitle = "${stadium.districtName}, ${stadium.regionName}",
+                        icon = Icons.Outlined.SportsSoccer,
+                        iconBgColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        onClick = { onSelect(stadium) }
                     )
                 }
             }
         }
     }
 }
+
+/** Tezkor amallar panelidagi bitta amal. */
+private data class QuickAction(
+    val title: String,
+    val icon: ImageVector,
+    val onClick: () -> Unit
+)
 
 @Composable
 private fun QuickActionsGrid(
@@ -420,67 +427,45 @@ private fun QuickActionsGrid(
     onAddUser: (() -> Unit)?,
     onAddCoach: (() -> Unit)?,
     onAddTournament: () -> Unit,
-    onShowBookings: () -> Unit
+    onShowBookings: () -> Unit,
+    onCreateBooking: (() -> Unit)? = null
 ) {
     val primary = MaterialTheme.colorScheme.primary
     val strings = Localization.current
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            QuickActionItem(strings.addStadium, Icons.Outlined.Home, primary, Modifier.weight(1f), onAddStadium)
-            QuickActionItem(strings.bookings, Icons.Outlined.CalendarToday, primary, Modifier.weight(1f), onShowBookings)
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            if (onAddUser != null) {
-                QuickActionItem(strings.addEmployee, Icons.Outlined.PersonAdd, primary, Modifier.weight(1f), onAddUser)
-            } else if (onAddCoach != null) {
-                QuickActionItem(strings.addCoach, Icons.Outlined.Sports, primary, Modifier.weight(1f), onAddCoach)
-            } else {
-                QuickActionItem(strings.createTournament, Icons.Outlined.EmojiEvents, primary, Modifier.weight(1f), onAddTournament)
-            }
-            
-            if (onAddUser != null || onAddCoach != null) {
-                QuickActionItem(strings.createTournament, Icons.Outlined.EmojiEvents, primary, Modifier.weight(1f), onAddTournament)
-            } else {
-                Spacer(Modifier.weight(1f))
-            }
-        }
-    }
-}
 
-@Composable
-private fun QuickActionItem(title: String, icon: ImageVector, color: Color, modifier: Modifier, onClick: () -> Unit) {
-    Card(
-        modifier = modifier
-            .height(110.dp)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = color.copy(alpha = 0.12f),
-                modifier = Modifier.size(40.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, null, tint = color, modifier = Modifier.size(20.dp))
+    // Amallar ro'yxati rolga qarab yig'iladi, keyin ikkitalab qatorlarga bo'linadi.
+    // Ilgari bu joyda ichma-ich shartlar bilan 4 xil joylashuv yasalardi.
+    val actions = buildList {
+        // Ega uchun kunlik asosiy ish - shuning uchun birinchi o'rinda
+        if (onCreateBooking != null) {
+            add(QuickAction(strings.createBooking, Icons.Outlined.AddCircleOutline, onCreateBooking))
+        }
+        add(QuickAction(strings.addStadium, Icons.Outlined.Home, onAddStadium))
+        add(QuickAction(strings.bookings, Icons.Outlined.CalendarToday, onShowBookings))
+        if (onAddUser != null) {
+            add(QuickAction(strings.addEmployee, Icons.Outlined.PersonAdd, onAddUser))
+        }
+        if (onAddCoach != null) {
+            add(QuickAction(strings.addCoach, Icons.Outlined.Sports, onAddCoach))
+        }
+        add(QuickAction(strings.createTournament, Icons.Outlined.EmojiEvents, onAddTournament))
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        actions.chunked(2).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                row.forEach { action ->
+                    QuickActionCard(
+                        title = action.title,
+                        icon = action.icon,
+                        color = primary,
+                        onClick = action.onClick,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
+                // Toq sonli amallarda oxirgi karta yarim kenglikda qolsin
+                if (row.size == 1) Spacer(Modifier.weight(1f))
             }
-            Text(
-                title,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.onSurface,
-                lineHeight = 18.sp
-            )
         }
     }
 }
@@ -493,7 +478,8 @@ private fun OwnerHomeTab(
     onAddCoach: () -> Unit,
     onProfileClick: () -> Unit,
     onNotificationClick: () -> Unit,
-    onShowBookings: () -> Unit
+    onShowBookings: () -> Unit,
+    onCreateBooking: () -> Unit
 ) {
     val strings = Localization.current
     LazyColumn(
@@ -507,7 +493,7 @@ private fun OwnerHomeTab(
         item {
             Column(modifier = Modifier.padding(16.dp)) {
                 DashboardGrid(state)
-                
+
                 Spacer(Modifier.height(24.dp))
 
                 SectionHeader(strings.quickActions)
@@ -519,7 +505,8 @@ private fun OwnerHomeTab(
                     onAddUser = null,
                     onAddCoach = onAddCoach,
                     onAddTournament = onAddTournament,
-                    onShowBookings = onShowBookings
+                    onShowBookings = onShowBookings,
+                    onCreateBooking = onCreateBooking
                 )
 
                 Spacer(Modifier.height(32.dp))
@@ -587,13 +574,7 @@ private fun UserHomeTab(
 
 @Composable
 private fun TournamentCard(tournament: TournamentResponseDto) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-    ) {
+    AppCard(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -641,7 +622,8 @@ private fun ScheduleList(state: HomeContract.State) {
 
                 ReportItem(
                     title = "$time - ${match.title ?: strings.team}",
-                    subtitle = "${strings.field} #${match.stadiumId ?: 1} • ${match.pricePerPlayer ?: 0.0} so'm",
+                    subtitle = "${strings.field} #${match.stadiumId ?: 1} • " +
+                        Money.withCurrency(match.pricePerPlayer ?: 0.0, strings.currency),
                     icon = Icons.Outlined.SportsSoccer,
                     iconBgColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                     onClick = { /* Navigation or Action */ }
@@ -783,7 +765,7 @@ private fun TournamentDetailScreen(tournament: TournamentResponseDto, onBack: ()
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     InfoSection(strings.participants, "${tournament.teamApplied ?: 0} / ${tournament.maxTeams ?: 0}", Icons.Default.Groups, Modifier.weight(1f))
-                    InfoSection(strings.entryFee, "${tournament.entryFee?.toInt() ?: 0} so'm", Icons.Default.Payments, Modifier.weight(1f))
+                    InfoSection(strings.entryFee, Money.withCurrency(tournament.entryFee ?: 0.0, strings.currency), Icons.Default.Payments, Modifier.weight(1f))
                 }
             }
 
@@ -820,22 +802,24 @@ private fun InfoSection(label: String, value: String, icon: ImageVector, modifie
 @Composable
 fun HomeShimmer() {
     Column(modifier = Modifier.fillMaxSize()) {
+        // Balandlik haqiqiy GradientHeader bilan taxminan bir xil bo'lsin -
+        // status bar + nishoncha + sarlavha + ko'lam qatori
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
-                .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
+                .height(WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 113.dp)
+                .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
                 .shimmer()
         )
         Column(modifier = Modifier.padding(16.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(modifier = Modifier.weight(1f).height(130.dp).clip(RoundedCornerShape(24.dp)).shimmer())
-                Box(modifier = Modifier.weight(1f).height(130.dp).clip(RoundedCornerShape(24.dp)).shimmer())
+                Box(modifier = Modifier.weight(1f).height(StatCardHeight).clip(RoundedCornerShape(24.dp)).shimmer())
+                Box(modifier = Modifier.weight(1f).height(StatCardHeight).clip(RoundedCornerShape(24.dp)).shimmer())
             }
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(modifier = Modifier.weight(1f).height(130.dp).clip(RoundedCornerShape(24.dp)).shimmer())
-                Box(modifier = Modifier.weight(1f).height(130.dp).clip(RoundedCornerShape(24.dp)).shimmer())
+                Box(modifier = Modifier.weight(1f).height(StatCardHeight).clip(RoundedCornerShape(24.dp)).shimmer())
+                Box(modifier = Modifier.weight(1f).height(StatCardHeight).clip(RoundedCornerShape(24.dp)).shimmer())
             }
             Spacer(Modifier.height(24.dp))
             Box(modifier = Modifier.width(150.dp).height(24.dp).clip(RoundedCornerShape(4.dp)).shimmer())

@@ -2,34 +2,31 @@ package uz.coder.foottopbusiness.presentation.main.home
 
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import androidx.lifecycle.viewModelScope
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
 import uz.coder.foottopbusiness.domain.usecase.admin.DashboardUseCase
-import uz.coder.foottopbusiness.domain.usecase.admin.WeeklyReportUseCase
-import uz.coder.foottopbusiness.domain.usecase.auth.LogoutUseCase
 import uz.coder.foottopbusiness.domain.usecase.match.GetMatchesUseCase
-import uz.coder.foottopbusiness.domain.usecase.stadium.DeleteStadiumUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetStadiumByIdUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetStadiumsUseCase
-import uz.coder.foottopbusiness.domain.usecase.stadium.UpdateOpenCloseTimeUseCase
 import uz.coder.foottopbusiness.domain.usecase.tournament.GetTournamentsUseCase
-import uz.coder.foottopbusiness.domain.usecase.user.GetAllUsersUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.domain.usecase.booking.CreateBookingUseCase
 import uz.coder.foottopbusiness.data.network.dto.booking.BookingRequestDto
 import uz.coder.foottopbusiness.core.platform.checkNotificationPermissionStatus
-import uz.coder.foottopbusiness.core.platform.requestNotificationPermission
 import uz.coder.foottopbusiness.core.platform.PermissionStatus
 import uz.coder.foottopbusiness.core.platform.openAppSettings
 import uz.coder.foottopbusiness.core.UserSession
+import uz.coder.foottopbusiness.core.minutesBetween
+import uz.coder.foottopbusiness.core.plusMinutes
+import uz.coder.foottopbusiness.core.isOverlap
+import uz.coder.foottopbusiness.core.toLocalDateTimeSafe
+import uz.coder.foottopbusiness.domain.usecase.booking.GetBookingsByStadiumIdUseCase
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.home.HomeContract.Effect.*
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 private fun durationMinutesKey(key: String): Int = when(key) {
@@ -39,24 +36,104 @@ private fun durationMinutesKey(key: String): Int = when(key) {
     else -> 60
 }
 
+/**
+ * Telefon raqamini backend kutadigan 9 xonali "901234567" ko'rinishiga keltiradi.
+ *
+ * Maydonning o'zi allaqachon faqat raqam saqlaydi, lekin bu yerda "+998 (90)
+ * 123-45-67" yoki 998 prefiksli qiymat kelib qolsa ham to'g'ri format ketadi.
+ */
+private fun normalizeBookingPhone(raw: String): String {
+    val digits = raw.filter { it.isDigit() }
+    return if (digits.length == 12 && digits.startsWith("998")) digits.substring(3) else digits
+}
+
+private typealias Slot = Triple<LocalDateTime, LocalDateTime, Boolean>
+
+/**
+ * Slotlar panjarasining qadami (daqiqada) - ketma-ket ikki slot boshlanishidan
+ * olinadi. Ro'yxat bitta slotdan iborat bo'lsa 30 daqiqa deb qabul qilinadi.
+ */
+private fun slotStepMinutes(slots: List<Slot>): Int {
+    val step = if (slots.size >= 2) minutesBetween(slots[0].first, slots[1].first) else 0
+    return if (step > 0) step else 30
+}
+
+/**
+ * [startIndex] dan boshlab tanlangan davomiylikni to'liq qoplaydigan slotlar.
+ *
+ * Ro'yxat uzilib qolsa (stadion yopiq oraliq yoki kun oxiri) null qaytaradi -
+ * ya'ni bunday oraliqni band qilib bo'lmaydi. Ilgari bu yerda indeks bo'yicha
+ * hisob ishlatilardi va davomiylikdan keyingi "chegara" sloti ham ro'yxatda
+ * bo'lishi talab qilinardi: shu sababli kunning oxirgi bo'sh soatini (masalan
+ * 22:00, agar ro'yxat 22:30 da tugasa) umuman band qilib bo'lmasdi.
+ */
+/**
+ * Haqiqatda bron bilan band bo'lgan slotlar boshlanish vaqti.
+ *
+ * Backend slotlarni panjara qadami bilan, lekin tanlangan DAVOMIYLIKDAGI oyna
+ * sifatida qaytaradi va bron bilan kesishgan har bir oynani band deb belgilaydi.
+ * Shuning uchun 16:00-17:00 broni 15:30 slotini ham (oynasi 15:30-16:30) band
+ * qilib ko'rsatadi, garchi 15:30-16:00 aslida bo'sh bo'lsa ham.
+ *
+ * Katakchaning o'z vaqti (start .. start+qadam) haqiqatda band bo'lishi uchun uni
+ * qoplaydigan BARCHA oynalar band bo'lishi kerak: bittasi bo'sh bo'lsa, demak
+ * katakchaning o'zi ham bo'sh - u shunchaki davomiylik uchun qisqalik qiladi.
+ */
+private fun occupiedSlotStarts(slots: List<Slot>, duration: String): Set<LocalDateTime> {
+    if (slots.isEmpty()) return emptySet()
+    val step = slotStepMinutes(slots)
+    val windowCells = ((durationMinutesKey(duration) + step - 1) / step).coerceAtLeast(1)
+
+    return slots.indices
+        .filter { i ->
+            if (slots[i].third) return@filter false
+            // i-katakchani qoplaydigan oynalar: [i - windowCells + 1 .. i].
+            // Ro'yxatda uzilish bo'lsa oyna i gacha yetib bormaydi - bunday
+            // oynalar hisobga olinmaydi.
+            (maxOf(0, i - windowCells + 1)..i).none { j ->
+                slots[j].third && slots[j].first.plusMinutes((i - j) * step) == slots[i].first
+            }
+        }
+        .mapTo(mutableSetOf()) { slots[it].first }
+}
+
+private fun coveringSlots(slots: List<Slot>, startIndex: Int, duration: String): List<Slot>? {
+    val step = slotStepMinutes(slots)
+    val minutes = durationMinutesKey(duration)
+    val needed = (minutes + step - 1) / step
+    if (needed <= 0 || startIndex + needed > slots.size) return null
+
+    var expected = slots[startIndex].first
+    for (i in startIndex until startIndex + needed) {
+        if (slots[i].first != expected) return null
+        expected = expected.plusMinutes(step)
+    }
+    return slots.subList(startIndex, startIndex + needed)
+}
+
 class HomeViewModel(
     private val getStadiumsUseCase: GetStadiumsUseCase,
-    private val deleteStadiumUseCase: DeleteStadiumUseCase,
-    private val updateOpenCloseTimeUseCase: UpdateOpenCloseTimeUseCase,
-    private val logoutUseCase: LogoutUseCase,
     private val getStadiumByIdUseCase: GetStadiumByIdUseCase,
     private val getUserUseCase: GetUserUseCase,
     private val preferencesManager: PreferencesManager,
-    private val getCoachesUseCase: uz.coder.foottopbusiness.domain.usecase.coach.GetCoachesUseCase,
     private val dashboardUseCase: DashboardUseCase,
-    private val weeklyReportUseCase: WeeklyReportUseCase,
     private val getMatchesUseCase: GetMatchesUseCase,
     private val getTournamentsUseCase: GetTournamentsUseCase,
-    private val getAllUsersUseCase: GetAllUsersUseCase,
     private val createBookingUseCase: CreateBookingUseCase,
+    private val getBookingsByStadiumIdUseCase: GetBookingsByStadiumIdUseCase,
     private val userSession: UserSession
 ) : BaseViewModel<HomeContract.State, HomeContract.Effect, HomeContract.Event>(
+    // Rol va foydalanuvchi sessiyada allaqachon bor (MainScreen shusiz bu
+    // ekranni ochmaydi) - shuning uchun boshlang'ich holatga darrov qo'yamiz.
+    // Ilgari ular faqat quyidagi collector'lar orqali kelardi, ya'ni birinchi
+    // kadr UNKNOWN rol bilan chizilardi: sarlavhada "ROL ANIQLANMAGAN"
+    // nishonchasi paydo bo'lib, keyin haqiqiy rolga almashardi va shu payt
+    // header balandligi sakrab ketardi.
     initialState = HomeContract.State(
+        user = userSession.user.value,
+        userRole = userSession.role.value,
+        isAdmin = userSession.role.value == UserRole.SUPER_ADMIN || userSession.role.value == UserRole.DISTRICT_ADMIN,
+        isOwner = userSession.role.value == UserRole.OWNER,
         selectedDate = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
     )
 ) {
@@ -65,14 +142,14 @@ class HomeViewModel(
             userSession.user.collect { currentUser ->
                 if (currentUser != null) {
                     val role = userSession.role.value
-                    updateState { 
+                    updateState {
                         copy(
                             user = currentUser,
                             isAdmin = role == UserRole.SUPER_ADMIN || role == UserRole.DISTRICT_ADMIN,
                             isOwner = role == UserRole.OWNER,
                             userRole = role,
                             isLoadingUser = false
-                        ) 
+                        )
                     }
                 }
             }
@@ -80,13 +157,13 @@ class HomeViewModel(
         viewModelScope.launch {
             userSession.role.collect { role ->
                 if (role != UserRole.UNKNOWN) {
-                    updateState { 
+                    updateState {
                         copy(
                             userRole = role,
                             isAdmin = role == UserRole.SUPER_ADMIN || role == UserRole.DISTRICT_ADMIN,
                             isOwner = role == UserRole.OWNER,
                             isLoadingUser = false
-                        ) 
+                        )
                     }
                 }
             }
@@ -97,67 +174,17 @@ class HomeViewModel(
     override fun handleEvent(event: HomeContract.Event) {
         when (event) {
             HomeContract.Event.Load, HomeContract.Event.Refresh -> {
-                updateState { copy(currentPage = 0, stadiums = emptyList(), isLastPage = false) }
                 loadUser()
-                loadStadiums(0)
-                loadCoaches()
+                loadStadiumCount()
                 loadMatches()
                 loadTournaments()
-            }
-            
-            is HomeContract.Event.SetShowStadiumTable -> updateState { copy(showStadiumTable = event.show) }
-
-            is HomeContract.Event.Search -> {
-                updateState { copy(searchQuery = event.query, currentPage = 0, stadiums = emptyList()) }
-                loadStadiums(0)
-            }
-
-            is HomeContract.Event.FilterActive -> {
-                updateState { copy(filterActive = event.isActive, currentPage = 0, stadiums = emptyList()) }
-                loadStadiums(0)
-            }
-
-            HomeContract.Event.LoadNextPage -> {
-                val s = state.value
-                if (!s.isLastPage && !s.isLoadingStadiums) loadStadiums(s.currentPage + 1)
-            }
-
-            HomeContract.Event.LoadPreviousPage -> {
-                val s = state.value
-                if (s.currentPage > 0 && !s.isLoadingStadiums) loadStadiums(s.currentPage - 1)
-            }
-
-            is HomeContract.Event.LoadPage -> {
-                if (!state.value.isLoadingStadiums) loadStadiums(event.page)
-            }
-
-            is HomeContract.Event.DeleteRequest -> updateState { copy(deletingId = event.id) }
-            HomeContract.Event.DeleteCancel -> updateState { copy(deletingId = null) }
-            HomeContract.Event.DeleteConfirm -> {
-                val id = state.value.deletingId ?: return
-                updateState { copy(deletingId = null) }
-                executeAsync {
-                    deleteStadiumUseCase(id).collect {
-                        updateState { copy(stadiums = stadiums.filter { it.id != id }) }
-                        sendEffect(ShowToast("Stadion o'chirildi"))
-                        loadDashboardStats()
-                    }
-                }
             }
 
             is HomeContract.Event.SelectTournament -> updateState { copy(selectedTournament = event.t) }
             HomeContract.Event.ClearTournament -> updateState { copy(selectedTournament = null) }
-            is HomeContract.Event.SelectMatch -> updateState { copy(selectedMatch = event.m) }
-            HomeContract.Event.ClearMatch -> updateState { copy(selectedMatch = null) }
 
             is HomeContract.Event.SelectStadiumForSlots -> {
-                updateState { 
-                    copy(
-                        selectedStadiumForTime = event.stadium,
-                        newOpenTime = event.stadium.openTime ?: "",
-                        newCloseTime = event.stadium.closeTime ?: ""
-                    ) 
-                }
+                updateState { copy(selectedStadiumForTime = event.stadium) }
                 loadSlots(event.stadium.id ?: return, state.value.selectedDate, state.value.selectedDuration)
             }
 
@@ -176,20 +203,9 @@ class HomeViewModel(
                 val slotIndex = availableSlots.indexOf(event.slot)
                 if (slotIndex == -1) return
 
-                val duration = state.value.selectedDuration
-                val slotsToSelect = when (duration) {
-                    "SIXTY" -> 3
-                    "NINETY" -> 4
-                    "ONE_HUNDRED_TWENTY" -> 5
-                    else -> 1
-                }
-
-                // Check only slots within the range, excluding the boundary end point
-                val canBook = if (slotIndex + slotsToSelect <= availableSlots.size) {
-                    (slotIndex until (slotIndex + slotsToSelect - 1)).all { availableSlots[it].third }
-                } else {
-                    false
-                }
+                // Oraliqni qoplaydigan slotlarning hammasi bo'sh bo'lishi kerak
+                val covering = coveringSlots(availableSlots, slotIndex, state.value.selectedDuration)
+                val canBook = covering != null && covering.all { it.third }
 
                 if (canBook) {
                     updateState { copy(selectedSlot = event.slot, isBookingSlot = true) }
@@ -202,34 +218,33 @@ class HomeViewModel(
                 val s = state.value
                 val slot = s.selectedSlot ?: return
                 val stadium = s.selectedStadiumForTime ?: return
-                
+
                 updateState { copy(isBookingSlot = false, selectedSlot = null) }
-                
+
                 executeAsync(
                     block = {
                         val userId = preferencesManager.userId.first().toLong()
-                        val duration = s.selectedDuration
-                        val slotsToSelect = when (duration) {
-                            "SIXTY" -> 3
-                            "NINETY" -> 4
-                            "ONE_HUNDRED_TWENTY" -> 5
-                            else -> 1
-                        }
-                        
-                        val availableSlots = s.stadiumSlots
-                        val slotIndex = availableSlots.indexOf(slot)
-                        val endSlot = availableSlots.getOrNull(slotIndex + slotsToSelect - 1)
-                        
-                        val totalPrice = (stadium.pricePerHour ?: 0.0) * (durationMinutesKey(duration) / 60.0)
-                        
+
+                        // Tugash vaqti to'g'ridan-to'g'ri davomiylikdan hisoblanadi.
+                        // Ilgari u ro'yxatdagi keyingi slotdan olinardi va o'sha
+                        // slot bo'lmasa (kun oxiri) slot.second ga - API qaytargan,
+                        // davomiylikka bog'liq qiymatga - qaytib ketardi.
+                        val endTime = slot.first.plusMinutes(durationMinutesKey(s.selectedDuration))
+
+                        val totalPrice = (stadium.pricePerHour ?: 0.0) * (durationMinutesKey(s.selectedDuration) / 60.0)
+
                         val request = BookingRequestDto(
                             userId = userId,
                             stadiumId = stadium.id?.toLong(),
                             startTime = slot.first.toString(),
-                            endTime = endSlot?.first?.toString() ?: slot.second.toString(),
+                            endTime = endTime.toString(),
                             totalPrice = totalPrice,
                             status = "PENDING",
-                            paymentMethod = "CASH"
+                            paymentMethod = "CASH",
+                            // Mijoz ma'lumoti: dialogda so'raladi, lekin ilgari
+                            // so'rovga qo'shilmasdan yo'qolib ketardi
+                            name = event.name.trim(),
+                            phone = normalizeBookingPhone(event.phone)
                         )
                         createBookingUseCase(request).first()
                     },
@@ -237,7 +252,7 @@ class HomeViewModel(
                         sendEffect(ShowToast("Muvaffaqiyatli band qilindi: ${event.name}"))
                         sendEffect(NavigateBack)
                         loadSlots(stadium.id ?: return@executeAsync, s.selectedDate, s.selectedDuration)
-                        // Check for notification permission after successful booking
+                        // Band qilish muvaffaqiyatli o'tgach bildirishnoma ruxsatini so'raymiz
                         handleEvent(HomeContract.Event.CheckNotificationPermission)
                     },
                     onError = {
@@ -248,54 +263,17 @@ class HomeViewModel(
 
             HomeContract.Event.DismissBookingDialog -> updateState { copy(isBookingSlot = false) }
 
-            HomeContract.Event.ClearStadiumForSlots -> updateState { copy(selectedStadiumForTime = null, stadiumSlots = emptyList(), selectedSlot = null, isBookingSlot = false) }
-
-            is HomeContract.Event.UpdateTime -> {
-                val stadiumId = state.value.selectedStadiumForTime?.id ?: return
-                updateState { copy(isUpdatingTime = true) }
-                executeAsync {
-                    updateOpenCloseTimeUseCase(stadiumId, event.open, event.close).collect {
-                        updateState {
-                            copy(
-                                isUpdatingTime = false,
-                                selectedStadiumForTime = null,
-                                stadiums = stadiums.map {
-                                    if (it.id == stadiumId) it.copy(
-                                        openTime = event.open,
-                                        closeTime = event.close
-                                    ) else it
-                                }
-                            )
-                        }
-                        sendEffect(ShowToast("Vaqt yangilandi"))
-                    }
-                }
-            }
-
-            HomeContract.Event.DownloadReport -> {
-                executeAsync {
-                    val matches = state.value.matches
-                    val csv = StringBuilder()
-                    csv.append("ID,Sana,Nomi,Stadion ID,O'yinchilar,Narx,Jami\n")
-                    matches.forEach { match ->
-                        val total = (match.currentPlayers ?: 0) * (match.pricePerPlayer ?: 0.0)
-                        csv.append("${match.id},${match.dateTime},${match.title},${match.stadiumId},${match.currentPlayers},${match.pricePerPlayer},$total\n")
-                    }
-                    sendEffect(DownloadFile("hisobot_${state.value.selectedDate}.csv", csv.toString()))
-                }
-            }
-
-            HomeContract.Event.Logout -> {
-                executeAsync {
-                    logoutUseCase()
-                }
+            HomeContract.Event.ClearStadiumForSlots -> updateState {
+                copy(
+                    selectedStadiumForTime = null,
+                    stadiumSlots = emptyList(),
+                    occupiedSlotStarts = emptySet(),
+                    selectedSlot = null,
+                    isBookingSlot = false
+                )
             }
 
             HomeContract.Event.ShowExitToast -> sendEffect(ShowToast("Chiqish uchun yana bir marta bosing"))
-
-            HomeContract.Event.Match -> sendEffect(Match)
-            HomeContract.Event.Stadium -> sendEffect(Stadium)
-            HomeContract.Event.Tournament -> sendEffect(Tournament)
 
             is HomeContract.Event.SetShowNotificationPermissionDialog -> updateState { copy(showNotificationPermissionDialog = event.show) }
             HomeContract.Event.RequestNotificationPermission -> {
@@ -326,9 +304,6 @@ class HomeViewModel(
             if (status == PermissionStatus.GRANTED) {
                 preferencesManager.setNotificationPermission(true)
             } else if (status == PermissionStatus.DENIED) {
-                // If denied, we check if it was permanently denied by the OS
-                // In a real app, you might want to check shouldShowRequestPermissionRationale here
-                // but we rely on the count as well.
                 if (currentCount >= 2) {
                     updateState { copy(showPermanentlyDeniedDialog = true) }
                 }
@@ -343,13 +318,10 @@ class HomeViewModel(
                 val status = checkNotificationPermissionStatus()
                 if (status != PermissionStatus.GRANTED) {
                     val requestCount = preferencesManager.notificationRequestCount.first()
-                    if (requestCount < 2) {
-                        updateState { copy(showNotificationPermissionDialog = true) }
-                    } else if (requestCount == 2) {
-                        // 3rd time - show explanation that leads to settings
+                    if (requestCount <= 2) {
                         updateState { copy(showNotificationPermissionDialog = true) }
                     } else {
-                        // More than 3 requests or permanently denied - show settings dialog
+                        // 3 martadan ko'p rad etilgan - sozlamalarga yo'naltiramiz
                         updateState { copy(showPermanentlyDeniedDialog = true) }
                     }
                 } else {
@@ -363,14 +335,14 @@ class HomeViewModel(
         val currentUser = userSession.user.value
         if (currentUser != null) {
             val role = userSession.role.value
-            updateState { 
+            updateState {
                 copy(
                     user = currentUser,
                     isAdmin = role == UserRole.SUPER_ADMIN || role == UserRole.DISTRICT_ADMIN,
                     isOwner = role == UserRole.OWNER,
                     userRole = role,
                     isLoadingUser = false
-                ) 
+                )
             }
             loadDashboardStats()
             return
@@ -383,16 +355,16 @@ class HomeViewModel(
                 userSession.setUser(result)
                 val userRole = userSession.role.value
 
-                updateState { 
+                updateState {
                     copy(
                         user = result,
                         isAdmin = userRole == UserRole.SUPER_ADMIN || userRole == UserRole.DISTRICT_ADMIN,
                         isOwner = userRole == UserRole.OWNER,
                         userRole = userRole,
                         isLoadingUser = false
-                    ) 
+                    )
                 }
-                loadDashboardStats() // Load stats after role is determined
+                loadDashboardStats() // Rol aniqlangach statistikani yuklaymiz
             }
         }
     }
@@ -408,119 +380,116 @@ class HomeViewModel(
                         LocalDateTime.parse(it.end ?: ""),
                         it.status == "AVAILABLE"
                     )
-                }?:emptyList()
-                updateState { copy(stadiumSlots = triples, isLoadingSlots = false) }
+                } ?: emptyList()
+                updateState {
+                    copy(
+                        stadiumSlots = triples,
+                        occupiedSlotStarts = occupiedSlotStarts(triples, duration),
+                        isLoadingSlots = false
+                    )
+                }
+                loadOccupiedFromBookings(id, date, triples)
             }
         }
     }
 
+    /**
+     * Haqiqiy bandlikni bronlar ro'yxatidan aniqlaydi.
+     *
+     * [occupiedSlotStarts] slot oynalaridan xulosa chiqaradi, lekin ikki bron
+     * orasida qolgan yarim soatni ajrata olmaydi: 18:30-19:30 va 20:00-21:00
+     * bronlarida 19:30 katakchasini qoplaydigan ikkala oyna ham band ko'rinadi,
+     * holbuki 19:30-20:00 aslida bo'sh turadi. Bronlarning o'zi bilan solishtirish
+     * bunday bo'sh oraliqlarni to'g'ri ko'rsatadi - gazon bekor turgan vaqt
+     * hisobda "band" bo'lib qolmaydi.
+     *
+     * So'rov muvaffaqiyatsiz bo'lsa oynalardan chiqarilgan taxmin joyida qoladi.
+     */
+    private fun loadOccupiedFromBookings(id: Int, date: String, slots: List<Slot>) {
+        if (slots.isEmpty()) return
+        executeAsync(
+            block = { getBookingsByStadiumIdUseCase(id.toLong(), date).first() },
+            onSuccess = { bookings ->
+                val step = slotStepMinutes(slots)
+                val intervals = bookings.mapNotNull { booking ->
+                    // Bekor qilingan bron gazonni band qilmaydi
+                    if (booking.status == "CANCELLED") return@mapNotNull null
+                    val start = booking.startTime.toLocalDateTimeSafe() ?: return@mapNotNull null
+                    val end = booking.endTime.toLocalDateTimeSafe() ?: return@mapNotNull null
+                    start to end
+                }
+
+                val occupied = slots
+                    .filter { slot ->
+                        val cellEnd = slot.first.plusMinutes(step)
+                        intervals.any { (bookingStart, bookingEnd) ->
+                            isOverlap(slot.first, cellEnd, bookingStart, bookingEnd)
+                        }
+                    }
+                    .mapTo(mutableSetOf()) { it.first }
+
+                // Shu orada sana yoki stadion almashgan bo'lsa natija eskirgan
+                if (state.value.stadiumSlots == slots) {
+                    updateState { copy(occupiedSlotStarts = occupied) }
+                }
+            }
+        )
+    }
+
     private fun loadDashboardStats() {
-        if (state.value.isAdmin || state.value.isOwner) {
-            updateState { copy(isLoadingDashboard = true, isLoadingWeeklyReport = true) }
-            executeAsync(
-                onError = { updateState { copy(isLoadingDashboard = false) } }
-            ) {
-                dashboardUseCase().collect { dashboard ->
-                    val totalRev = dashboard.stadiumRevenues.sumOf { it.totalRevenue }
-                    updateState {
-                        copy(
-                            dashboard = dashboard,
-                            isLoadingDashboard = false,
-                            activeStadiums = dashboard.activeStadiumsCount,
-                            totalTournaments = dashboard.tournamentsCount,
-                            totalUsers = dashboard.usersCount,
-                            totalEarnings = totalRev
-                        )
-                    }
-                }
-            }
-            executeAsync(
-                onError = { updateState { copy(isLoadingWeeklyReport = false) } }
-            ) {
-                weeklyReportUseCase().collect { report ->
-                    updateState {
-                        copy(
-                            weeklyReport = report,
-                            isLoadingWeeklyReport = false,
-                            weeklyEarnings = report.dailyRevenue.map { it.revenue },
-                            weeklyLabels = report.dailyRevenue.map { day ->
-                                val parts = day.date.split("-")
-                                if (parts.size == 3) "${parts[2]}.${parts[1]}" else day.date
-                            }
-                        )
-                    }
-                }
-            }
-        } else {
-            // For non-admin roles, we don't call admin dashboard APIs.
-            // Stats will be updated locally from other API calls (loadStadiums, loadMatches, etc.)
-            updateState { 
-                copy(
-                    isLoadingDashboard = false, 
-                    isLoadingWeeklyReport = false,
-                    dashboard = null,
-                    weeklyReport = null
-                ) 
-            }
+        if (!state.value.isAdmin && !state.value.isOwner) {
+            // Admin bo'lmagan rollar uchun admin API'lari chaqirilmaydi,
+            // statistika boshqa so'rovlardan hisoblanadi
             updateLocalStats()
+            return
+        }
+
+        executeAsync {
+            dashboardUseCase().collect { dashboard ->
+                updateState {
+                    copy(
+                        activeStadiums = dashboard.activeStadiumsCount,
+                        totalTournaments = dashboard.tournamentsCount,
+                        totalUsers = dashboard.usersCount,
+                        totalEarnings = dashboard.stadiumRevenues.sumOf { it.totalRevenue }
+                    )
+                }
+            }
         }
     }
 
     private fun updateLocalStats() {
         val s = state.value
-        if (s.isAdmin || s.isOwner) return // Admin uses dashboard API instead
+        if (s.isAdmin || s.isOwner) return // Admin uchun dashboard API'si ishlatiladi
 
-        val totalEarnings = s.matches.sumOf { (it.currentPlayers ?: 0) * (it.pricePerPlayer ?: 0.0) }
-        
-        updateState { 
+        updateState {
             copy(
-                totalEarnings = totalEarnings,
-                totalMatches = s.matches.size,
-                totalTournaments = s.tournaments.size,
-                // activeStadiums is updated in loadStadiums via pageData.totalElements
-            ) 
+                totalEarnings = s.matches.sumOf { (it.currentPlayers ?: 0) * (it.pricePerPlayer ?: 0.0) },
+                totalTournaments = s.tournaments.size
+                // activeStadiums loadStadiumCount() ichida yangilanadi
+            )
         }
     }
 
-    private fun loadStadiums(page: Int) {
-        val s = state.value
-        updateState { copy(isLoadingStadiums = true, stadiumError = null) }
+    /**
+     * Stadionlar soni va birinchi sahifadagi ro'yxat.
+     *
+     * Son [activeStadiums] uchun kerak (admin/owner'da dashboard'dan ham
+     * keladi, bu esa zaxira). Ro'yxatning o'zi esa "Bron qilish" amalida
+     * stadion tanlash uchun ishlatiladi - shuning uchun uni tashlab
+     * yubormaymiz, qo'shimcha so'rov ham kerak bo'lmaydi.
+     */
+    private fun loadStadiumCount() {
         executeAsync(
-            block = {
-                var result = uz.coder.foottopbusiness.data.network.dto.stadium.PageStadiumResponseDto()
-                getStadiumsUseCase(
-                    name = s.searchQuery.takeIf { it.isNotBlank() },
-                    isActive = s.filterActive,
-                    page = page,
-                ).collect { result = it }
-                result
-            },
+            block = { getStadiumsUseCase(name = null, isActive = null, page = 0).first() },
             onSuccess = { pageData ->
-                val newItems = pageData.content ?: emptyList()
                 updateState {
                     copy(
-                        stadiums = newItems,
-                        currentPage = page,
-                        isLastPage = pageData.last ?: true,
-                        isLoadingStadiums = false,
+                        stadiums = pageData.content ?: emptyList(),
                         activeStadiums = pageData.totalElements?.toInt() ?: activeStadiums
                     )
                 }
-            },
-            onError = { updateState { copy(isLoadingStadiums = false, stadiumError = it.message) } }
-        )
-    }
-
-    private fun loadCoaches() {
-        updateState { copy(isLoadingCoaches = true) }
-        executeAsync(
-            block = {
-                var r = emptyList<uz.coder.foottopbusiness.data.network.dto.CoachResponseDto>()
-                getCoachesUseCase().collect { r = it }
-                r
-            },
-            onSuccess = { updateState { copy(coaches = it, isLoadingCoaches = false) } },
-            onError = { updateState { copy(isLoadingCoaches = false) } }
+            }
         )
     }
 
@@ -528,8 +497,7 @@ class HomeViewModel(
         updateState { copy(isLoadingMatches = true) }
         executeAsync {
             getMatchesUseCase().collect { matches ->
-                val latest = matches.sortedByDescending { it.dateTime }.take(10)
-                updateState { copy(matches = matches, latestMatches = latest, isLoadingMatches = false) }
+                updateState { copy(matches = matches, isLoadingMatches = false) }
                 updateLocalStats()
             }
         }

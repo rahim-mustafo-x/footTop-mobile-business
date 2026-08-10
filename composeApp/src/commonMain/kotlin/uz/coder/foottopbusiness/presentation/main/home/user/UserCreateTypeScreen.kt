@@ -21,6 +21,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import uz.coder.foottopbusiness.core.localization.Localization
+import uz.coder.foottopbusiness.core.ui.GradientHeader
 import uz.coder.foottopbusiness.presentation.main.coaches.create.CoachCreateScreen
 
 class UserCreateTypeScreen : Screen {
@@ -32,26 +33,10 @@ class UserCreateTypeScreen : Screen {
 
         Scaffold(
             topBar = {
-                val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                        .background(MaterialTheme.colorScheme.primary)
-                        .padding(top = statusBarPadding + 16.dp, start = 8.dp, end = 24.dp, bottom = 32.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { navigator.pop() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = MaterialTheme.colorScheme.onPrimary)
-                        }
-                        Text(
-                            strings.createUser,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
+                GradientHeader(
+                    title = strings.createUser,
+                    onBack = { navigator.pop() }
+                )
             }
         ) { padding ->
             Column(

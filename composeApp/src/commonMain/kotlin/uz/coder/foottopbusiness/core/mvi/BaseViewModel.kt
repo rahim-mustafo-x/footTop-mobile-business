@@ -13,6 +13,15 @@ abstract class BaseViewModel <S: MviState, E: MviEffect, A: MviEvent>(initialSta
     private val _state = MutableStateFlow(initialState)
     val state = _state.asStateFlow()
     private val _effect = Channel<E>(Channel.BUFFERED)
+
+    /**
+     * Bir martalik effektlar oqimi.
+     *
+     * DIQQAT: Channel asosida qurilgan, ya'ni **bitta iste'molchi** uchun.
+     * Bitta ViewModel nusxasini ikki joyda collect qilsa, event'lar ular
+     * o'rtasida bo'linib ketadi va bir qismi yo'qoladi.
+     * Har bir ViewModel nusxasiga bitta collector bo'lsin.
+     */
     val effect = _effect.receiveAsFlow()
     protected fun updateState(reducer: S.() -> S){
         _state.value = _state.value.reducer()

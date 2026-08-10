@@ -29,6 +29,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import uz.coder.foottopbusiness.core.BackHandler
 import uz.coder.foottopbusiness.core.localization.ErrorMapper
 import uz.coder.foottopbusiness.core.localization.Localization
+import uz.coder.foottopbusiness.core.ui.GradientHeader
 import uz.coder.foottopbusiness.core.platform.LocationPermissionLauncher
 import uz.coder.foottopbusiness.core.visualTransformation.AmountTransformation
 import uz.coder.foottopbusiness.core.visualTransformation.PhoneTransformation
@@ -118,46 +119,7 @@ fun EditStadiumScreen(viewModel: EditStadiumViewModel, onBack: () -> Unit) {
         snackbarHost = { SnackbarHost(hostState) },
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                            )
-                        )
-                    )
-                    .padding(top = statusBarPadding, start = 8.dp, end = 24.dp, bottom = 24.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = onBack,
-                        modifier = Modifier
-                            .padding(horizontal = 8.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f))
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                    Text(
-                        strings.editStadium,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
+            GradientHeader(title = strings.editStadium, onBack = onBack)
         }
     ) { paddingValues ->
         Column(

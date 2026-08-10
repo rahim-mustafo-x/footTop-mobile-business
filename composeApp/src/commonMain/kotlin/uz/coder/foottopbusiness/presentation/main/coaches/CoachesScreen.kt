@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import uz.coder.foottopbusiness.core.localization.ErrorMapper
 import uz.coder.foottopbusiness.core.localization.Localization
+import uz.coder.foottopbusiness.core.ui.GradientHeader
+import uz.coder.foottopbusiness.core.ui.HeaderIconButton
 import uz.coder.foottopbusiness.presentation.main.components.UserCardItem
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -60,35 +62,16 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                    .background(MaterialTheme.colorScheme.primary)
-                    .padding(top = statusBarPadding, start = 24.dp, end = 24.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 32.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        strings.users,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    IconButton(
+            GradientHeader(
+                title = strings.users,
+                actions = {
+                    HeaderIconButton(
+                        icon = Icons.Default.Add,
                         onClick = { navigator.push(uz.coder.foottopbusiness.presentation.main.home.user.UserCreateTypeScreen()) },
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f))
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = "Add", tint = MaterialTheme.colorScheme.onPrimary)
-                    }
+                        contentDescription = strings.createUser
+                    )
                 }
-            }
+            )
         }
     ) { paddingValues ->
         Column(
@@ -194,51 +177,7 @@ private fun CoachDetailScreen(coach: CoachResponseDto, onBack: () -> Unit) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.9f)
-                            )
-                        )
-                    )
-                    .padding(top = statusBarPadding, start = 24.dp, end = 24.dp, bottom = 32.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        onClick = onBack,
-                        shape = androidx.compose.foundation.shape.CircleShape,
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f),
-                        modifier = Modifier.size(46.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowBack,
-                                null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-                    Spacer(Modifier.width(16.dp))
-                    Column {
-                        Text(
-                            strings.coachInfo,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Black
-                        )
-                    }
-                }
-            }
+            GradientHeader(title = strings.coachInfo, onBack = onBack)
         }
     ) { padding ->
         Column(

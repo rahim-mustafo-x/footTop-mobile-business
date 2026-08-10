@@ -13,6 +13,12 @@ fun LocalDateTime.plusMinutes(minutes: Int): LocalDateTime {
     return this.toInstant(tz).plus(minutes, DateTimeUnit.MINUTE).toLocalDateTime(tz)
 }
 
+/** Ikki vaqt orasidagi farq, daqiqada (manfiy bo'lishi mumkin). */
+fun minutesBetween(from: LocalDateTime, to: LocalDateTime): Int {
+    val tz = TimeZone.currentSystemDefault()
+    return (to.toInstant(tz) - from.toInstant(tz)).inWholeMinutes.toInt()
+}
+
 fun isOverlap(s1: LocalDateTime, e1: LocalDateTime, s2: LocalDateTime, e2: LocalDateTime): Boolean {
     return s1 < e2 && e1 > s2
 }

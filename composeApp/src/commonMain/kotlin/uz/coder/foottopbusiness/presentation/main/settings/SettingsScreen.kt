@@ -82,6 +82,8 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
 import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.platform.getPlatform
+import uz.coder.foottopbusiness.core.ui.RoleBadge
+import uz.coder.foottopbusiness.core.ui.description
 import uz.coder.foottopbusiness.core.ui.shimmer
 import uz.coder.foottopbusiness.presentation.auth.login.LoginVoyager
 import uz.coder.foottopbusiness.presentation.main.settings.about.AboutAppVoyager
@@ -419,20 +421,41 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                                     fontWeight = FontWeight.Medium
                                 )
 
-                                if (!state.user?.username.isNullOrBlank()) {
-                                    Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                                        modifier = Modifier.padding(top = 12.dp)
-                                    ) {
-                                        Text(
-                                            "@${state.user?.username}",
-                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                                            fontSize = 13.sp,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            fontWeight = FontWeight.Bold
-                                        )
+                                Row(
+                                    modifier = Modifier.padding(top = 12.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // Rol nishonchasi - profil ochilganda foydalanuvchi
+                                    // o'zining vakolatini shu yerdan ko'radi
+                                    RoleBadge(state.userRole)
+
+                                    if (!state.user?.username.isNullOrBlank()) {
+                                        Surface(
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                                        ) {
+                                            Text(
+                                                "@${state.user?.username}",
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                                fontSize = 12.sp,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
                                     }
+                                }
+
+                                // Rol nimani anglatishini bir qatorda tushuntiramiz
+                                val roleDesc = state.userRole.description(strings)
+                                if (roleDesc.isNotBlank()) {
+                                    Text(
+                                        roleDesc,
+                                        modifier = Modifier.padding(top = 8.dp),
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = TextAlign.Center
+                                    )
                                 }
                             }
                         }

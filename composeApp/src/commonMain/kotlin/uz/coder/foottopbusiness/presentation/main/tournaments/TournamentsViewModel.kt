@@ -64,17 +64,30 @@ class TournamentsViewModel(
             is TournamentsContract.Event.ShowDistrictDropdown -> updateState { copy(showDistrictDropdown = event.show) }
             is TournamentsContract.Event.ShowStadiumDropdown -> updateState { copy(showStadiumDropdown = event.show) }
             is TournamentsContract.Event.ShowErrors -> updateState { copy(showErrors = event.show) }
-            is TournamentsContract.Event.SelectStadium -> {
-                val stadium = event.stadium
-                updateState { 
-                    copy(
-                        selectedStadium = stadium, 
-                        showStadiumDropdown = false,
-                        latitude = stadium.location?.latitude,
-                        longitude = stadium.location?.longitude,
-                        showErrors = false
-                    ) 
+            is TournamentsContract.Event.ToggleStadium -> {
+                val current = state.value.selectedStadiums
+                val next = if (current.any { it.id == event.stadium.id }) {
+                    current.filterNot { it.id == event.stadium.id }
+                } else {
+                    current + event.stadium
                 }
+                updateState { copy(selectedStadiums = next, showErrors = false) }
+                applyPrimaryStadium(next.firstOrNull())
+            }
+
+            is TournamentsContract.Event.SetPrimaryStadium -> {
+                val current = state.value.selectedStadiums
+                if (current.none { it.id == event.stadium.id }) return
+                val next = listOf(event.stadium) + current.filterNot { it.id == event.stadium.id }
+                updateState { copy(selectedStadiums = next, showErrors = false) }
+                applyPrimaryStadium(event.stadium)
+            }
+
+            is TournamentsContract.Event.PrefillStadium -> {
+                if (state.value.selectedStadiums.isNotEmpty()) return
+                val stadium = state.value.stadiums.firstOrNull { it.id?.toLong() == event.stadiumId } ?: return
+                updateState { copy(selectedStadiums = listOf(stadium)) }
+                applyPrimaryStadium(stadium)
             }
             is TournamentsContract.Event.Latitude -> updateState { copy(latitude = event.value, showErrors = false) }
             is TournamentsContract.Event.Longitude -> updateState { copy(longitude = event.value, showErrors = false) }
@@ -89,7 +102,9 @@ class TournamentsViewModel(
             }
             is TournamentsContract.Event.TriggerLocationPermission -> updateState { copy(triggerLocationPermission = event.trigger) }
             is TournamentsContract.Event.Create -> {
-                if (event.name.isBlank() || event.startDate.isBlank() || event.endDate.isBlank() || state.value.selectedRegion == null || state.value.selectedDistrict == null) {
+                // Viloyat/tuman endi stadiondan kelib chiqadi, shuning uchun
+                // ularni alohida tekshirish shart emas
+                if (event.name.isBlank() || event.startDate.isBlank() || event.endDate.isBlank() || state.value.selectedStadiums.isEmpty()) {
                     updateState { copy(showErrors = true) }
                     sendEffect(TournamentsContract.Effect.ShowToast("Iltimos, barcha majburiy maydonlarni to'ldiring"))
                     return
@@ -112,6 +127,7 @@ class TournamentsViewModel(
                                 startTime = event.startTime,
                                 endTime = event.endTime,
                                 districtId = state.value.selectedDistrict?.id?.toLong(),
+                                stadiumId = state.value.primaryStadium?.id?.toLong(),
                                 location = if (event.latitude != null && event.longitude != null) {
                                     LocationDto(event.latitude, event.longitude)
                                 } else null
@@ -148,6 +164,7 @@ class TournamentsViewModel(
                                 startTime = event.startTime,
                                 endTime = event.endTime,
                                 districtId = state.value.selectedDistrict?.id?.toLong(),
+                                stadiumId = state.value.primaryStadium?.id?.toLong(),
                                 location = if (event.latitude != null && event.longitude != null) {
                                     LocationDto(event.latitude, event.longitude)
                                 } else null
@@ -206,7 +223,15 @@ class TournamentsViewModel(
     private fun loadRegions() {
         executeAsync(
             block = { getRegionsUseCase().first() },
-            onSuccess = { updateState { copy(regions = it) } }
+            onSuccess = { regions ->
+                updateState { copy(regions = regions) }
+                // Stadion viloyatlar yuklanishidan oldin tanlangan bo'lsa,
+                // viloyat/tumanni endi to'ldiramiz
+                val primary = state.value.primaryStadium
+                if (primary != null && state.value.selectedRegion == null) {
+                    applyPrimaryStadium(primary)
+                }
+            }
         )
     }
 
@@ -227,6 +252,58 @@ class TournamentsViewModel(
                     fetchCurrentLocation()
                 } else {
                     updateState { copy(triggerLocationPermission = true) }
+                }
+            }
+        )
+    }
+
+    /**
+     * Asosiy stadion o'zgarganda koordinata, viloyat va tumanni o'sha stadiondan
+     * to'ldiradi.
+     *
+     * Stadionda faqat viloyat/tuman NOMI bor (`regionName`, `districtName`),
+     * backendga esa `districtId` kerak - shuning uchun nom bo'yicha yuklangan
+     * ro'yxatdan qidiriladi. Viloyatlar hali yuklanmagan bo'lsa, [loadRegions]
+     * kelgach qayta uriniladi.
+     */
+    private fun applyPrimaryStadium(stadium: uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse?) {
+        if (stadium == null) {
+            updateState {
+                copy(
+                    latitude = null,
+                    longitude = null,
+                    selectedRegion = null,
+                    selectedDistrict = null,
+                    districts = emptyList()
+                )
+            }
+            return
+        }
+
+        updateState {
+            copy(
+                latitude = stadium.location?.latitude,
+                longitude = stadium.location?.longitude
+            )
+        }
+
+        val region = state.value.regions.firstOrNull { it.name.equals(stadium.regionName, ignoreCase = true) }
+        if (region == null) {
+            updateState { copy(selectedRegion = null, selectedDistrict = null, districts = emptyList()) }
+            return
+        }
+
+        updateState { copy(selectedRegion = region, selectedDistrict = null) }
+        executeAsync(
+            block = { getDistrictsUseCase(region.id).first() },
+            onSuccess = { districts ->
+                updateState {
+                    copy(
+                        districts = districts,
+                        selectedDistrict = districts.firstOrNull {
+                            it.name.equals(stadium.districtName, ignoreCase = true)
+                        }
+                    )
                 }
             }
         )

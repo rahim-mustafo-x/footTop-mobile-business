@@ -66,17 +66,18 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
+import uz.coder.foottopbusiness.core.Money
 import uz.coder.foottopbusiness.core.localization.ErrorMapper
 import uz.coder.foottopbusiness.core.localization.Localization
+import uz.coder.foottopbusiness.core.ui.GradientHeader
+import uz.coder.foottopbusiness.core.ui.HeaderIconButton
 import uz.coder.foottopbusiness.core.ui.shimmer
-import uz.coder.foottopbusiness.presentation.main.home.HomeContract
-import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportsScreen() {
-    val homeViewModel = koinInject<HomeViewModel>()
-    val homeState by homeViewModel.state.collectAsState()
+    val viewModel = koinInject<ReportsViewModel>()
+    val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val strings = Localization.current
 
@@ -85,24 +86,24 @@ fun ReportsScreen() {
     var selectedFilterDate by remember { mutableStateOf<String?>(value = null) }
 
     androidx.compose.runtime.LaunchedEffect(Unit) {
-        homeViewModel.effect.collect { effect ->
+        viewModel.effect.collect { effect ->
             when (effect) {
-                is HomeContract.Effect.DownloadFile -> {
+                is ReportsContract.Effect.DownloadFile -> {
                     val filePath = uz.coder.foottopbusiness.core.saveFile(effect.fileName, effect.content)
-                    if (filePath != null) {
-                        uz.coder.foottopbusiness.core.platform.openFile(filePath)
-                    } else {
-                        snackbarHostState.showSnackbar("Faylni saqlashda xatolik")
+                    when {
+                        filePath == null -> snackbarHostState.showSnackbar(strings.fileSaveError)
+                        // Fayl saqlandi, lekin uni ochadigan ilova topilmadi -
+                        // foydalanuvchiga hech bo'lmasa yo'lni aytamiz
+                        !uz.coder.foottopbusiness.core.platform.openFile(filePath) ->
+                            snackbarHostState.showSnackbar("${strings.fileSaved}: $filePath")
                     }
-                    homeViewModel.handleEvent(HomeContract.Event.Load)
                 }
-                is HomeContract.Effect.ShowToast -> {
+                is ReportsContract.Effect.ShowToast -> {
                     snackbarHostState.showSnackbar(
                         message = ErrorMapper.map(effect.message, strings),
                         withDismissAction = true
                     )
                 }
-                else -> {}
             }
         }
     }
@@ -111,51 +112,17 @@ fun ReportsScreen() {
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(bottomStart = 36.dp, bottomEnd = 36.dp))
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                            )
-                        )
+            GradientHeader(
+                title = strings.financialReport,
+                subtitle = strings.incomeMonitoring,
+                actions = {
+                    HeaderIconButton(
+                        icon = Icons.Default.Download,
+                        onClick = { viewModel.handleEvent(ReportsContract.Event.DownloadReport) },
+                        contentDescription = strings.download
                     )
-                    .padding(top = statusBarPadding, start = 24.dp, end = 24.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 32.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            strings.financialReport,
-                            color = Color.White,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Black
-                        )
-                        Text(
-                            strings.incomeMonitoring,
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                    IconButton(
-                        onClick = { homeViewModel.handleEvent(HomeContract.Event.DownloadReport) },
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(Color.White.copy(alpha = 0.15f))
-                    ) {
-                        Icon(Icons.Default.Download, contentDescription = "Download", tint = Color.White, modifier = Modifier.size(24.dp))
-                    }
                 }
-            }
+            )
         }
     ) { padding ->
         if (showDatePicker) {
@@ -184,7 +151,7 @@ fun ReportsScreen() {
                 DatePicker(state = datePickerState)
             }
         }
-        if (homeState.isLoadingDashboard || homeState.isLoadingWeeklyReport) {
+        if (state.isLoadingDashboard || state.isLoadingWeeklyReport) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -218,12 +185,12 @@ fun ReportsScreen() {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
-                    if (homeState.weeklyReport != null) {
-                        homeState.weeklyReport?.let { report ->
+                    if (state.weeklyReport != null) {
+                        state.weeklyReport?.let { report ->
                             IncomeOverviewCard(
                                 totalEarnings = report.weeklyRevenue,
                                 weeklyTotal = report.weeklyRevenue,
-                                totalUsers = homeState.dashboard?.usersCount ?: 0,
+                                totalUsers = state.dashboard?.usersCount ?: 0,
                                 growth = report.bookingsGrowthPercent
                             )
                         }
@@ -256,14 +223,14 @@ fun ReportsScreen() {
                     }
                 }
 
-                val recentMatches = homeState.matches
+                val recentMatches = state.matches
                     .filter { match ->
                         val matchDate = match.dateTime
                         matchDate != null && (currentFilterDate == null || matchDate.startsWith(currentFilterDate))
                     }
                     .sortedByDescending { it.dateTime }
 
-                if (recentMatches.isEmpty() && !homeState.isLoadingMatches) {
+                if (recentMatches.isEmpty() && !state.isLoadingMatches) {
                     item {
                         Text(
                             strings.noDataYet,
@@ -278,7 +245,8 @@ fun ReportsScreen() {
 
                         ReportItem(
                             title = match.title ?: "O'yin",
-                            subtitle = "$datePart • ${match.currentPlayers} ta bandlar • ${total.toInt()} so'm",
+                            subtitle = "$datePart • ${match.currentPlayers} • " +
+                                Money.withCurrency(total, strings.currency),
                             icon = Icons.Default.BarChart,
                             iconBgColor = MaterialTheme.colorScheme.primary,
                             onClick = { /* Handle click */ }
@@ -293,6 +261,9 @@ fun ReportsScreen() {
 @Composable
 private fun IncomeOverviewCard(totalEarnings: Double, weeklyTotal: Double, totalUsers: Int, growth: Double) {
     val strings = Localization.current
+    // Karta foni primary bo'lgani uchun matn onPrimary bo'lishi shart:
+    // qorong'i temada primary och ko'k, unda oq matn o'qilmaydi
+    val onPrimary = MaterialTheme.colorScheme.onPrimary
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
@@ -301,20 +272,20 @@ private fun IncomeOverviewCard(totalEarnings: Double, weeklyTotal: Double, total
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.PieChart, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.PieChart, null, tint = onPrimary.copy(alpha = 0.8f), modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(strings.incomeOverview, color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
+                Text(strings.incomeOverview, color = onPrimary.copy(alpha = 0.8f), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
             }
             Spacer(Modifier.height(8.dp))
-            val formattedEarnings = when {
-                totalEarnings >= 1_000_000 -> "${(totalEarnings / 1_000_000).toInt()}M UZS"
-                totalEarnings >= 1_000 -> "${(totalEarnings / 1_000).toInt()}K UZS"
-                else -> "${totalEarnings.toInt()} UZS"
-            }
-            Text(formattedEarnings, color = Color.White, fontSize = 34.sp, fontWeight = FontWeight.Black)
-            
+            Text(
+                Money.compactWithCurrency(totalEarnings, strings.currency),
+                color = onPrimary,
+                fontSize = 34.sp,
+                fontWeight = FontWeight.Black
+            )
+
             Spacer(Modifier.height(24.dp))
-            
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -323,16 +294,11 @@ private fun IncomeOverviewCard(totalEarnings: Double, weeklyTotal: Double, total
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                val weeklyFormatted = when {
-                    weeklyTotal >= 1_000_000 -> "${(weeklyTotal / 1_000_000).toInt()}M"
-                    weeklyTotal >= 1_000 -> "${(weeklyTotal / 1_000).toInt()}K"
-                    else -> "${weeklyTotal.toInt()}"
-                }
-                SummaryStatSmall(strings.active.uppercase(), weeklyFormatted, Color.White) // Placeholder for "THIS WEEK"
-                Box(modifier = Modifier.width(1.dp).height(30.dp).background(Color.White.copy(alpha = 0.2f)))
+                SummaryStatSmall(strings.active.uppercase(), Money.compact(weeklyTotal), onPrimary) // Placeholder for "THIS WEEK"
+                Box(modifier = Modifier.width(1.dp).height(30.dp).background(onPrimary.copy(alpha = 0.2f)))
                 SummaryStatSmall(strings.growth, "${if(growth >= 0) "+" else ""}$growth%", Color(0xFFB9F6CA))
-                Box(modifier = Modifier.width(1.dp).height(30.dp).background(Color.White.copy(alpha = 0.2f)))
-                SummaryStatSmall(strings.customers, totalUsers.toString(), Color.White)
+                Box(modifier = Modifier.width(1.dp).height(30.dp).background(onPrimary.copy(alpha = 0.2f)))
+                SummaryStatSmall(strings.customers, totalUsers.toString(), onPrimary)
             }
         }
     }
@@ -510,43 +476,6 @@ private fun WeeklyRevenueChart(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun ReportSummaryCard(
-    totalEarnings: Double,
-    activeStadiums: Int,
-    totalTournaments: Int,
-    totalMatches: Int
-) {
-    val strings = Localization.current
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text(strings.weeklyAnalysis, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
-            Spacer(Modifier.height(16.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                SummaryStat(strings.totalRevenue, "${totalEarnings.toInt() / 1000}K ${strings.uzsPerHour.substringBefore("/")}", MaterialTheme.colorScheme.primary)
-                SummaryStat(strings.activeStadiums, "$activeStadiums ta", MaterialTheme.colorScheme.secondary)
-            }
-            Spacer(Modifier.height(12.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                SummaryStat(strings.totalTournaments, "$totalTournaments ta", Color(0xFFFF9800))
-                SummaryStat(strings.totalMatches, "$totalMatches ta", Color(0xFF9C27B0))
-            }
-        }
-    }
-}
-
-@Composable
-private fun SummaryStat(label: String, value: String, color: Color) {
-    Column {
-        Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = color)
     }
 }
 

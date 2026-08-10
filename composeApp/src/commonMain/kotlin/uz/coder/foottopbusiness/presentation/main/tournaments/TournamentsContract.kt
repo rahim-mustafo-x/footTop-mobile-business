@@ -30,12 +30,17 @@ sealed interface TournamentsContract {
         val longitude: Double? = null,
         val triggerLocationPermission: Boolean = false,
 
-        // Stadium selection
+        // Stadium selection - turnir bir nechta stadionda o'tishi mumkin.
+        // Ro'yxatdagi BIRINCHI stadion asosiy hisoblanadi: koordinata, viloyat va
+        // tuman o'shandan olinadi va backendga ham hozircha o'sha yuboriladi.
         val stadiums: List<uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse> = emptyList(),
-        val selectedStadium: uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse? = null,
+        val selectedStadiums: List<uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse> = emptyList(),
         val showStadiumDropdown: Boolean = false,
         val showErrors: Boolean = false
-    ) : MviState
+    ) : MviState {
+        val primaryStadium: uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse?
+            get() = selectedStadiums.firstOrNull()
+    }
 
     sealed interface Effect : MviEffect {
         data class ShowToast(val message: String) : Effect
@@ -56,7 +61,12 @@ sealed interface TournamentsContract {
         data class ShowRegionDropdown(val show: Boolean) : Event
         data class ShowDistrictDropdown(val show: Boolean) : Event
         data class ShowStadiumDropdown(val show: Boolean) : Event
-        data class SelectStadium(val stadium: uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse) : Event
+        /** Stadionni ro'yxatga qo'shadi yoki olib tashlaydi. */
+        data class ToggleStadium(val stadium: uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse) : Event
+        /** Tanlanganlardan birini asosiy qilib belgilaydi (ro'yxat boshiga ko'chiradi). */
+        data class SetPrimaryStadium(val stadium: uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse) : Event
+        /** Tahrirlash ekrani ochilganda saqlangan stadionni qayta tanlaydi. */
+        data class PrefillStadium(val stadiumId: Long) : Event
         data class ShowErrors(val show: Boolean) : Event
         data class Latitude(val value: Double?) : Event
         data class Longitude(val value: Double?) : Event

@@ -29,10 +29,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -50,6 +47,11 @@ import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import uz.coder.foottopbusiness.core.localization.ErrorMapper
+import uz.coder.foottopbusiness.core.Money
+import uz.coder.foottopbusiness.core.visualTransformation.PhoneTransformation
+import uz.coder.foottopbusiness.core.visualTransformation.formatPhoneNumber
+import uz.coder.foottopbusiness.core.formatAsTime
+import uz.coder.foottopbusiness.data.network.dto.booking.BookingResponseDto
 import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.platform.makePhoneCall
 import uz.coder.foottopbusiness.core.plusMinutes
@@ -65,44 +67,6 @@ import uz.coder.foottopbusiness.core.ui.Success
 // --- Slot state enum ---
 private enum class SlotRowState {
     AVAILABLE, SELECTED, BOOKED, PAST
-}
-
-class PhoneVisualTransformation : VisualTransformation {
-    override fun filter(text: AnnotatedString): TransformedText {
-        // Expected input: 991234567
-        // Output: (99) 123-45-67
-        val trimmed = if (text.text.length >= 9) text.text.substring(0, 9) else text.text
-        var out = ""
-        for (i in trimmed.indices) {
-            if (i == 0) out += "("
-            out += trimmed[i]
-            if (i == 1) out += ") "
-            if (i == 4) out += "-"
-            if (i == 6) out += "-"
-        }
-
-        val offsetMapping = object : OffsetMapping {
-            override fun originalToTransformed(offset: Int): Int {
-                if (offset <= 0) return 0
-                if (offset <= 2) return offset + 1 // (XX
-                if (offset <= 5) return offset + 3 // (XX) XXX
-                if (offset <= 7) return offset + 4 // (XX) XXX-XX
-                if (offset <= 9) return offset + 5 // (XX) XXX-XX-XX
-                return 13
-            }
-
-            override fun transformedToOriginal(offset: Int): Int {
-                if (offset <= 1) return 0
-                if (offset <= 4) return offset - 1
-                if (offset <= 8) return offset - 3
-                if (offset <= 11) return offset - 4
-                if (offset <= 13) return offset - 5
-                return 9
-            }
-        }
-
-        return TransformedText(AnnotatedString(out), offsetMapping)
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -179,13 +143,21 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
             if (stadium != null) {
                 if (isOwnerless) {
                     Surface(
-                        modifier = Modifier.fillMaxWidth().navigationBarsPadding(),
+                        // navigationBarsPadding ichkarida: Surface foni pastki
+                        // chekkagacha bo'yalsin, tugma esa panel ustida tursin.
+                        // Modifikator Surface'ning o'ziga berilsa, panel joyi
+                        // bo'yalmay qolib, tugma ostida bo'sh chiziq paydo bo'ladi.
+                        modifier = Modifier.fillMaxWidth(),
                         shadowElevation = 8.dp,
                         color = MaterialTheme.colorScheme.surface
                     ) {
-                        Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                        Box(modifier = Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp)) {
                             Button(
-                                onClick = { stadium.phone?.let { makePhoneCall(it) } },
+                                onClick = {
+                                    if (makePhoneCall(stadium.phone.orEmpty()).not()) {
+                                        scope.launch { snackbarHostState.showSnackbar(strings.cannotOpenDialer) }
+                                    }
+                                },
                                 shape = RoundedCornerShape(20.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Success),
                                 modifier = Modifier.fillMaxWidth().height(60.dp)
@@ -210,11 +182,11 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     val selectedEnd = startTime?.plusMinutes(durationMins)
                     val endTimeStr = selectedEnd?.let { formatTimeFromDateTime(it) } ?: ""
                     Surface(
-                        modifier = Modifier.fillMaxWidth().navigationBarsPadding(),
+                        modifier = Modifier.fillMaxWidth(),
                         shadowElevation = 8.dp,
                         color = MaterialTheme.colorScheme.surface
                     ) {
-                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                        Column(modifier = Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -231,7 +203,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                 }
                                 Column(modifier = Modifier.weight(0.8f)) {
                                     Spacer(Modifier.height(16.dp))
-                                    Text("${totalPrice.toInt()} so'm", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
+                                    Text(Money.withCurrency(totalPrice, strings.currency), style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
                                 }
                             }
 
@@ -474,10 +446,20 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                         SlotListItem(
                                             slot = slot,
                                             rowState = rowState,
+                                            // Band slot xodim uchun bosiladigan - bron tafsiloti ochiladi
+                                            clickable = rowState != SlotRowState.PAST &&
+                                                (rowState != SlotRowState.BOOKED || canEdit),
                                             onClick = {
-                                                if (rowState == SlotRowState.AVAILABLE || rowState == SlotRowState.SELECTED) {
-                                                    if (rowState == SlotRowState.SELECTED) viewModel.handleEvent(StadiumDetailsContract.Event.ClearSelection)
-                                                    else viewModel.handleEvent(StadiumDetailsContract.Event.SelectSlotSelection(selectedTabIndex, origIdx))
+                                                when (rowState) {
+                                                    SlotRowState.SELECTED ->
+                                                        viewModel.handleEvent(StadiumDetailsContract.Event.ClearSelection)
+                                                    SlotRowState.AVAILABLE ->
+                                                        viewModel.handleEvent(StadiumDetailsContract.Event.SelectSlotSelection(selectedTabIndex, origIdx))
+                                                    SlotRowState.BOOKED ->
+                                                        viewModel.handleEvent(
+                                                            StadiumDetailsContract.Event.SlotClick(slot, currentStadium.id ?: 0)
+                                                        )
+                                                    SlotRowState.PAST -> Unit
                                                 }
                                             }
                                         )
@@ -576,13 +558,18 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     
                     OutlinedTextField(
                         value = state.bookerPhone,
-                        onValueChange = { if (it.length <= 9) viewModel.handleEvent(StadiumDetailsContract.Event.UpdateBookerPhone(it)) },
+                        // Faqat raqam: klaviatura Number bo'lsa ham, nusxa-joylashtirish
+                        // orqali harf tushishi mumkin
+                        onValueChange = { input ->
+                            val digits = input.filter { it.isDigit() }.take(9)
+                            viewModel.handleEvent(StadiumDetailsContract.Event.UpdateBookerPhone(digits))
+                        },
                         label = { Text(strings.phoneNumber) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         prefix = { Text("+998 ") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        visualTransformation = PhoneVisualTransformation(),
+                        visualTransformation = PhoneTransformation(),
                         isError = phoneError,
                         supportingText = if (phoneError) { { Text(strings.enterFullPhone) } } else null,
                         leadingIcon = { Icon(Icons.Default.Phone, null, tint = if (phoneError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary) }
@@ -601,7 +588,9 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                                     endTime = selectedEnd.toString(),
                                     price = totalPrice,
                                     name = state.bookerName.takeIf { it.isNotBlank() },
-                                    phone = if (state.bookerPhone.isNotBlank()) "998${state.bookerPhone}" else null
+                                    // 9 xonali ko'rinishda ketadi; ViewModel yana bir
+                                    // bor tozalab, uzunligini tekshiradi
+                                    phone = state.bookerPhone.takeIf { it.isNotBlank() }
                                 )
                             )
                         }
@@ -611,7 +600,7 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     modifier = Modifier.fillMaxWidth().height(56.dp)
                 ) {
                     Text(
-                        text = "${strings.confirm} (${totalPrice.toInt()} so'm)",
+                        text = "${strings.confirm} (${Money.withCurrency(totalPrice, strings.currency)})",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                     )
                 }
@@ -621,6 +610,37 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
 
     if (state.showBookingResultDialog) {
         BookingResultDialog(message = state.bookingResultMessage, isSuccess = state.isBookingSuccess, onDismiss = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissBookingResultDialog) })
+    }
+
+    if (state.showBookingDetailsDialog) {
+        BookingDetailsDialog(
+            bookings = state.bookingDetails,
+            isLoading = state.isLoadingBookingDetails,
+            onCall = { phone ->
+                if (makePhoneCall(phone).not()) {
+                    scope.launch { snackbarHostState.showSnackbar(strings.cannotOpenDialer) }
+                }
+            },
+            onCancelBooking = { bookingId ->
+                viewModel.handleEvent(StadiumDetailsContract.Event.OpenCancelDialog(bookingId))
+            },
+            onDismiss = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissBookingDetails) }
+        )
+    }
+
+    val bookingToCancel = state.bookingToCancel
+    if (state.showCancelDialog && bookingToCancel != null) {
+        CancelBookingDialog(
+            reason = state.cancelReason,
+            isCancelling = state.isLoading,
+            onReasonChange = { viewModel.handleEvent(StadiumDetailsContract.Event.UpdateCancelReason(it)) },
+            onConfirm = {
+                viewModel.handleEvent(
+                    StadiumDetailsContract.Event.ConfirmCancelBooking(bookingToCancel, state.cancelReason)
+                )
+            },
+            onDismiss = { viewModel.handleEvent(StadiumDetailsContract.Event.DismissCancelDialog) }
+        )
     }
 
     if (state.showNotificationPermissionDialog) {
@@ -641,6 +661,198 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
         trigger = state.triggerNotificationRequest,
         onResult = { status ->
             viewModel.handleEvent(StadiumDetailsContract.Event.OnNotificationPermissionResult(status))
+        }
+    )
+}
+
+/**
+ * Band qilingan slot tafsiloti: mijoz ismi, telefoni, vaqti va narxi.
+ * Faqat xodim (admin/owner) uchun ochiladi.
+ */
+@Composable
+private fun BookingDetailsDialog(
+    bookings: List<BookingResponseDto>,
+    isLoading: Boolean,
+    onCall: (String) -> Unit,
+    onCancelBooking: (Long) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val strings = Localization.current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(28.dp),
+        icon = {
+            Icon(
+                Icons.Default.EventBusy,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(40.dp)
+            )
+        },
+        title = { Text(strings.bookingDetails, fontWeight = FontWeight.Bold) },
+        text = {
+            when {
+                isLoading -> {
+                    Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+                bookings.isEmpty() -> Text(strings.bookingNotFound)
+                else -> {
+                    Column(
+                        modifier = Modifier.verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        bookings.forEach { booking ->
+                            BookingDetailsCard(
+                                booking = booking,
+                                onCall = onCall,
+                                onCancelBooking = onCancelBooking
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(strings.close) }
+        }
+    )
+}
+
+/**
+ * Bitta bron kartasi.
+ *
+ * Vaqt sifatida bronning O'ZINING vaqti ko'rsatiladi, bosilgan slotniki emas -
+ * slot bron bilan kesishgani uchun band bo'lishi mumkin (masalan 17:00 sloti
+ * 16:30-17:30 broni tufayli band), xodimga esa aniq bron vaqti kerak.
+ */
+@Composable
+private fun BookingDetailsCard(
+    booking: BookingResponseDto,
+    onCall: (String) -> Unit,
+    onCancelBooking: (Long) -> Unit
+) {
+    val strings = Localization.current
+    val phone = booking.phone
+    val bookingId = booking.id
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        // Bron vaqti - eng muhim ma'lumot, shuning uchun tepada va ajratilgan
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Icon(
+                    Icons.Default.AccessTime,
+                    null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Column {
+                    Text(
+                        strings.bookedTime,
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "${booking.startTime.toLocalDateTimeSafe()?.formatAsTime() ?: "-"} - " +
+                            (booking.endTime.toLocalDateTimeSafe()?.formatAsTime() ?: "-"),
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+
+        BookingDetailRow(Icons.Default.Person, strings.customerName, booking.name ?: strings.unknown)
+        BookingDetailRow(
+            Icons.Default.Phone,
+            strings.phoneNumber,
+            phone?.let { formatPhoneNumber(it) } ?: "-"
+        )
+        BookingDetailRow(
+            Icons.Default.Payments,
+            strings.totalPriceLabel,
+            Money.withCurrency(booking.totalPrice ?: 0.0, strings.currency)
+        )
+        BookingDetailRow(Icons.Default.Info, strings.status, booking.status ?: "-")
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (!phone.isNullOrBlank()) {
+                Button(
+                    onClick = { onCall(phone) },
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Icon(Icons.Default.Phone, null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(strings.call, fontSize = 13.sp)
+                }
+            }
+            if (bookingId != null) {
+                TextButton(onClick = { onCancelBooking(bookingId) }) {
+                    Text(strings.cancelBooking, color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BookingDetailRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        Column {
+            Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+/** Bronni bekor qilish - sabab majburiy. */
+@Composable
+private fun CancelBookingDialog(
+    reason: String,
+    isCancelling: Boolean,
+    onReasonChange: (String) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val strings = Localization.current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(28.dp),
+        title = { Text(strings.cancelBooking, fontWeight = FontWeight.Bold) },
+        text = {
+            OutlinedTextField(
+                value = reason,
+                onValueChange = onReasonChange,
+                label = { Text(strings.cancelReason) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                minLines = 2
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                enabled = reason.isNotBlank() && !isCancelling,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text(strings.confirm)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(strings.cancel) }
         }
     )
 }
@@ -737,6 +949,7 @@ private fun formatTimeFromDateTime(dateTime: LocalDateTime): String {
 private fun SlotListItem(
     slot: SlotDto,
     rowState: SlotRowState,
+    clickable: Boolean,
     onClick: () -> Unit
 ) {
     val strings = Localization.current
@@ -778,7 +991,7 @@ private fun SlotListItem(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = !isBusy) { onClick() },
+            .clickable(enabled = clickable) { onClick() },
         color = containerColor
     ) {
         Row(

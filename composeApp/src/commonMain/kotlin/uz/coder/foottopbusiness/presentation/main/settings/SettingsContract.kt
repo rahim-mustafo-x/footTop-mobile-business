@@ -4,10 +4,12 @@ import uz.coder.foottopbusiness.core.mvi.MviEffect
 import uz.coder.foottopbusiness.core.mvi.MviEvent
 import uz.coder.foottopbusiness.core.mvi.MviState
 import uz.coder.foottopbusiness.data.network.dto.UserDto
+import uz.coder.foottopbusiness.domain.model.UserRole
 
 sealed interface SettingsContract {
     data class State(
         val user: UserDto? = null,
+        val userRole: UserRole = UserRole.UNKNOWN,
         val isLoadingUser: Boolean = false,
         val showDeleteAccountDialog: Boolean = false,
         val deleteConfirmText: String = "",

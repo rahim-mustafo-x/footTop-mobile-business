@@ -2,15 +2,17 @@ package uz.coder.foottopbusiness.core
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.data.network.dto.UserDto
 import uz.coder.foottopbusiness.domain.model.UserRole
 
 class UserSession(private val preferencesManager: PreferencesManager) {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
     private val _user = MutableStateFlow<UserDto?>(null)
     val user = _user.asStateFlow()
 
@@ -18,9 +20,21 @@ class UserSession(private val preferencesManager: PreferencesManager) {
     val role = _role.asStateFlow()
 
     init {
-        CoroutineScope(Dispatchers.Default).launch {
-            preferencesManager.role.collectLatest { roleName ->
-                if (roleName != null && _role.value == UserRole.UNKNOWN) {
+        // Sessiya tugaganda (qo'lda chiqish yoki 401) xotiradagi foydalanuvchini
+        // tozalaymiz. Busiz keyingi login eski foydalanuvchi ma'lumotini ko'rsatardi.
+        scope.launch {
+            preferencesManager.authorised.collect { authorised ->
+                if (!authorised) clear()
+            }
+        }
+
+        // Login paytida rol prefs'ga yoziladi, foydalanuvchi obyekti esa keyinroq
+        // yuklanadi. Shu oraliqda rolni prefs'dan olamiz.
+        // Foydalanuvchi obyekti kelgach, rol o'sha yerdan aniqlanadi (aniqroq manba),
+        // shuning uchun bu yerda uni qayta yozmaymiz.
+        scope.launch {
+            preferencesManager.role.collect { roleName ->
+                if (_user.value == null) {
                     _role.value = UserRole.fromString(roleName)
                 }
             }
@@ -29,31 +43,18 @@ class UserSession(private val preferencesManager: PreferencesManager) {
 
     fun setUser(user: UserDto?) {
         _user.value = user
-        if (user != null) {
-            val determinedRole = determineRole(user)
-            _role.value = determinedRole
-            CoroutineScope(Dispatchers.Default).launch {
-                preferencesManager.setRole(determinedRole.roleName)
-            }
-        } else {
+        if (user == null) {
             _role.value = UserRole.UNKNOWN
+            return
+        }
+
+        val determinedRole = UserRole.highestOf(user.roles?.map { it.name })
+        _role.value = determinedRole
+        scope.launch {
+            preferencesManager.setRole(determinedRole.roleName)
         }
     }
 
-    private fun determineRole(user: UserDto): UserRole {
-        val isSuperAdmin = user.roles?.any { it.name == "ROLE_SUPER_ADMIN" || it.name == "SUPER_ADMIN" } ?: false
-        val isDistrictAdmin = user.roles?.any { it.name == "ROLE_DISTRICT_ADMIN" } ?: false
-        val isOwner = user.roles?.any { it.name == "ROLE_OWNER" } ?: false
-        
-        return when {
-            isSuperAdmin -> UserRole.SUPER_ADMIN
-            isDistrictAdmin -> UserRole.DISTRICT_ADMIN
-            isOwner -> UserRole.OWNER
-            user.roles?.any { it.name?.contains("COACH", ignoreCase = true) == true || it.name?.contains("MURABBIY", ignoreCase = true) == true } == true -> UserRole.COACH
-            else -> UserRole.fromString(user.roles?.firstOrNull()?.name)
-        }
-    }
-    
     fun clear() {
         _user.value = null
         _role.value = UserRole.UNKNOWN

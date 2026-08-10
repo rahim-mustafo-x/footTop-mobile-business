@@ -6,7 +6,6 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -27,8 +26,21 @@ val darkColorScheme = darkColorScheme(
     surfaceVariant = SurfaceVariantDark,
     onSurfaceVariant = OnSurfaceVariantDark,
     outline = OutlineDark,
+    outlineVariant = OutlineVariantDark,
+    primaryContainer = PrimaryContainerDark,
+    onPrimaryContainer = OnPrimaryContainerDark,
+    secondaryContainer = SecondaryContainerDark,
+    onSecondaryContainer = OnSecondaryContainerDark,
+    tertiaryContainer = TertiaryContainerDark,
+    onTertiaryContainer = OnTertiaryContainerDark,
+    inverseSurface = InverseSurfaceDark,
+    inverseOnSurface = InverseOnSurfaceDark,
+    inversePrimary = InversePrimaryDark,
+    scrim = Scrim,
     error = Error,
     onError = OnPrimaryDark,
+    // errorContainer ataylab to'q qizil: ekranlarda .copy(alpha = 0.05f)
+    // bilan xato maydonlari foni sifatida ishlatiladi
     errorContainer = Error,
     onErrorContainer = OnPrimaryDark
 )
@@ -46,8 +58,21 @@ val lightColorScheme = lightColorScheme(
     surfaceVariant = SurfaceVariant,
     onSurfaceVariant = OnSurfaceVariant,
     outline = Outline,
+    outlineVariant = OutlineVariant,
+    primaryContainer = PrimaryContainer,
+    onPrimaryContainer = OnPrimaryContainer,
+    secondaryContainer = SecondaryContainer,
+    onSecondaryContainer = OnSecondaryContainer,
+    tertiaryContainer = TertiaryContainer,
+    onTertiaryContainer = OnTertiaryContainer,
+    inverseSurface = InverseSurface,
+    inverseOnSurface = InverseOnSurface,
+    inversePrimary = InversePrimary,
+    scrim = Scrim,
     error = Error,
     onError = OnPrimary,
+    // errorContainer ataylab to'q qizil: ekranlarda .copy(alpha = 0.05f)
+    // bilan xato maydonlari foni sifatida ishlatiladi
     errorContainer = Error,
     onErrorContainer = OnPrimary
 )
@@ -60,5 +85,5 @@ fun AppTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable ()
         Surface(modifier = Modifier.fillMaxSize()) {
             content()
         }
-    }, shapes = Shapes(), typography = Typography())
+    }, shapes = Shapes(), typography = AppTypography)
 }

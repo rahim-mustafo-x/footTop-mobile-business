@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import uz.coder.foottopbusiness.core.localization.Localization
+import uz.coder.foottopbusiness.core.ui.GradientHeader
+import uz.coder.foottopbusiness.core.ui.HeaderIconButton
 import uz.coder.foottopbusiness.core.ui.shimmer
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,54 +62,19 @@ fun StadiumScreen(viewModel: StadiumViewModel, onNavigateToAddStadium: () -> Uni
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                            )
-                        )
-                    )
-                    .padding(top = statusBarPadding, start = 24.dp, end = 24.dp, bottom = 24.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            if (state.isOwner) strings.schedule else strings.stadiums,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Black
-                        )
-                        if (!state.isOwner) {
-                            Text(
-                                "${state.stadiums.size} ta stadion",
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
+            GradientHeader(
+                title = if (state.isOwner) strings.schedule else strings.stadiums,
+                subtitle = if (state.isOwner) null else strings.stadiumCount(state.stadiums.size),
+                actions = {
                     if (!state.isOwner) {
-                        IconButton(
+                        HeaderIconButton(
+                            icon = Icons.Default.Add,
                             onClick = onNavigateToAddStadium,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f))
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = "Add", tint = MaterialTheme.colorScheme.onPrimary)
-                        }
+                            contentDescription = strings.addStadium
+                        )
                     }
                 }
-            }
+            )
         }
     ) { paddingValues ->
         Column(

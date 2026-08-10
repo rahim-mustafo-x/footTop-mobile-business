@@ -19,7 +19,6 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,7 +42,9 @@ import uz.coder.foottopbusiness.core.BackHandler
 import org.koin.compose.koinInject
 import uz.coder.foottopbusiness.core.localization.ErrorMapper
 import uz.coder.foottopbusiness.core.localization.Localization
-import uz.coder.foottopbusiness.presentation.main.settings.SettingsViewModel
+import uz.coder.foottopbusiness.core.ui.GradientHeader
+import uz.coder.foottopbusiness.core.UserSession
+import uz.coder.foottopbusiness.domain.model.UserRole
 
 import uz.coder.foottopbusiness.core.visualTransformation.PhoneTransformation
 import uz.coder.foottopbusiness.core.visualTransformation.AmountTransformation
@@ -54,50 +55,34 @@ class UserCreateScreen : Screen {
     override fun Content() {
         val viewModel = getScreenModel<UserCreateViewModel>()
         val state by viewModel.state.collectAsState()
-        val settingsViewModel = koinInject<SettingsViewModel>()
-        val userState by settingsViewModel.state.collectAsState()
         val navigator = LocalNavigator.currentOrThrow
         val snackbarHostState = remember { SnackbarHostState() }
         val strings = Localization.current
 
-        // Persist current user role to avoid flickering
-        var persistedCurrentUserRole by rememberSaveable { mutableStateOf("") }
-        LaunchedEffect(userState.user) {
-            userState.user?.roles?.firstOrNull()?.name?.let {
-                persistedCurrentUserRole = it
-            }
-        }
+        // Rol yagona manbadan olinadi. Ilgari bu yer alohida SettingsViewModel
+        // yaratib, `roles.firstOrNull()` ni olardi - API rollarni boshqa tartibda
+        // qaytarsa, noto'g'ri rol chiqardi. UserSession esa vakolat ustuvorligi
+        // bo'yicha eng yuqorisini beradi va flicker'ga qarshi hiyla ham kerak emas.
+        val currentRole by koinInject<UserSession>().role.collectAsState()
 
-        val isSuperAdmin = persistedCurrentUserRole == "ROLE_SUPER_ADMIN"
-        val isDistrictAdmin = persistedCurrentUserRole == "ROLE_DISTRICT_ADMIN"
-        val isPrivileged = isSuperAdmin || isDistrictAdmin
+        val isSuperAdmin = currentRole == UserRole.SUPER_ADMIN
+        val isPrivileged = isSuperAdmin || currentRole == UserRole.DISTRICT_ADMIN
 
-        val availableRoles = remember(isSuperAdmin, isDistrictAdmin, persistedCurrentUserRole) {
-            if (persistedCurrentUserRole.isEmpty()) return@remember emptyList()
-            val roles = mutableListOf<Triple<String, String, String>>()
-            
-            if (isSuperAdmin) {
-                roles.add(Triple("ROLE_DISTRICT_ADMIN", "Tuman Admini", "Tuman bo'yicha boshqaruv"))
-            }
-            
-            if (isPrivileged) {
-                roles.add(Triple("ROLE_OWNER", "Stadion egasi", "Maydonlarni nazorat"))
-            }
-
-            if (isPrivileged || persistedCurrentUserRole == "ROLE_OWNER") {
-                roles.add(Triple("ROLE_COACH", "Coach", "Murabbiy kabineti"))
-            }
-
-            if (isPrivileged) {
-                roles.add(Triple("ROLE_PLAYER", "O'yinchi", "O'yinlar ishtirokchisi"))
-            }
-            roles
-        }
-
-        LaunchedEffect(userState.isLoadingUser) {
-            if (!userState.isLoadingUser && persistedCurrentUserRole.isEmpty() && userState.user == null) {
-                // If everything loaded and still no user, maybe session expired
-                // but let's wait for actual role
+        val availableRoles = remember(currentRole, strings) {
+            if (currentRole == UserRole.UNKNOWN) return@remember emptyList()
+            buildList {
+                if (isSuperAdmin) {
+                    add(Triple("ROLE_DISTRICT_ADMIN", strings.roleDistrictAdmin, strings.roleDistrictAdminDesc))
+                }
+                if (isPrivileged) {
+                    add(Triple("ROLE_OWNER", strings.roleOwner, strings.roleOwnerDesc))
+                }
+                if (isPrivileged || currentRole == UserRole.OWNER) {
+                    add(Triple("ROLE_COACH", strings.roleCoach, strings.roleCoachDesc))
+                }
+                if (isPrivileged) {
+                    add(Triple("ROLE_PLAYER", strings.rolePlayer, strings.rolePlayerDesc))
+                }
             }
         }
 
@@ -121,41 +106,15 @@ class UserCreateScreen : Screen {
 
         Scaffold(
             topBar = {
-                val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                        .background(MaterialTheme.colorScheme.primary)
-                        .padding(top = statusBarPadding, start = 24.dp, end = 24.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 32.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(
-                            onClick = { navigator.pop() },
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f))
-                        ) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
-                        }
-                        Spacer(Modifier.width(16.dp))
-                        val title = when(state.role) {
-                            "ROLE_PLAYER" -> strings.addPlayer
-                            "ROLE_DISTRICT_ADMIN" -> strings.addDistrictAdmin
-                            "ROLE_COACH" -> strings.addCoach
-                            else -> strings.createUser
-                        }
-                        Text(
-                            title,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
+                GradientHeader(
+                    title = when (state.role) {
+                        "ROLE_PLAYER" -> strings.addPlayer
+                        "ROLE_DISTRICT_ADMIN" -> strings.addDistrictAdmin
+                        "ROLE_COACH" -> strings.addCoach
+                        else -> strings.createUser
+                    },
+                    onBack = { navigator.pop() }
+                )
             },
             snackbarHost = { SnackbarHost(snackbarHostState) },
             containerColor = MaterialTheme.colorScheme.surface

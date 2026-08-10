@@ -37,4 +37,7 @@ data class TournamentResponseDto(
     @SerialName("endTime") val endTime: String? = null,
     @SerialName("prizes") val prizes: String? = null,
     @SerialName("location") val location: LocationDto? = null,
+    // Backend bu maydonni qaytarmasa null bo'ladi - tahrirlashda stadion
+    // oldindan tanlanmaydi, qolgan hamma narsa ishlayveradi
+    @SerialName("stadiumId") val stadiumId: Long? = null,
 )

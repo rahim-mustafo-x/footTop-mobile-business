@@ -3,6 +3,7 @@ package uz.coder.foottopbusiness.presentation.main.stadium.details
 import uz.coder.foottopbusiness.core.mvi.MviEffect
 import uz.coder.foottopbusiness.core.mvi.MviEvent
 import uz.coder.foottopbusiness.core.mvi.MviState
+import uz.coder.foottopbusiness.data.network.dto.booking.BookingResponseDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.SlotDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.domain.model.UserRole
@@ -23,8 +24,13 @@ sealed interface StadiumDetailsContract {
         val isLoading: Boolean = false,
         val isUpdatingStatus: Boolean = false,
         val isBooking: Boolean = false,
-        val selectedSlot: SlotDto? = null,
-        val showSlotActionDialog: Boolean = false,
+
+        // Band qilingan slot tafsiloti - xodim slotni bosganda ko'rsatiladi
+        val showBookingDetailsDialog: Boolean = false,
+        val isLoadingBookingDetails: Boolean = false,
+        // Slotga kesishgan bronlar. Bitta 60 daqiqalik slot ikkita bronga
+        // to'g'ri kelishi mumkin, shuning uchun ro'yxat.
+        val bookingDetails: List<BookingResponseDto> = emptyList(),
 
         // Selection state for booking logic
         val selectedDate: String? = null,
@@ -61,9 +67,9 @@ sealed interface StadiumDetailsContract {
         object BackClick : Event
         object EditClick : Event
         data class ToggleActive(val isActive: Boolean) : Event
-        data class SlotClick(val slot: SlotDto) : Event
-        object DismissSlotDialog : Event
-        data class BookSlot(val slot: SlotDto) : Event
+        /** Band qilingan slot bosildi - xodimga bron tafsilotini ko'rsatamiz. */
+        data class SlotClick(val slot: SlotDto, val stadiumId: Int) : Event
+        object DismissBookingDetails : Event
         object DismissBookingResultDialog : Event
 
         // New events for the improved logic

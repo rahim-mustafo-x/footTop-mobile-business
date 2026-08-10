@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import uz.coder.foottopbusiness.core.Money
 import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.data.network.dto.booking.BookingResponseDto
 import uz.coder.foottopbusiness.core.toLocalDateTimeSafe
@@ -43,7 +44,7 @@ import uz.coder.foottopbusiness.presentation.main.booking.details.BookingDetails
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BookingListScreen(viewModel: BookingListViewModel, onBack: () -> Unit) {
+fun BookingListScreen(viewModel: BookingListViewModel, onBack: (() -> Unit)?) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val navigator = LocalNavigator.currentOrThrow
     val strings = Localization.current
@@ -51,7 +52,7 @@ fun BookingListScreen(viewModel: BookingListViewModel, onBack: () -> Unit) {
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
-                BookingListContract.Effect.NavigateBack -> onBack()
+                BookingListContract.Effect.NavigateBack -> onBack?.invoke()
                 is BookingListContract.Effect.ShowToast -> { /* Show toast */ }
                 is BookingListContract.Effect.NavigateToDetails -> {
                     navigator.push(BookingDetailsScreen(effect.booking))
@@ -67,8 +68,11 @@ fun BookingListScreen(viewModel: BookingListViewModel, onBack: () -> Unit) {
                 TopAppBar(
                     title = { Text(strings.bookingListTitle, fontWeight = FontWeight.Bold) },
                     navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = strings.back)
+                        // Ildiz tab sifatida ochilganda qaytadigan joy yo'q
+                        if (onBack != null) {
+                            IconButton(onClick = onBack) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = strings.back)
+                            }
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -276,7 +280,11 @@ fun BookingItem(booking: BookingResponseDto, onCancelClick: () -> Unit, onClick:
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(strings.totalPriceLabel + ":", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("${booking.totalPrice?.toInt() ?: 0} so'm", fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+                Text(
+                    Money.withCurrency(booking.totalPrice ?: 0.0, strings.currency),
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }

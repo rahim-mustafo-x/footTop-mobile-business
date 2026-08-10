@@ -1,14 +1,11 @@
 package uz.coder.foottopbusiness.presentation.main.home
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.koin.compose.koinInject
 import uz.coder.foottopbusiness.presentation.main.home.slots.SlotsControlVoyager
-import uz.coder.foottopbusiness.presentation.main.stadium.StadiumVoyager
-import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsVoyager
 
 object HomeVoyager : Screen {
     @Composable
@@ -16,6 +13,8 @@ object HomeVoyager : Screen {
         val viewModel = koinInject<HomeViewModel>()
         val navigator = LocalNavigator.currentOrThrow
 
+        // Effect oqimi Channel asosida (bitta iste'molchi) - uni HomeScreen
+        // ichida collect qilamiz, bu yerda takrorlamaymiz.
         HomeScreen(
             viewModel = viewModel,
             navigateToSlotsControl = { stadium ->
@@ -23,15 +22,5 @@ object HomeVoyager : Screen {
                 viewModel.handleEvent(HomeContract.Event.ClearStadiumForSlots)
             }
         )
-
-        LaunchedEffect(Unit) {
-            viewModel.effect.collect { result ->
-                when (result) {
-                    HomeContract.Effect.Stadium -> navigator.push(StadiumVoyager)
-                    HomeContract.Effect.Tournament -> navigator.push(TournamentsVoyager)
-                    else -> {}
-                }
-            }
-        }
     }
 }
