@@ -1,6 +1,5 @@
 @file:Suppress("DEPRECATION")
 
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.androidApplication)
@@ -10,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "wuz.coder.foottopbusiness.android"
+    namespace = "uz.coder.foottopbusiness.android"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
@@ -27,7 +26,12 @@ android {
     }
     buildTypes {
         getByName("release") {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
     compileOptions {
