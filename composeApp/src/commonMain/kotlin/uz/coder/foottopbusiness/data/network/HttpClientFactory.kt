@@ -23,7 +23,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import uz.coder.foottopbusiness.core.NetworkConfig
 import uz.coder.foottopbusiness.core.SessionManager
+import uz.coder.foottopbusiness.core.platform.isDebugBuild
 import uz.coder.foottopbusiness.core.log
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.data.network.dto.BaseResponse
@@ -34,7 +36,8 @@ class HttpClientFactory(
     private val sessionManager: SessionManager
 ) {
     companion object {
-        const val BASE_URL = "http://83.222.19.225:5002"
+        /** Yagona manba: [NetworkConfig.BASE_URL]. */
+        val BASE_URL = NetworkConfig.BASE_URL
     }
 
     private val ioScope = CoroutineScope(Dispatchers.Default)
@@ -60,7 +63,9 @@ class HttpClientFactory(
                         log("Ktor", message)
                     }
                 }
-                level = LogLevel.ALL
+                // Release'da so'rov/javob loglari yozilmaydi -- aks holda
+                // Bearer token logcat'ga tushadi.
+                level = if (isDebugBuild) LogLevel.ALL else LogLevel.NONE
             }
 
             install(HttpTimeout) {
@@ -110,7 +115,7 @@ class HttpClientFactory(
 
                     if (!isAuthEndpoint) {
                         when (code) {
-                            401, 403, 400, 404, 409 -> {
+                            401, 403, 400, 404, 409, 429 -> {
                                 val errorBody = response.bodyAsText()
                                 try {
                                     val json = Json { ignoreUnknownKeys = true }

@@ -11,6 +11,11 @@ class GetBookingsUseCase(private val repository: BookingRepository) {
         startDateTo: String? = null,
         totalPrice: Double? = null,
         status: String? = null,
-        paymentMethod: String? = null
-    ) = repository.getBookings(userId, stadiumId, matchId, startDateFrom, startDateTo, totalPrice, status, paymentMethod)
+        paymentMethod: String? = null,
+        page: Int = 0,
+        size: Int = BookingRepository.DEFAULT_PAGE_SIZE
+    ) = repository.getBookings(
+        userId, stadiumId, matchId, startDateFrom, startDateTo,
+        totalPrice, status, paymentMethod, page, size
+    )
 }

@@ -32,6 +32,14 @@ class AndroidPlatform : Platform {
 
 actual fun getPlatform(): Platform = AndroidPlatform()
 
+actual val isDebugBuild: Boolean
+    get() = try {
+        val context = ContextProvider.getContext()
+        (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+    } catch (_: Exception) {
+        false
+    }
+
 actual fun exitApp() {
     exitProcess(0)
 }

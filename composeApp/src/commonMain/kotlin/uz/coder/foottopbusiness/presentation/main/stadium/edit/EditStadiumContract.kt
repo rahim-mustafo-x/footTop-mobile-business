@@ -5,6 +5,7 @@ import uz.coder.foottopbusiness.core.mvi.MviEvent
 import uz.coder.foottopbusiness.core.mvi.MviState
 import uz.coder.foottopbusiness.data.network.dto.UserDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto
+import uz.coder.foottopbusiness.data.network.dto.stadium.ImageDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.RegionDto
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.stadium.addstadium.StadiumDuration
@@ -31,6 +32,11 @@ sealed interface EditStadiumContract {
         val districts: List<DistrictDto> = emptyList(),
         val selectedRegion: RegionDto? = null,
         val selectedDistrict: DistrictDto? = null,
+        /** Stadionning hozirgi hududi -- foydalanuvchi qayta tanlamasa shu saqlanadi. */
+        val originalRegionId: Int? = null,
+        val originalDistrictId: Int? = null,
+        /** Mavjud rasmlar. Saqlashda qayta uzatiladi, aks holda serverda o'chib ketadi. */
+        val existingImages: List<ImageDto> = emptyList(),
         val showRegionDropdown: Boolean = false,
         val showDistrictDropdown: Boolean = false,
         // owners

@@ -9,6 +9,12 @@ interface Platform {
 
 expect fun getPlatform(): Platform
 
+/**
+ * Debug build'mi. Release'da tarmoq loglari (Bearer token bilan birga)
+ * yozilmasligi uchun kerak.
+ */
+expect val isDebugBuild: Boolean
+
 expect fun exitApp()
 
 expect fun shareApp(text: String)

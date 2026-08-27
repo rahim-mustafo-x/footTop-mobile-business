@@ -9,12 +9,20 @@ sealed interface BookingListContract {
     data class State(
         val bookings: List<BookingResponseDto> = emptyList(),
         val filteredBookings: List<BookingResponseDto> = emptyList(),
-        val selectedTab: Int = 0, // 0: All, 1: Upcoming, 2: Active, 3: Completed, 4: Cancelled
+        val selectedTab: Int = 0, // 0: All, 1: Upcoming, 2: Active, 3: Completed, 4: Cancelled, 5: Pending
         val isLoading: Boolean = false,
         val isRefreshing: Boolean = false,
         val showCancelDialog: Boolean = false,
         val cancelReason: String = "",
         val bookingToCancel: Long? = null,
+        val showRejectDialog: Boolean = false,
+        val rejectReason: String = "",
+        val bookingToReject: Long? = null,
+        /** Tasdiqlash/rad etish davom etayotgan bron -- tugmalarni bloklash uchun. */
+        val processingBookingId: Long? = null,
+        val page: Int = 0,
+        val canLoadMore: Boolean = true,
+        val isLoadingMore: Boolean = false,
         val startDate: String? = null,
         val endDate: String? = null,
         val stadiumId: Long? = null
@@ -24,6 +32,8 @@ sealed interface BookingListContract {
         data class ShowToast(val message: String) : Effect
         object NavigateBack : Effect
         data class NavigateToDetails(val booking: BookingResponseDto) : Effect
+        object BookingConfirmed : Effect
+        object BookingRejected : Effect
     }
 
     sealed interface Event : MviEvent {
@@ -36,5 +46,12 @@ sealed interface BookingListContract {
         data class UpdateCancelReason(val reason: String) : Event
         data class ConfirmCancelBooking(val bookingId: Long, val reason: String) : Event
         data class FilterByDate(val start: String, val end: String) : Event
+
+        data class ConfirmBooking(val bookingId: Long) : Event
+        data class OpenRejectDialog(val bookingId: Long) : Event
+        object DismissRejectDialog : Event
+        data class UpdateRejectReason(val reason: String) : Event
+        data class SubmitReject(val bookingId: Long, val reason: String) : Event
+        object LoadMore : Event
     }
 }

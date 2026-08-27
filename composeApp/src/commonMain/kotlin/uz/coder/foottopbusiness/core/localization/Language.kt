@@ -310,6 +310,16 @@ interface Language {
     val districtScopeViolation: String
     val dataIntegrityViolation: String
     val bookingTimeAlreadyTaken: String
+    val rateLimitExceeded: String
+    val accessDenied: String
+    val bookingNotPending: String
+
+    val confirmBooking: String
+    val rejectBooking: String
+    val rejectReason: String
+    val bookingConfirmedMsg: String
+    val bookingRejectedMsg: String
+    val pendingTab: String
 
     val coachInfo: String
     val experienceYears: String
@@ -643,6 +653,16 @@ class EnLanguage : Language {
     override val districtScopeViolation = "You can only create stadiums in your own assigned district."
     override val dataIntegrityViolation = "Data integrity error. This information may be used by other records."
     override val bookingTimeAlreadyTaken = "This time slot is already booked. Please choose another time."
+    override val rateLimitExceeded = "Too many attempts. Please wait a moment and try again."
+    override val accessDenied = "You do not have permission for this action."
+    override val bookingNotPending = "This booking is no longer pending."
+
+    override val confirmBooking = "Confirm"
+    override val rejectBooking = "Reject"
+    override val rejectReason = "Reason for rejection"
+    override val bookingConfirmedMsg = "Booking confirmed"
+    override val bookingRejectedMsg = "Booking rejected"
+    override val pendingTab = "Pending"
 
     override val coachInfo = "Coach Information"
     override val experienceYears = "years"
@@ -976,6 +996,16 @@ class RuLanguage : Language {
     override val districtScopeViolation = "Вы можете создавать стадионы только в своем закрепленном районе."
     override val dataIntegrityViolation = "Ошибка целостности данных. Эта информация может использоваться другими записями."
     override val bookingTimeAlreadyTaken = "Это время уже занято. Пожалуйста, выберите другое время."
+    override val rateLimitExceeded = "Слишком много попыток. Подождите немного и попробуйте снова."
+    override val accessDenied = "У вас нет прав на это действие."
+    override val bookingNotPending = "Эта бронь больше не в статусе ожидания."
+
+    override val confirmBooking = "Подтвердить"
+    override val rejectBooking = "Отклонить"
+    override val rejectReason = "Причина отклонения"
+    override val bookingConfirmedMsg = "Бронь подтверждена"
+    override val bookingRejectedMsg = "Бронь отклонена"
+    override val pendingTab = "Ожидают"
 
     override val coachInfo = "Информация о тренере"
     override val experienceYears = "лет"
@@ -1309,6 +1339,16 @@ class UzLanguage : Language {
     override val districtScopeViolation = "Siz faqat o'zingizga biriktirilgan hududda stadion yarata olasiz."
     override val dataIntegrityViolation = "Ma'lumotlar yaxlitligi xatosi. Ushbu ma'lumot boshqa yozuvlar tomonidan foydalanilayotgan bo'lishi mumkin."
     override val bookingTimeAlreadyTaken = "Ushbu vaqt allaqachon band qilingan. Iltimos, boshqa vaqtni tanlang."
+    override val rateLimitExceeded = "Juda ko'p urinish. Biroz kutib, qayta urinib ko'ring."
+    override val accessDenied = "Bu amal uchun sizda ruxsat yo'q."
+    override val bookingNotPending = "Bu bron endi kutish holatida emas."
+
+    override val confirmBooking = "Tasdiqlash"
+    override val rejectBooking = "Rad etish"
+    override val rejectReason = "Rad etish sababi"
+    override val bookingConfirmedMsg = "Bron tasdiqlandi"
+    override val bookingRejectedMsg = "Bron rad etildi"
+    override val pendingTab = "Kutilmoqda"
 
     override val coachInfo = "Murabbiy ma'lumotlari"
     override val experienceYears = "yil"

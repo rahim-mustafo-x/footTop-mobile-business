@@ -390,10 +390,15 @@ class StadiumDetailsViewModel(
                 // har bir maydon serverda tozalanadi. Shuning uchun stadionda mavjud
                 // bo'lgan hamma narsani qaytadan uzatamiz.
                 //
-                // TODO: regionId, districtId va rasmlar StadiumResponse'da yo'q,
-                // shuning uchun ular hamon saqlanmaydi. To'g'ri yechim - backendda
-                // faqat holatni o'zgartiradigan PATCH endpoint, yoki bu maydonlarni
-                // stadion javobiga qo'shish.
+                // regionId/districtId/images endi StadiumResponse'da bor, shuning uchun
+                // ular yo'qolmaydi. Agar ular kelmagan bo'lsa -- eski backend yoki
+                // to'liqsiz javob -- o'zgartirishni bajarmaymiz, aks holda stadion
+                // boshqa hududga ko'chib ketadi.
+                val regionId = currentStadium.regionId
+                val districtId = currentStadium.districtId
+                if (regionId == null || districtId == null) {
+                    throw IllegalStateException("STADIUM_REGION_MISSING")
+                }
                 var updated: StadiumResponse? = null
                 stadiumRepository.updateStadium(
                     id = currentStadium.id ?: return@executeAsync null,
@@ -406,14 +411,15 @@ class StadiumDetailsViewModel(
                     openTime = currentStadium.openTime ?: "",
                     closeTime = currentStadium.closeTime ?: "",
                     imageUrl = "",
-                    regionId = 13,
-                    districtId = 193,
+                    images = currentStadium.images ?: emptyList(),
+                    regionId = regionId,
+                    districtId = districtId,
                     isActive = isActive,
                     ownerId = currentStadium.ownerId,
                     phone = currentStadium.phone,
                     latitude = currentStadium.location?.latitude,
                     longitude = currentStadium.location?.longitude,
-                    address = currentStadium.location?.address
+                    address = currentStadium.location?.address ?: currentStadium.address
                 ).collect { updated = it }
                 updated
             },
