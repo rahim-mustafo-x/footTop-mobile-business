@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,16 +62,16 @@ class TournamentCreateScreen : Screen {
             }
         )
 
-        var name by remember { mutableStateOf("") }
-        var startDate by remember { mutableStateOf("") }
-        var endDate by remember { mutableStateOf("") }
-        var startTime by remember { mutableStateOf("") }
-        var endTime by remember { mutableStateOf("") }
-        var maxTeams by remember { mutableStateOf("") }
-        var entryFee by remember { mutableStateOf("") }
-        var address by remember { mutableStateOf("") }
-        var latitude by remember { mutableStateOf<Double?>(null) }
-        var longitude by remember { mutableStateOf<Double?>(null) }
+        var name by rememberSaveable { mutableStateOf("") }
+        var startDate by rememberSaveable { mutableStateOf("") }
+        var endDate by rememberSaveable { mutableStateOf("") }
+        var startTime by rememberSaveable { mutableStateOf("") }
+        var endTime by rememberSaveable { mutableStateOf("") }
+        var maxTeams by rememberSaveable { mutableStateOf("") }
+        var entryFee by rememberSaveable { mutableStateOf("") }
+        var address by rememberSaveable { mutableStateOf("") }
+        var latitude by rememberSaveable { mutableStateOf<Double?>(null) }
+        var longitude by rememberSaveable { mutableStateOf<Double?>(null) }
 
         var showStartDatePicker by remember { mutableStateOf(false) }
         var showEndDatePicker by remember { mutableStateOf(false) }

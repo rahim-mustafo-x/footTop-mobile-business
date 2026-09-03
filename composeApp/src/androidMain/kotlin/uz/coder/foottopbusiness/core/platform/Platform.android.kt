@@ -13,8 +13,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import com.google.android.gms.location.CurrentLocationRequest
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeoutOrNull
 import uz.coder.foottopbusiness.core.context.ContextProvider
 import uz.coder.foottopbusiness.core.visualTransformation.normalizePhoneForDial
 import kotlin.system.exitProcess
@@ -206,10 +210,39 @@ actual suspend fun getCurrentLocation(): Pair<Double, Double>? {
     if (checkLocationPermissionStatus() != PermissionStatus.GRANTED) return null
     
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-    return try {
-        val location = fusedLocationClient.lastLocation.await()
-        location?.let { it.latitude to it.longitude }
-    } catch (e: Exception) {
+
+    // lastLocation ko'p holatda null qaytaradi: yangi qurilma, emulyator yoki GPS
+    // uzoq vaqt ishlatilmagan bo'lsa kesh bo'sh bo'ladi. Ilgari shunda xarita jim
+    // turardi va joylashuv umuman tanlanmasdi, shuning uchun kesh bo'sh chiqsa
+    // qurilmadan yangi fix so'raymiz.
+    val cached = try {
+        fusedLocationClient.lastLocation.await()
+    } catch (_: Exception) {
         null
     }
+    if (cached != null) return cached.latitude to cached.longitude
+
+    val cancellationSource = CancellationTokenSource()
+    return try {
+        withTimeoutOrNull(FRESH_LOCATION_TIMEOUT_MS) {
+            fusedLocationClient.getCurrentLocation(
+                CurrentLocationRequest.Builder()
+                    .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
+                    .setMaxUpdateAgeMillis(FRESH_LOCATION_MAX_AGE_MS)
+                    .build(),
+                cancellationSource.token
+            ).await()
+        }?.let { it.latitude to it.longitude }
+    } catch (_: Exception) {
+        null
+    } finally {
+        // Timeout yoki xatoda GPS so'rovi osilib qolmasligi uchun.
+        cancellationSource.cancel()
+    }
 }
+
+/** Yangi GPS fix'ini kutish muddati. Ochiq havoda odatda 2-5 soniya. */
+private const val FRESH_LOCATION_TIMEOUT_MS = 15_000L
+
+/** Shu yoshdagi fix yetarli, GPS'ni qaytadan yoqib o'tirmaymiz. */
+private const val FRESH_LOCATION_MAX_AGE_MS = 60_000L
