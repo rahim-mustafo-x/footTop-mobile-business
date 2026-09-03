@@ -37,12 +37,13 @@ class EditStadiumViewModel(
         pricePerHour = stadium.pricePerHour?.toInt()?.toString() ?: "",
         openTime = if (stadium.openTime.isNullOrBlank()) "08:00" else try { LocalDateTime.parse(stadium.openTime).formatAsTime() } catch (_: Exception) { stadium.openTime },
         closeTime = if (stadium.closeTime.isNullOrBlank()) "22:00" else try { LocalDateTime.parse(stadium.closeTime).formatAsTime() } catch (_: Exception) { stadium.closeTime },
-        // Note: images are handled differently in StadiumResponse vs CreateRequest
-        // For simplicity assuming first image or empty
         imageUrl = "",
+        existingImages = stadium.images ?: emptyList(),
+        originalRegionId = stadium.regionId,
+        originalDistrictId = stadium.districtId,
         latitude = stadium.location?.latitude,
         longitude = stadium.location?.longitude,
-        preciseAddress = stadium.name ?: "", // Or some other field if available
+        preciseAddress = stadium.location?.address ?: stadium.address ?: "",
         type = try { StadiumType.valueOf(stadium.type ?: "FOOTBALL") } catch (_: Exception) { StadiumType.FOOTBALL },
         duration = try { StadiumDuration.valueOf(stadium.duration ?: "SIXTY") } catch (_: Exception) { StadiumDuration.SIXTY }
     )
@@ -143,8 +144,26 @@ class EditStadiumViewModel(
             block = { getRegionsUseCase().first() },
             onSuccess = { regions ->
                 updateState { copy(regions = regions) }
-                // If stadium has region, we might want to pre-select it and load districts
-                // But stadium response names are strings, IDs are needed for selection logic
+                // Stadionning hozirgi viloyat/tumanini oldindan tanlab qo'yamiz --
+                // aks holda foydalanuvchi ularga tegmasa, saqlashda hudud yo'qoladi.
+                val regionId = state.value.originalRegionId ?: return@executeAsync
+                val region = regions.firstOrNull { it.id == regionId } ?: return@executeAsync
+                preselectDistrict(region)
+            }
+        )
+    }
+
+    private fun preselectDistrict(region: RegionDto) {
+        updateState { copy(selectedRegion = region) }
+        executeAsync(
+            block = { getDistrictsUseCase(region.id).first() },
+            onSuccess = { districts ->
+                updateState {
+                    copy(
+                        districts = districts,
+                        selectedDistrict = districts.firstOrNull { it.id == originalDistrictId }
+                    )
+                }
             }
         )
     }
@@ -181,8 +200,9 @@ class EditStadiumViewModel(
                     openTime = s.openTime,
                     closeTime = s.closeTime,
                     imageUrl = s.imageUrl,
-                    regionId = s.selectedRegion?.id ?: 0,
-                    districtId = s.selectedDistrict?.id ?: 0,
+                    images = if (s.imageUrl.isBlank()) s.existingImages else null,
+                    regionId = s.selectedRegion?.id ?: s.originalRegionId ?: 0,
+                    districtId = s.selectedDistrict?.id ?: s.originalDistrictId ?: 0,
                     ownerId = s.selectedOwner?.id?.toInt(),
                     phone = s.phone,
                     latitude = s.latitude,

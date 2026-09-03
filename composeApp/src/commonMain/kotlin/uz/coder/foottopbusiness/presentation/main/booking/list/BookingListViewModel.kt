@@ -6,12 +6,17 @@ import kotlinx.datetime.toInstant
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
 import uz.coder.foottopbusiness.core.toLocalDateTimeSafe
 import uz.coder.foottopbusiness.data.network.dto.booking.BookingResponseDto
+import uz.coder.foottopbusiness.domain.repository.BookingRepository
 import uz.coder.foottopbusiness.domain.usecase.booking.CancelBookingUseCase
+import uz.coder.foottopbusiness.domain.usecase.booking.ConfirmBookingUseCase
 import uz.coder.foottopbusiness.domain.usecase.booking.GetBookingsUseCase
+import uz.coder.foottopbusiness.domain.usecase.booking.RejectBookingUseCase
 
 class BookingListViewModel(
     private val getBookingsUseCase: GetBookingsUseCase,
-    private val cancelBookingUseCase: CancelBookingUseCase
+    private val cancelBookingUseCase: CancelBookingUseCase,
+    private val confirmBookingUseCase: ConfirmBookingUseCase,
+    private val rejectBookingUseCase: RejectBookingUseCase
 ) : BaseViewModel<BookingListContract.State, BookingListContract.Effect, BookingListContract.Event>(
     initialState = BookingListContract.State()
 ) {
@@ -19,29 +24,47 @@ class BookingListViewModel(
         loadBookings()
     }
 
-    private fun loadBookings(isRefreshing: Boolean = false) {
+    /**
+     * Backend endi sahifalab qaytaradi. [append] = true bo'lsa keyingi sahifa
+     * mavjud ro'yxatga qo'shiladi, aks holda ro'yxat noldan yuklanadi.
+     */
+    private fun loadBookings(isRefreshing: Boolean = false, append: Boolean = false) {
         val s = state.value
+        val targetPage = if (append) s.page + 1 else 0
         executeAsync(
-            onLoading = { updateState { copy(isLoading = !isRefreshing, isRefreshing = isRefreshing) } },
+            onLoading = {
+                updateState {
+                    copy(
+                        isLoading = !isRefreshing && !append,
+                        isRefreshing = isRefreshing,
+                        isLoadingMore = append
+                    )
+                }
+            },
             block = {
                 getBookingsUseCase(
                     startDateFrom = s.startDate,
                     startDateTo = s.endDate,
-                    stadiumId = s.stadiumId
+                    stadiumId = s.stadiumId,
+                    page = targetPage
                 ).first()
             },
             onSuccess = { list ->
-                updateState { 
+                updateState {
+                    val merged = if (append) bookings + list else list
                     copy(
-                        bookings = list, 
-                        isLoading = false, 
+                        bookings = merged,
+                        isLoading = false,
                         isRefreshing = false,
-                        filteredBookings = filterBookings(list, selectedTab)
-                    ) 
+                        isLoadingMore = false,
+                        page = targetPage,
+                        canLoadMore = list.size >= BookingRepository.DEFAULT_PAGE_SIZE,
+                        filteredBookings = filterBookings(merged, selectedTab)
+                    )
                 }
             },
             onError = {
-                updateState { copy(isLoading = false, isRefreshing = false) }
+                updateState { copy(isLoading = false, isRefreshing = false, isLoadingMore = false) }
                 sendEffect(BookingListContract.Effect.ShowToast("Xatolik: ${it.message}"))
             }
         )
@@ -78,6 +101,63 @@ class BookingListViewModel(
                 updateState { copy(startDate = event.start, endDate = event.end) }
                 loadBookings()
             }
+            is BookingListContract.Event.ConfirmBooking -> confirmBooking(event.bookingId)
+            is BookingListContract.Event.OpenRejectDialog -> {
+                updateState { copy(showRejectDialog = true, bookingToReject = event.bookingId, rejectReason = "") }
+            }
+            BookingListContract.Event.DismissRejectDialog -> {
+                updateState { copy(showRejectDialog = false, bookingToReject = null) }
+            }
+            is BookingListContract.Event.UpdateRejectReason -> {
+                updateState { copy(rejectReason = event.reason) }
+            }
+            is BookingListContract.Event.SubmitReject -> rejectBooking(event.bookingId, event.reason)
+            BookingListContract.Event.LoadMore -> {
+                val s = state.value
+                if (s.canLoadMore && !s.isLoadingMore && !s.isLoading) {
+                    loadBookings(append = true)
+                }
+            }
+        }
+    }
+
+    private fun confirmBooking(id: Long) {
+        executeAsync(
+            onLoading = { updateState { copy(processingBookingId = id) } },
+            block = { confirmBookingUseCase(id).first() },
+            onSuccess = { updated ->
+                updateState { copy(processingBookingId = null) }
+                replaceBooking(updated)
+                sendEffect(BookingListContract.Effect.BookingConfirmed)
+            },
+            onError = {
+                updateState { copy(processingBookingId = null) }
+                sendEffect(BookingListContract.Effect.ShowToast("Xatolik: ${it.message}"))
+            }
+        )
+    }
+
+    private fun rejectBooking(id: Long, reason: String) {
+        executeAsync(
+            onLoading = { updateState { copy(processingBookingId = id) } },
+            block = { rejectBookingUseCase(id, reason).first() },
+            onSuccess = { updated ->
+                updateState { copy(processingBookingId = null, showRejectDialog = false, bookingToReject = null) }
+                replaceBooking(updated)
+                sendEffect(BookingListContract.Effect.BookingRejected)
+            },
+            onError = {
+                updateState { copy(processingBookingId = null) }
+                sendEffect(BookingListContract.Effect.ShowToast("Xatolik: ${it.message}"))
+            }
+        )
+    }
+
+    /** Butun ro'yxatni qayta yuklamasdan, faqat o'zgargan bronni almashtiramiz. */
+    private fun replaceBooking(updated: BookingResponseDto) {
+        updateState {
+            val merged = bookings.map { if (it.id == updated.id) updated else it }
+            copy(bookings = merged, filteredBookings = filterBookings(merged, selectedTab))
         }
     }
 
@@ -106,7 +186,10 @@ class BookingListViewModel(
                 }
             }
             4 -> { // Cancelled
-                list.filter { it.status == "CANCELLED" }
+                list.filter { it.status == "CANCELLED" || it.status == "REJECTED" }
+            }
+            5 -> { // Tasdiqlashni kutayotganlar -- egasining asosiy ish ro'yxati
+                list.filter { it.status == "PENDING" }
             }
             else -> list // All
         }

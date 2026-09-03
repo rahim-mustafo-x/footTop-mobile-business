@@ -79,6 +79,7 @@ class StadiumRepositoryImpl(
         openTime: String,
         closeTime: String,
         imageUrl: String,
+        images: List<ImageDto>?,
         regionId: Int,
         districtId: Int,
         isActive: Boolean,
@@ -96,11 +97,11 @@ class StadiumRepositoryImpl(
                 location = LocationDto(latitude = latitude, longitude = longitude, address = address),
                 type = type, duration = duration,
                 capacity = capacity, pricePerHour = pricePerHour,
-                images = if (imageUrl.isNotBlank()) listOf(ImageDto(imageUrl)) else emptyList(),
+                images = images ?: if (imageUrl.isNotBlank()) listOf(ImageDto(imageUrl)) else emptyList(),
                 isActive = isActive
             )
         )
-        
+
         // If 204 No Content, we construct a response from the request data
         val stadiumResponse = if (response.status.value == 204) {
              StadiumResponse(

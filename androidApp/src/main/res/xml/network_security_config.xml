@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  DIQQAT: hozircha backend HTTP (TLS'siz) ishlaydi, shuning uchun shu IP uchun
+  cleartext'ga ruxsat berilgan. Server domenga + Let's Encrypt'ga o'tkazilgach
+  (backend repo: docs/DEPLOY-TLS.md) bu faylni butunlay o'chirish va
+  AndroidManifest'dagi networkSecurityConfig havolasini olib tashlash kerak.
+-->
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">
-        <!-- Replace with your domain -->
-        <domain includeSubdomains="true">example.com</domain>
-        <!-- For local testing (e.g., 192.168.x.x) -->
         <domain includeSubdomains="true">83.222.19.225</domain>
     </domain-config>
 </network-security-config>

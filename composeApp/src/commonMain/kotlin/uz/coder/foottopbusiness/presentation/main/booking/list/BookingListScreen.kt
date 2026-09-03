@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -18,6 +19,7 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,21 +50,31 @@ fun BookingListScreen(viewModel: BookingListViewModel, onBack: (() -> Unit)?) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val navigator = LocalNavigator.currentOrThrow
     val strings = Localization.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
                 BookingListContract.Effect.NavigateBack -> onBack?.invoke()
-                is BookingListContract.Effect.ShowToast -> { /* Show toast */ }
+                is BookingListContract.Effect.ShowToast ->
+                    snackbarHostState.showSnackbar(effect.message)
                 is BookingListContract.Effect.NavigateToDetails -> {
                     navigator.push(BookingDetailsScreen(effect.booking))
                 }
+                BookingListContract.Effect.BookingConfirmed ->
+                    snackbarHostState.showSnackbar(strings.bookingConfirmedMsg)
+                BookingListContract.Effect.BookingRejected ->
+                    snackbarHostState.showSnackbar(strings.bookingRejectedMsg)
             }
         }
     }
-    val tabs = listOf(strings.seeAll, strings.kelgusi, strings.faol, strings.yakunlangan, strings.bekorQilingan)
+    val tabs = listOf(
+        strings.seeAll, strings.kelgusi, strings.faol,
+        strings.yakunlangan, strings.bekorQilingan, strings.pendingTab
+    )
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             Column(modifier = Modifier.background(MaterialTheme.colorScheme.primary)) {
                 TopAppBar(
@@ -139,12 +151,30 @@ fun BookingListScreen(viewModel: BookingListViewModel, onBack: (() -> Unit)?) {
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        items(bookings) { booking ->
+                        itemsIndexed(bookings) { index, booking ->
+                            // Ro'yxat oxiriga yaqinlashganda keyingi sahifani yuklaymiz
+                            if (index == bookings.lastIndex && state.canLoadMore) {
+                                LaunchedEffect(bookings.size) {
+                                    viewModel.handleEvent(BookingListContract.Event.LoadMore)
+                                }
+                            }
                             BookingItem(
                                 booking = booking,
+                                isProcessing = state.processingBookingId == booking.id,
                                 onCancelClick = { booking.id?.let { viewModel.handleEvent(BookingListContract.Event.OpenCancelDialog(it)) } },
+                                onConfirmClick = { booking.id?.let { viewModel.handleEvent(BookingListContract.Event.ConfirmBooking(it)) } },
+                                onRejectClick = { booking.id?.let { viewModel.handleEvent(BookingListContract.Event.OpenRejectDialog(it)) } },
                                 onClick = { viewModel.handleEvent(BookingListContract.Event.SelectBooking(booking)) }
                             )
+                        }
+
+                        if (state.isLoadingMore) {
+                            item {
+                                Box(
+                                    Modifier.fillMaxWidth().padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) { CircularProgressIndicator(strokeWidth = 2.dp) }
+                            }
                         }
                     }
                 }
@@ -203,10 +233,55 @@ fun BookingListScreen(viewModel: BookingListViewModel, onBack: (() -> Unit)?) {
             }
         )
     }
+
+    if (state.showRejectDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.handleEvent(BookingListContract.Event.DismissRejectDialog) },
+            title = { Text(strings.rejectBooking) },
+            text = {
+                OutlinedTextField(
+                    value = state.rejectReason,
+                    onValueChange = { viewModel.handleEvent(BookingListContract.Event.UpdateRejectReason(it)) },
+                    label = { Text(strings.rejectReason) },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                    isError = state.rejectReason.isBlank(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        state.bookingToReject?.let {
+                            viewModel.handleEvent(
+                                BookingListContract.Event.SubmitReject(it, state.rejectReason)
+                            )
+                        }
+                    },
+                    enabled = state.rejectReason.isNotBlank() && state.processingBookingId == null,
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(strings.rejectBooking)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { viewModel.handleEvent(BookingListContract.Event.DismissRejectDialog) }) {
+                    Text(strings.back)
+                }
+            }
+        )
+    }
 }
 
 @Composable
-fun BookingItem(booking: BookingResponseDto, onCancelClick: () -> Unit, onClick: () -> Unit) {
+fun BookingItem(
+    booking: BookingResponseDto,
+    isProcessing: Boolean,
+    onCancelClick: () -> Unit,
+    onConfirmClick: () -> Unit,
+    onRejectClick: () -> Unit,
+    onClick: () -> Unit
+) {
     val strings = Localization.current
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
@@ -239,7 +314,11 @@ fun BookingItem(booking: BookingResponseDto, onCancelClick: () -> Unit, onClick:
                     )
                 }
                 
-                if (booking.status != "CANCELLED") {
+                // Kutilayotgan bronda bekor qilish emas, tasdiqlash/rad etish kerak --
+                // ular pastdagi tugmalar qatorida.
+                if (booking.status != "CANCELLED" && booking.status != "REJECTED" &&
+                    booking.status != "PENDING"
+                ) {
                     IconButton(onClick = onCancelClick) {
                         Icon(Icons.Default.Close, contentDescription = strings.cancel, tint = MaterialTheme.colorScheme.error)
                     }
@@ -285,6 +364,39 @@ fun BookingItem(booking: BookingResponseDto, onCancelClick: () -> Unit, onClick:
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.primary
                 )
+            }
+
+            // Stadion egasining asosiy amali: kelgan so'rovni tasdiqlash yoki rad etish
+            if (booking.status == "PENDING") {
+                Spacer(Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onRejectClick,
+                        enabled = !isProcessing,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(strings.rejectBooking)
+                    }
+                    Button(
+                        onClick = onConfirmClick,
+                        enabled = !isProcessing,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        if (isProcessing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
+                            Text(strings.confirmBooking)
+                        }
+                    }
+                }
             }
         }
     }

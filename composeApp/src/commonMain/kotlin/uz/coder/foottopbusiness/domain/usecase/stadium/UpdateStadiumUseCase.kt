@@ -1,5 +1,6 @@
 package uz.coder.foottopbusiness.domain.usecase.stadium
 
+import uz.coder.foottopbusiness.data.network.dto.stadium.ImageDto
 import uz.coder.foottopbusiness.domain.repository.StadiumRepository
 
 class UpdateStadiumUseCase(private val repository: StadiumRepository) {
@@ -14,6 +15,7 @@ class UpdateStadiumUseCase(private val repository: StadiumRepository) {
         openTime: String,
         closeTime: String,
         imageUrl: String,
+        images: List<ImageDto>? = null,
         regionId: Int,
         districtId: Int,
         isActive: Boolean = true,
@@ -23,6 +25,24 @@ class UpdateStadiumUseCase(private val repository: StadiumRepository) {
         longitude: Double? = null,
         address: String? = null,
     ) = repository.updateStadium(
-        id, name, description, type, duration, capacity, pricePerHour, openTime, closeTime, imageUrl, regionId, districtId, isActive, ownerId, phone, latitude, longitude, address
+        id = id,
+        name = name,
+        description = description,
+        type = type,
+        duration = duration,
+        capacity = capacity,
+        pricePerHour = pricePerHour,
+        openTime = openTime,
+        closeTime = closeTime,
+        imageUrl = imageUrl,
+        images = images,
+        regionId = regionId,
+        districtId = districtId,
+        isActive = isActive,
+        ownerId = ownerId,
+        phone = phone,
+        latitude = latitude,
+        longitude = longitude,
+        address = address
     )
 }

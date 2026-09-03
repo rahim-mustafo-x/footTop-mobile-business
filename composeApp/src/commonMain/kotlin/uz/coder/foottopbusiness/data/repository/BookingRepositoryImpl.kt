@@ -35,9 +35,14 @@ class BookingRepositoryImpl(private val api: BookingApiService) : BookingReposit
         startDateTo: String?,
         totalPrice: Double?,
         status: String?,
-        paymentMethod: String?
+        paymentMethod: String?,
+        page: Int,
+        size: Int
     ): Flow<List<BookingResponseDto>> = flow {
-        val response = api.getBookings(userId, stadiumId, matchId, startDateFrom, startDateTo, totalPrice, status, paymentMethod)
+        val response = api.getBookings(
+            userId, stadiumId, matchId, startDateFrom, startDateTo,
+            totalPrice, status, paymentMethod, page, size
+        )
         if (response.success == true) {
             emit(response.data ?: emptyList())
         } else {
@@ -51,6 +56,24 @@ class BookingRepositoryImpl(private val api: BookingApiService) : BookingReposit
             response.data?.let { emit(it) } ?: throw Exception("Bekor qilindi, lekin ma'lumotlar qaytmadi")
         } else {
             throw Exception(response.message ?: "Bekor qilishda xatolik")
+        }
+    }
+
+    override fun confirmBooking(id: Long): Flow<BookingResponseDto> = flow {
+        val response = api.confirmBooking(id)
+        if (response.success == true) {
+            response.data?.let { emit(it) } ?: throw Exception("Tasdiqlandi, lekin ma'lumotlar qaytmadi")
+        } else {
+            throw Exception(response.message ?: "Tasdiqlashda xatolik")
+        }
+    }
+
+    override fun rejectBooking(id: Long, reason: String): Flow<BookingResponseDto> = flow {
+        val response = api.rejectBooking(id, CancelBookingRequestDto(reason))
+        if (response.success == true) {
+            response.data?.let { emit(it) } ?: throw Exception("Rad etildi, lekin ma'lumotlar qaytmadi")
+        } else {
+            throw Exception(response.message ?: "Rad etishda xatolik")
         }
     }
 }

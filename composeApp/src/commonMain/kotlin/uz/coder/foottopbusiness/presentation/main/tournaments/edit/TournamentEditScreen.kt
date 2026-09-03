@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,7 +63,7 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
             }
         )
 
-        var name by remember { mutableStateOf(tournament.name ?: "") }
+        var name by rememberSaveable { mutableStateOf(tournament.name ?: "") }
         
         fun formatFromApi(d: String?): String {
             if (d == null) return ""
@@ -70,20 +71,20 @@ class TournamentEditScreen(private val tournament: TournamentResponseDto) : Scre
             return if (parts.size == 3) "${parts[2]}.${parts[1]}.${parts[0]}" else d
         }
         
-        var startDate by remember { mutableStateOf(formatFromApi(tournament.startDate)) }
-        var endDate by remember { mutableStateOf(formatFromApi(tournament.endDate)) }
-        var startTime by remember { mutableStateOf(tournament.startTime ?: "") }
-        var endTime by remember { mutableStateOf(tournament.endTime ?: "") }
-        var maxTeams by remember { mutableStateOf(tournament.maxTeams?.toString() ?: "") }
-        var entryFee by remember { mutableStateOf(tournament.entryFee?.toInt()?.toString() ?: "") }
+        var startDate by rememberSaveable { mutableStateOf(formatFromApi(tournament.startDate)) }
+        var endDate by rememberSaveable { mutableStateOf(formatFromApi(tournament.endDate)) }
+        var startTime by rememberSaveable { mutableStateOf(tournament.startTime ?: "") }
+        var endTime by rememberSaveable { mutableStateOf(tournament.endTime ?: "") }
+        var maxTeams by rememberSaveable { mutableStateOf(tournament.maxTeams?.toString() ?: "") }
+        var entryFee by rememberSaveable { mutableStateOf(tournament.entryFee?.toInt()?.toString() ?: "") }
         
         // Manzil endi qanday saqlangan bo'lsa shundayligicha ko'rsatiladi.
         // Ilgari u split(", ").last() bilan ajratilardi - vergul ishlatilgan
         // manzilda ("Bunyodkor ko'chasi, 5-uy") faqat oxirgi bo'lak qolib,
         // qolgani tahrirlashdayoq yo'qolardi.
-        var preciseAddress by remember { mutableStateOf(tournament.address ?: "") }
-        var latitude by remember { mutableStateOf(tournament.location?.latitude) }
-        var longitude by remember { mutableStateOf(tournament.location?.longitude) }
+        var preciseAddress by rememberSaveable { mutableStateOf(tournament.address ?: "") }
+        var latitude by rememberSaveable { mutableStateOf(tournament.location?.latitude) }
+        var longitude by rememberSaveable { mutableStateOf(tournament.location?.longitude) }
 
         var showStartDatePicker by remember { mutableStateOf(false) }
         var showEndDatePicker by remember { mutableStateOf(false) }

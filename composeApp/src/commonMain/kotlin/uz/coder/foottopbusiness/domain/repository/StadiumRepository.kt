@@ -1,6 +1,7 @@
 package uz.coder.foottopbusiness.domain.repository
 
 import kotlinx.coroutines.flow.Flow
+import uz.coder.foottopbusiness.data.network.dto.stadium.ImageDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.PageStadiumResponseDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.RegionDto
@@ -37,6 +38,8 @@ interface StadiumRepository {
         openTime: String,
         closeTime: String,
         imageUrl: String,
+        /** Mavjud rasmlar. null bo'lsa [imageUrl] dan yasaladi (eski xatti-harakat). */
+        images: List<ImageDto>? = null,
         regionId: Int,
         districtId: Int,
         isActive: Boolean = true,

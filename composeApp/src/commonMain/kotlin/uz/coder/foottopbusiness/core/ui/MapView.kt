@@ -26,8 +26,14 @@ import org.maplibre.spatialk.geojson.Position
 import org.maplibre.compose.util.ClickResult
 import org.maplibre.compose.style.BaseStyle
 import kotlin.time.Duration.Companion.milliseconds
+import uz.coder.foottopbusiness.core.platform.LocationPermissionLauncher
+import uz.coder.foottopbusiness.core.platform.PermissionStatus
+import uz.coder.foottopbusiness.core.platform.checkLocationPermissionStatus
 import uz.coder.foottopbusiness.core.platform.getCurrentLocation
 import kotlinx.coroutines.launch
+
+/** Joriy joylashuvni aniqlash bosqichi — foydalanuvchiga holatni ko'rsatish uchun. */
+private enum class LocateState { Idle, Locating, Denied, Failed }
 
 @Composable
 fun MapView(
@@ -42,39 +48,82 @@ fun MapView(
     val scope = rememberCoroutineScope()
 
     var userLocation by remember { mutableStateOf<Pair<Double, Double>?>(null) }
-    
+    var locateState by remember { mutableStateOf(LocateState.Idle) }
+    var permissionRequest by remember { mutableStateOf(false) }
+    // Ruxsat so'rovi "Mening joylashuvim" tugmasidan kelganmi. Tugmadan kelgan
+    // bo'lsa tanlovni majburan yangilaymiz, ekran ochilishidan bo'lsa - yo'q.
+    var permissionFromFab by remember { mutableStateOf(false) }
+    var locateAttempt by remember { mutableIntStateOf(0) }
+
+    // Tahrirlash oqimida allaqachon tanlangan joy bor - uni joriy joylashuv
+    // bilan almashtirib yubormaymiz.
+    val hasInitialSelection = initialLatitude != null && initialLatitude != 0.0 &&
+            initialLongitude != null
+
     // Use the projection to calculate screen positions of markers
     // This allows them to stay pinned to their geo-coordinates as the map moves
-    
-    val initialLat = initialLatitude ?: userLocation?.first ?: tashkentLat
-    val initialLng = initialLongitude ?: userLocation?.second ?: tashkentLng
 
     val cameraState = rememberCameraState(
         firstPosition = CameraPosition(
-            target = Position(longitude = initialLng, latitude = initialLat),
-            zoom = if (initialLatitude != null && initialLatitude != 0.0) 15.0 else 12.0
+            target = if (hasInitialSelection) {
+                Position(longitude = initialLongitude, latitude = initialLatitude)
+            } else {
+                Position(longitude = tashkentLng, latitude = tashkentLat)
+            },
+            zoom = if (hasInitialSelection) 15.0 else 12.0
         )
     )
 
-    // Automatically get user location once on entry
-    LaunchedEffect(Unit) {
-        if (enabled) {
-            val loc = getCurrentLocation()
-            loc?.let {
-                userLocation = it
-                // Only animate to user location if NO initial selection exists
-                if (initialLatitude == null || initialLatitude == 0.0) {
-                    cameraState.animateTo(
-                        CameraPosition(
-                            target = Position(longitude = it.second, latitude = it.first),
-                            zoom = 15.0
-                        ),
-                        duration = 1000.milliseconds
-                    )
-                    onLocationSelected(it.first, it.second)
+    suspend fun locateAndSelect(forceSelect: Boolean) {
+        locateState = LocateState.Locating
+        val loc = getCurrentLocation()
+        if (loc == null) {
+            locateState = LocateState.Failed
+            return
+        }
+        userLocation = loc
+        locateState = LocateState.Idle
+        if (forceSelect || !hasInitialSelection) {
+            onLocationSelected(loc.first, loc.second)
+            cameraState.animateTo(
+                CameraPosition(
+                    target = Position(longitude = loc.second, latitude = loc.first),
+                    zoom = 15.0
+                ),
+                duration = 1000.milliseconds
+            )
+        }
+    }
+
+    LocationPermissionLauncher(
+        trigger = permissionRequest,
+        onResult = { status ->
+            permissionRequest = false
+            if (status == PermissionStatus.GRANTED) {
+                if (permissionFromFab) {
+                    permissionFromFab = false
+                    scope.launch { locateAndSelect(forceSelect = true) }
+                } else {
+                    locateAttempt++
                 }
+            } else {
+                permissionFromFab = false
+                locateState = LocateState.Denied
             }
         }
+    )
+
+    // Xarita ochilishi bilan joriy joylashuvni aniqlab, uni tanlab qo'yamiz.
+    // Ilgari ruxsat shu yerda so'ralmasdi: MapSelectionScreen alohida ekran
+    // bo'lgani uchun AddStadium'dagi ruxsat so'rovi bu yerga yetib kelmaydi va
+    // ruxsatsiz qurilmada xarita jim turardi.
+    LaunchedEffect(locateAttempt, enabled) {
+        if (!enabled) return@LaunchedEffect
+        if (checkLocationPermissionStatus() != PermissionStatus.GRANTED) {
+            if (locateAttempt == 0) permissionRequest = true else locateState = LocateState.Denied
+            return@LaunchedEffect
+        }
+        locateAndSelect(forceSelect = false)
     }
 
     Box(modifier = modifier) {
@@ -199,18 +248,12 @@ fun MapView(
             SmallFloatingActionButton(
                 onClick = {
                     scope.launch {
-                        val loc = getCurrentLocation()
-                        loc?.let {
-                            userLocation = it
-                            cameraState.animateTo(
-                                CameraPosition(
-                                    target = Position(longitude = it.second, latitude = it.first),
-                                    zoom = 15.0
-                                ),
-                                duration = 1000.milliseconds
-                            )
-                            onLocationSelected(it.first, it.second)
+                        if (checkLocationPermissionStatus() != PermissionStatus.GRANTED) {
+                            permissionFromFab = true
+                            permissionRequest = true
+                            return@launch
                         }
+                        locateAndSelect(forceSelect = true)
                     }
                 },
                 modifier = Modifier
@@ -221,6 +264,54 @@ fun MapView(
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
             ) {
                 Icon(Icons.Default.MyLocation, contentDescription = "Mening joylashuvim", modifier = Modifier.size(20.dp))
+            }
+        }
+
+        // Joylashuvni aniqlash holati. Ilgari muvaffaqiyatsizlik jim o'tib ketardi
+        // va admin nega joy tanlanmaganini bilmasdi.
+        if (enabled && locateState != LocateState.Idle) {
+            Surface(
+                modifier = Modifier.align(Alignment.TopCenter).padding(12.dp),
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 4.dp
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 14.dp, end = 6.dp, top = 4.dp, bottom = 4.dp)
+                ) {
+                    if (locateState == LocateState.Locating) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        Spacer(Modifier.width(10.dp))
+                    }
+                    Text(
+                        text = when (locateState) {
+                            LocateState.Locating -> "Joylashuv aniqlanmoqda..."
+                            LocateState.Denied -> "Joylashuvga ruxsat berilmagan"
+                            else -> "Joylashuv topilmadi"
+                        },
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    if (locateState != LocateState.Locating) {
+                        TextButton(
+                            onClick = {
+                                if (locateState == LocateState.Denied) {
+                                    permissionFromFab = true
+                                    permissionRequest = true
+                                } else {
+                                    scope.launch { locateAndSelect(forceSelect = true) }
+                                }
+                            }
+                        ) {
+                            Text(
+                                text = if (locateState == LocateState.Denied) "Ruxsat berish" else "Qayta urinish",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
             }
         }
     }

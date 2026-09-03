@@ -12,6 +12,8 @@ import uz.coder.foottopbusiness.domain.usecase.admin.CreateStaffUseCase
 import uz.coder.foottopbusiness.domain.usecase.admin.DashboardUseCase
 import uz.coder.foottopbusiness.domain.usecase.admin.WeeklyReportUseCase
 import uz.coder.foottopbusiness.domain.usecase.booking.CancelBookingUseCase
+import uz.coder.foottopbusiness.domain.usecase.booking.ConfirmBookingUseCase
+import uz.coder.foottopbusiness.domain.usecase.booking.RejectBookingUseCase
 import uz.coder.foottopbusiness.domain.usecase.booking.CreateBookingUseCase
 import uz.coder.foottopbusiness.domain.usecase.booking.GetBookingsByStadiumIdUseCase
 import uz.coder.foottopbusiness.domain.usecase.booking.GetBookingsUseCase
@@ -125,6 +127,8 @@ val appModule = module {
     factory { CreateStaffUseCase(get()) }
     factory { CreateBookingUseCase(get()) }
     factory { CancelBookingUseCase(get()) }
+    factory { ConfirmBookingUseCase(get()) }
+    factory { RejectBookingUseCase(get()) }
     factory { GetBookingsByStadiumIdUseCase(get()) }
     factory { GetBookingsUseCase(get()) }
 
@@ -139,7 +143,7 @@ val appModule = module {
     factory { AddStadiumViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { (stadium: StadiumResponse) -> EditStadiumViewModel(stadium, get(), get(), get(), get(), get()) }
     factory { (stadium: StadiumResponse) -> StadiumDetailsViewModel(stadium, get(), get(), get(), get(), get()) }
-    factory { BookingListViewModel(get(), get()) }
+    factory { BookingListViewModel(get(), get(), get(), get()) }
     factory { CoachesViewModel(get(), get(), get()) }
     factory { TournamentsViewModel(get(), get(), get(), get(), get(), get(), get()) }
     factory { SettingsViewModel(get(), get(), get(), get(), get()) }

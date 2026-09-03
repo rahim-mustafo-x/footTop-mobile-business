@@ -4,12 +4,12 @@ import androidx.compose.runtime.Composable
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import org.koin.compose.koinInject
+import cafe.adriel.voyager.koin.getScreenModel
 
 object AddStadiumVoyager : Screen {
     @Composable
     override fun Content() {
-        val viewModel = koinInject<AddStadiumViewModel>()
+        val viewModel = getScreenModel<AddStadiumViewModel>()
         val navigator = LocalNavigator.currentOrThrow
         AddStadiumScreen(
             viewModel = viewModel,

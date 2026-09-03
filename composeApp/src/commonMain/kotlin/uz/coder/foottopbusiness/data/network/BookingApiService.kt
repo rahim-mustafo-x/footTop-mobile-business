@@ -33,7 +33,9 @@ class BookingApiService(private val client: HttpClient) {
         startDateTo: String?,
         totalPrice: Double?,
         status: String?,
-        paymentMethod: String?
+        paymentMethod: String?,
+        page: Int,
+        size: Int
     ): BaseResponse<List<BookingResponseDto>> {
         return client.get("/v1/booking") {
             parameter("userId", userId)
@@ -44,11 +46,26 @@ class BookingApiService(private val client: HttpClient) {
             parameter("totalPrice", totalPrice)
             parameter("status", status)
             parameter("paymentMethod", paymentMethod)
+            parameter("page", page)
+            parameter("size", size)
         }.body()
     }
 
     suspend fun cancelBooking(id: Long, request: CancelBookingRequestDto): BaseResponse<BookingResponseDto> {
         return client.patch("/v1/booking/$id/cancel") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
+    }
+
+    /** Stadion egasi kutilayotgan bronni tasdiqlaydi. */
+    suspend fun confirmBooking(id: Long): BaseResponse<BookingResponseDto> {
+        return client.patch("/v1/booking/$id/confirm").body()
+    }
+
+    /** Stadion egasi kutilayotgan bronni rad etadi. */
+    suspend fun rejectBooking(id: Long, request: CancelBookingRequestDto): BaseResponse<BookingResponseDto> {
+        return client.patch("/v1/booking/$id/reject") {
             contentType(ContentType.Application.Json)
             setBody(request)
         }.body()

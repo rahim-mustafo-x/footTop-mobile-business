@@ -16,7 +16,16 @@ interface BookingRepository {
         startDateTo: String? = null,
         totalPrice: Double? = null,
         status: String? = null,
-        paymentMethod: String? = null
+        paymentMethod: String? = null,
+        page: Int = 0,
+        size: Int = DEFAULT_PAGE_SIZE
     ): Flow<List<BookingResponseDto>>
     fun cancelBooking(id: Long, reason: String): Flow<BookingResponseDto>
+    fun confirmBooking(id: Long): Flow<BookingResponseDto>
+    fun rejectBooking(id: Long, reason: String): Flow<BookingResponseDto>
+
+    companion object {
+        /** Backend ham shu qiymatni default sifatida ishlatadi. */
+        const val DEFAULT_PAGE_SIZE = 50
+    }
 }

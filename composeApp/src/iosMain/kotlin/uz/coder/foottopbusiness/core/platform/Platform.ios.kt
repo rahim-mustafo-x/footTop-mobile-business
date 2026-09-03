@@ -25,6 +25,10 @@ class IOSPlatform: Platform {
 
 actual fun getPlatform(): Platform = IOSPlatform()
 
+@OptIn(kotlin.experimental.ExperimentalNativeApi::class)
+actual val isDebugBuild: Boolean
+    get() = kotlin.native.Platform.isDebugBinary
+
 actual fun exitApp() {
     // iOS apps are not supposed to exit programmatically, but if forced:
     // platform.posix.exit(0)

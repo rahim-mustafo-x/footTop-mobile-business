@@ -47,6 +47,9 @@ class UserCreateViewModel(
     private fun loadUsers() {
         getAllUsersUseCase()
             .onEach { users -> _state.update { it.copy(users = users) } }
+            // OWNER uchun /v1/users endi 403 qaytaradi -- bu ekranni buzmasligi kerak,
+            // u holda faqat "yangi xodim" varianti qoladi.
+            .catch { _state.update { it.copy(users = emptyList()) } }
             .launchIn(screenModelScope)
     }
 
