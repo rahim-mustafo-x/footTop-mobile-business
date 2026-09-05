@@ -4,20 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FootTopBusiness | Privacy Policy</title>
-    <link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
-    <link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
-    <link href="[https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap)" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text: #0f172a;
-            --text-muted: #475569;
-            --primary: #0f766e;
-            --primary-dark: #0d5e58;
-            --primary-light: #f0fdfa;
-            --border: #e2e8f0;
-            --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            --bg-paper: #fcfbf9;
+            --surface: #ffffff;
+            --text-main: #1c1d1f;
+            --text-muted: #57595e;
+            --text-light: #76787d;
+            --accent: #1e3a8a;
+            --accent-subtle: #f0f4ff;
+            --border: #e6e4df;
+            --border-dark: #1c1d1f;
         }
 
         * {
@@ -27,373 +27,382 @@
         }
 
         body {
-            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg);
-            color: var(--text);
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+            background-color: var(--bg-paper);
+            color: var(--text-main);
             line-height: 1.7;
+            font-size: 15px;
             -webkit-font-smoothing: antialiased;
         }
 
-        .hero {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: #ffffff;
-            padding: 80px 20px 100px;
-            text-align: center;
-        }
-
-        .hero h1 {
-            font-size: 2.75rem;
-            font-weight: 700;
-            letter-spacing: -0.025em;
-            margin-bottom: 12px;
-        }
-
-        .hero p {
-            opacity: 0.9;
-            font-size: 1.05rem;
-            font-weight: 500;
-        }
-
-        .container {
-            max-width: 860px;
-            margin: -50px auto 80px;
+        .document-wrapper {
+            max-width: 880px;
+            margin: 60px auto;
             padding: 0 24px;
         }
 
-        .card {
-            background: var(--card);
-            border-radius: 20px;
-            padding: 48px;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
+        .document-header {
+            border-bottom: 2px solid var(--border-dark);
+            padding-bottom: 32px;
+            margin-bottom: 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 20px;
         }
 
-        .lead-text {
-            font-size: 1.1rem;
+        .brand-meta h1 {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 3rem;
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.01em;
+            color: var(--text-main);
+        }
+
+        .brand-meta .doc-type {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .doc-meta-table {
+            text-align: right;
+            font-size: 0.85rem;
             color: var(--text-muted);
-            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .doc-meta-table span {
+            display: block;
+        }
+
+        .doc-meta-table strong {
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        /* Editorial Content Layout */
+        .editorial-content {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 64px 56px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+        }
+
+        .lead-paragraph {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 1.4rem;
+            line-height: 1.6;
+            color: var(--text-main);
+            margin-bottom: 36px;
+        }
+
+        .executive-summary {
+            background: var(--accent-subtle);
+            border-left: 3px solid var(--accent);
+            padding: 20px 24px;
+            margin-bottom: 48px;
+            font-size: 0.95rem;
+        }
+
+        .executive-summary strong {
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.8rem;
+            display: block;
+            margin-bottom: 4px;
         }
 
         h2 {
-            color: var(--text);
-            margin: 40px 0 16px;
-            font-size: 1.5rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            padding-bottom: 8px;
-            border-bottom: 2px solid var(--primary-light);
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin: 48px 0 20px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
         }
 
-        h2:first-of-type {
-            margin-top: 24px;
+        h2::before {
+            content: "§";
+            font-size: 1.2rem;
+            color: var(--accent);
         }
 
         h3 {
-            margin: 24px 0 8px;
-            font-size: 1.15rem;
+            font-size: 1.05rem;
             font-weight: 600;
-            color: var(--primary-dark);
+            color: var(--text-main);
+            margin: 28px 0 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         p {
             color: var(--text-muted);
-            margin-bottom: 16px;
-            font-size: 0.975rem;
+            margin-bottom: 18px;
         }
 
         ul {
-            margin: 12px 0 20px 20px;
+            list-style: none;
+            margin: 16px 0 24px;
+        }
+
+        ul li {
+            position: relative;
+            padding-left: 20px;
+            margin-bottom: 10px;
             color: var(--text-muted);
         }
 
-        li {
-            margin: 10px 0;
-            padding-left: 4px;
-            font-size: 0.975rem;
+        ul li::before {
+            content: "—";
+            position: absolute;
+            left: 0;
+            color: var(--accent);
         }
 
-        li::marker {
-            color: var(--primary);
-        }
-
-        .note {
-            background: var(--primary-light);
-            border-left: 4px solid var(--primary);
-            padding: 18px 20px;
-            border-radius: 12px;
-            margin: 28px 0;
-            color: var(--primary-dark);
-            font-size: 0.975rem;
-        }
-
-        .note strong {
-            color: var(--primary-dark);
-        }
-
-        table {
+        /* Formal Archival Table */
+        .archive-table {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            margin: 24px 0;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            overflow: hidden;
+            border-collapse: collapse;
+            margin: 32px 0;
+            font-size: 0.9rem;
         }
 
-        th, td {
-            padding: 16px 20px;
+        .archive-table th {
             text-align: left;
-            font-size: 0.95rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-light);
+            border-bottom: 2px solid var(--text-main);
+            padding: 12px 16px;
         }
 
-        th {
-            background: #f1f5f9;
-            color: var(--text);
-            font-weight: 600;
+        .archive-table td {
+            padding: 16px;
             border-bottom: 1px solid var(--border);
-        }
-
-        td {
             color: var(--text-muted);
-            border-bottom: 1px solid var(--border);
+            vertical-align: top;
         }
 
-        tr:last-child td {
-            border-bottom: none;
+        .archive-table code {
+            font-family: monospace;
+            background: #f3f4f6;
+            padding: 2px 6px;
+            font-size: 0.85em;
+            color: var(--text-main);
+            border: 1px solid #e5e7eb;
         }
 
-        code {
-            background: #f1f5f9;
-            color: var(--primary-dark);
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.875em;
-            font-weight: 600;
-        }
-
-        .contact {
-            background: #f1f5f9;
-            border-radius: 14px;
-            padding: 24px;
-            margin-top: 24px;
+        /* Official Sign-off Section */
+        .contact-block {
+            margin-top: 48px;
+            padding-top: 32px;
+            border-top: 1px solid var(--border);
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
         }
 
         .contact-item h4 {
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
-            margin-bottom: 4px;
+            letter-spacing: 0.1em;
+            color: var(--text-light);
+            margin-bottom: 8px;
         }
 
-        .contact-item p {
-            color: var(--text);
-            font-weight: 600;
-            margin-bottom: 0;
-        }
-
-        .contact-item a {
-            color: var(--primary);
+        .contact-item p, .contact-item a {
+            font-weight: 500;
+            color: var(--text-main);
             text-decoration: none;
         }
 
         .contact-item a:hover {
-            text-decoration: underline;
+            color: var(--accent);
         }
 
-        .footer {
+        .document-footer {
+            margin-top: 48px;
             text-align: center;
-            color: var(--text-muted);
-            font-size: 0.875rem;
-            margin-top: 40px;
+            font-size: 0.8rem;
+            color: var(--text-light);
+            letter-spacing: 0.05em;
         }
 
-        @media (max-width: 640px) {
-            .hero {
-                padding: 60px 20px 80px;
+        @media (max-width: 768px) {
+            .editorial-content {
+                padding: 32px 24px;
             }
-            .hero h1 {
-                font-size: 2.1rem;
+            .document-header {
+                flex-direction: column;
+                align-items: flex-start;
             }
-            .card {
-                padding: 28px 20px;
+            .doc-meta-table {
+                text-align: left;
             }
-            
-            table, thead, tbody, th, td, tr {
-                display: block;
-            }
-            thead {
-                display: none;
-            }
-            tr {
-                border-bottom: 1px solid var(--border);
-                padding: 8px 0;
-            }
-            tr:last-child {
-                border-bottom: none;
-            }
-            td {
-                border: none;
-                padding: 8px 16px;
-            }
-            td::before {
-                content: attr(data-label);
-                display: block;
-                font-weight: 600;
-                color: var(--text);
-                font-size: 0.8rem;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-                margin-bottom: 4px;
+            .contact-block {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
 
-<header class="hero">
-    <h1>Privacy Policy</h1>
-    <p>FootTopBusiness • Last updated: October 27, 2026</p>
-</header>
+<div class="document-wrapper">
+    
+    <header class="document-header">
+        <div class="brand-meta">
+            <span class="doc-type">Official Policy Document</span>
+            <h1>FootTopBusiness</h1>
+        </div>
+        <div class="doc-meta-table">
+            <span><strong>Document Ref:</strong> PRIV-2026-V2</span>
+            <span><strong>Effective Date:</strong> October 27, 2026</span>
+            <span><strong>Status:</strong> Active</span>
+        </div>
+    </header>
 
-<main class="container">
-    <section class="card">
-
-        <p class="lead-text">
+    <main class="editorial-content">
+        
+        <p class="lead-paragraph">
             FootTopBusiness is committed to protecting your privacy and handling your information
-            responsibly. This policy explains what information we collect, how we use it,
-            and the choices available to you when using our application.
+            with formal responsibility. This policy details our data management practices, processing procedures,
+            and user rights within the platform.
         </p>
 
-        <div class="note">
-            <strong>In short:</strong> We collect only the information necessary to operate the app,
-            manage stadium bookings, send notifications, and keep your account secure.
+        <div class="executive-summary">
+            <strong>Executive Summary</strong>
+            We only process data required to operate the application, facilitate stadium reservations, deliver system communications, and maintain infrastructure security.
         </div>
 
-        <h2>Information We Collect</h2>
+        <h2>Information Collected</h2>
 
-        <h3>Account Information</h3>
+        <h3>Account Identifiers</h3>
         <ul>
-            <li>Full name</li>
-            <li>Phone number</li>
-            <li>Username</li>
-            <li>Account role (Owner, Coach, Admin, etc.)</li>
-            <li>Optional profile image</li>
+            <li>Full legal name</li>
+            <li>Phone contact number</li>
+            <li>System username</li>
+            <li>Assigned administrative role (Owner, Coach, Admin)</li>
+            <li>Optional profile imagery</li>
         </ul>
 
-        <h3>Location Information</h3>
+        <h3>Geographic Location</h3>
         <p>
-            With your permission, the app may access your location while you are using the map.
-            This allows us to display your current position and help you accurately select
-            stadium coordinates.
+            With explicit authorization, the application accesses location services exclusively while active. 
+            This enables coordinate resolution for accurate venue identification on interactive maps.
         </p>
         <p>
-            <strong>We do not collect location data in the background.</strong>
+            <em>Note: Background location collection is strictly non-operational.</em>
         </p>
 
-        <h3>Business & Booking Data</h3>
+        <h3>Business Operations</h3>
         <ul>
-            <li>Stadium details (name, address, pricing, working hours)</li>
-            <li>Booking and reservation records</li>
-            <li>Customer contact information provided during bookings</li>
-            <li>Revenue and tournament statistics</li>
+            <li>Facility profiles (designation, address, rate structures, operational hours)</li>
+            <li>Reservation registers and historical logs</li>
+            <li>Customer contact records linked to bookings</li>
+            <li>Financial yields and tournament analytical data</li>
         </ul>
 
-        <h3>Technical Information</h3>
+        <h3>Technical Telemetry</h3>
         <ul>
-            <li>Push notification tokens (Firebase Cloud Messaging)</li>
-            <li>Network connectivity status for synchronization</li>
+            <li>Messaging endpoint tokens (Firebase Cloud Messaging)</li>
+            <li>Network connectivity status for synchronizing state</li>
         </ul>
 
-        <h2>How We Use Your Information</h2>
+        <h2>Purpose of Processing</h2>
         <ul>
-            <li>Manage bookings, tournaments, and schedules</li>
-            <li>Provide role-based access to business features</li>
-            <li>Send real-time notifications and updates</li>
-            <li>Authenticate users and prevent unauthorized access</li>
+            <li>Execution of booking schedules, matches, and tournament fixtures</li>
+            <li>Provision of role-restricted access to administrative tools</li>
+            <li>Dispatch of critical system notifications</li>
+            <li>Identity authentication and access threat prevention</li>
         </ul>
 
-        <h2>Third-Party Services</h2>
+        <h2>Third-Party Integrations</h2>
         <p>
-            We do not sell your personal information. We use trusted third-party services that
-            help the application function properly.
+            Personal data is not commercialized or sold. Infrastructure services are limited to trusted technical providers required for operational viability:
         </p>
         <ul>
-            <li><strong>Firebase (Google):</strong> Notifications and analytics</li>
-            <li><strong>OpenStreetMap / OpenFreeMap:</strong> Maps and address lookup</li>
-            <li><strong>Private Backend Servers:</strong> Secure storage of application data</li>
+            <li><strong>Firebase (Google LLC):</strong> Push notifications and app telemetry</li>
+            <li><strong>OpenStreetMap / OpenFreeMap:</strong> Mapping interfaces and geocoding</li>
+            <li><strong>Private Infrastructure:</strong> Encrypted backend databases</li>
         </ul>
 
-        <h2>App Permissions</h2>
+        <h2>System Permissions</h2>
 
-        <table>
+        <table class="archive-table">
             <thead>
-            <tr>
-                <th>Permission</th>
-                <th>Purpose</th>
-            </tr>
+                <tr>
+                    <th>Identifier</th>
+                    <th>Functional Purpose</th>
+                </tr>
             </thead>
             <tbody>
-            <tr>
-                <td data-label="Permission"><code>INTERNET</code></td>
-                <td data-label="Purpose">Connect to our servers and synchronize data</td>
-            </tr>
-            <tr>
-                <td data-label="Permission"><code>ACCESS_FINE_LOCATION</code></td>
-                <td data-label="Purpose">Display your location and select stadium coordinates</td>
-            </tr>
-            <tr>
-                <td data-label="Permission"><code>POST_NOTIFICATIONS</code></td>
-                <td data-label="Purpose">Notify you about bookings, matches, and updates</td>
-            </tr>
+                <tr>
+                    <td><code>INTERNET</code></td>
+                    <td>Maintains active link to application servers for data synchronization.</td>
+                </tr>
+                <tr>
+                    <td><code>ACCESS_FINE_LOCATION</code></td>
+                    <td>Renders user position to assist coordinate selection for venues.</td>
+                </tr>
+                <tr>
+                    <td><code>POST_NOTIFICATIONS</code></td>
+                    <td>Delivers real-time status updates regarding reservations and schedules.</td>
+                </tr>
             </tbody>
         </table>
 
-        <h2>Data Retention</h2>
+        <h2>Retention & Erasure</h2>
         <p>
-            Your information is stored only as long as necessary to provide our services or
-            while your account remains active.
+            Data is maintained only for periods required to fulfill operational services or for the duration of active accounts.
         </p>
         <p>
-            You may request deletion of your account through a District or Super Admin.
-            Once approved, your personal information will be removed from our active systems.
+            Account deletion requests may be initiated via a District or Super Administrator. Upon confirmation, associated personal records are purged from active primary databases.
         </p>
 
-        <h2>Security</h2>
+        <h2>Security Protocol</h2>
         <p>
-            We protect your data using industry-standard security practices, including
-            JWT-based authentication and secure on-device storage for sensitive credentials.
+            Information security is enforced through standardized technical controls, including JSON Web Token (JWT) authorization protocols and secure local storage mechanisms for active sessions.
         </p>
 
-        <h2>Changes to This Policy</h2>
+        <h2>Amendments</h2>
         <p>
-            We may update this Privacy Policy from time to time. Any changes will be published
-            within the application or on this page, and the “Last updated” date will be revised.
+            Modifications to this document will be published directly within the platform. Revisions take effect upon publication with updated timestamp references.
         </p>
 
-        <h2>Contact Us</h2>
+        <h2>Direct Contacts</h2>
 
-        <div class="contact">
+        <div class="contact-block">
             <div class="contact-item">
-                <h4>Email</h4>
+                <h4>Electronic Mail</h4>
                 <p><a href="mailto:rahim.mustafo.x@gmail.com">rahim.mustafo.x@gmail.com</a></p>
             </div>
             <div class="contact-item">
-                <h4>In the App</h4>
+                <h4>In-App Channel</h4>
                 <p>Profile → Help & Contact</p>
             </div>
         </div>
 
-        <div class="footer">
-            © 2026 FootTopBusiness. All rights reserved.
-        </div>
+    </main>
 
-    </section>
-</main>
+    <footer class="document-footer">
+        © 2026 FootTopBusiness. All rights reserved. Formal Archival Record.
+    </footer>
+
+</div>
 
 </body>
 </html>
