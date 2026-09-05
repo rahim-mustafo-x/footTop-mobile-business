@@ -1,174 +1,276 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FootTopBusiness | Privacy Policy</title>
+    <link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
+    <link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
+    <link href="[https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap)" rel="stylesheet">
     <style>
-        :root{
-          --bg:#f4f7fb;
-          --card:#ffffff;
-          --text:#1f2937;
-          --muted:#6b7280;
-          --primary:#0f766e;
-          --primary-dark:#0b5e57;
-          --border:#e5e7eb;
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #0f172a;
+            --text-muted: #475569;
+            --primary: #0f766e;
+            --primary-dark: #0d5e58;
+            --primary-light: #f0fdfa;
+            --border: #e2e8f0;
+            --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
         }
 
-    ```
-    *{margin:0;padding:0;box-sizing:border-box;}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    body{
-      font-family: Inter, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height:1.75;
-    }
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
 
-    .hero{
-      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-      color:white;
-      padding:70px 20px;
-      text-align:center;
-    }
+        .hero {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: #ffffff;
+            padding: 80px 20px 100px;
+            text-align: center;
+        }
 
-    .hero h1{
-      font-size:2.6rem;
-      margin-bottom:10px;
-    }
+        .hero h1 {
+            font-size: 2.75rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            margin-bottom: 12px;
+        }
 
-    .hero p{
-      opacity:.9;
-      font-size:1rem;
-    }
+        .hero p {
+            opacity: 0.9;
+            font-size: 1.05rem;
+            font-weight: 500;
+        }
 
-    .container{
-      max-width:900px;
-      margin:-40px auto 60px;
-      padding:0 20px;
-    }
+        .container {
+            max-width: 860px;
+            margin: -50px auto 80px;
+            padding: 0 24px;
+        }
 
-    .card{
-      background:var(--card);
-      border-radius:18px;
-      padding:36px;
-      box-shadow:0 15px 40px rgba(15,118,110,.08);
-      border:1px solid var(--border);
-    }
+        .card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 48px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
 
-    h2{
-      color:var(--primary);
-      margin:32px 0 12px;
-      font-size:1.35rem;
-    }
+        .lead-text {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
 
-    h3{
-      margin:18px 0 8px;
-      font-size:1.05rem;
-    }
+        h2 {
+            color: var(--text);
+            margin: 40px 0 16px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary-light);
+        }
 
-    p{
-      color:#374151;
-      margin-bottom:14px;
-    }
+        h2:first-of-type {
+            margin-top: 24px;
+        }
 
-    ul{
-      margin:10px 0 18px 22px;
-    }
+        h3 {
+            margin: 24px 0 8px;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
 
-    li{
-      margin:8px 0;
-    }
+        p {
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            font-size: 0.975rem;
+        }
 
-    .note{
-      background:#ecfeff;
-      border-left:4px solid var(--primary);
-      padding:14px 16px;
-      border-radius:10px;
-      margin:18px 0;
-    }
+        ul {
+            margin: 12px 0 20px 20px;
+            color: var(--text-muted);
+        }
 
-    table{
-      width:100%;
-      border-collapse:collapse;
-      margin:18px 0;
-      overflow:hidden;
-      border-radius:12px;
-      border:1px solid var(--border);
-    }
+        li {
+            margin: 10px 0;
+            padding-left: 4px;
+            font-size: 0.975rem;
+        }
 
-    th,td{
-      padding:14px 16px;
-      text-align:left;
-      border-bottom:1px solid var(--border);
-    }
+        li::marker {
+            color: var(--primary);
+        }
 
-    th{
-      background:#f8fafc;
-      color:#111827;
-    }
+        .note {
+            background: var(--primary-light);
+            border-left: 4px solid var(--primary);
+            padding: 18px 20px;
+            border-radius: 12px;
+            margin: 28px 0;
+            color: var(--primary-dark);
+            font-size: 0.975rem;
+        }
 
-    tr:last-child td{
-      border-bottom:none;
-    }
+        .note strong {
+            color: var(--primary-dark);
+        }
 
-    .contact{
-      background:#f8fafc;
-      border:1px solid var(--border);
-      border-radius:14px;
-      padding:20px;
-      margin-top:16px;
-    }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 24px 0;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
 
-    .footer{
-      text-align:center;
-      color:var(--muted);
-      font-size:.9rem;
-      margin-top:34px;
-    }
+        th, td {
+            padding: 16px 20px;
+            text-align: left;
+            font-size: 0.95rem;
+        }
 
-    @media (max-width:640px){
-      .hero h1{font-size:2rem;}
-      .card{padding:24px;}
-      table,thead,tbody,th,td,tr{display:block;}
-      thead{display:none;}
-      tr{border-bottom:1px solid var(--border);}
-      td{
-        border:none;
-        padding:12px 0;
-      }
-      td::before{
-        content:attr(data-label);
-        display:block;
-        font-weight:600;
-        color:#111827;
-        margin-bottom:4px;
-      }
-    }
-    ```
+        th {
+            background: #f1f5f9;
+            color: var(--text);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }
 
+        td {
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        code {
+            background: #f1f5f9;
+            color: var(--primary-dark);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.875em;
+            font-weight: 600;
+        }
+
+        .contact {
+            background: #f1f5f9;
+            border-radius: 14px;
+            padding: 24px;
+            margin-top: 24px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .contact-item h4 {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .contact-item p {
+            color: var(--text);
+            font-weight: 600;
+            margin-bottom: 0;
+        }
+
+        .contact-item a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .contact-item a:hover {
+            text-decoration: underline;
+        }
+
+        .footer {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-top: 40px;
+        }
+
+        @media (max-width: 640px) {
+            .hero {
+                padding: 60px 20px 80px;
+            }
+            .hero h1 {
+                font-size: 2.1rem;
+            }
+            .card {
+                padding: 28px 20px;
+            }
+            
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+            thead {
+                display: none;
+            }
+            tr {
+                border-bottom: 1px solid var(--border);
+                padding: 8px 0;
+            }
+            tr:last-child {
+                border-bottom: none;
+            }
+            td {
+                border: none;
+                padding: 8px 16px;
+            }
+            td::before {
+                content: attr(data-label);
+                display: block;
+                font-weight: 600;
+                color: var(--text);
+                font-size: 0.8rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                margin-bottom: 4px;
+            }
+        }
     </style>
 </head>
 <body>
 
 <header class="hero">
     <h1>Privacy Policy</h1>
-    <p>FootTopBusiness • Last updated: October 27, 2023</p>
+    <p>FootTopBusiness • Last updated: October 27, 2026</p>
 </header>
 
 <main class="container">
     <section class="card">
 
-        ```
-        <p>
+        <p class="lead-text">
             FootTopBusiness is committed to protecting your privacy and handling your information
             responsibly. This policy explains what information we collect, how we use it,
             and the choices available to you when using our application.
         </p>
 
         <div class="note">
-            <strong>In short:</strong> we collect only the information necessary to operate the app,
+            <strong>In short:</strong> We collect only the information necessary to operate the app,
             manage stadium bookings, send notifications, and keep your account secure.
         </div>
 
@@ -221,9 +323,9 @@
             help the application function properly.
         </p>
         <ul>
-            <li><strong>Firebase (Google):</strong> notifications and analytics</li>
-            <li><strong>OpenStreetMap / OpenFreeMap:</strong> maps and address lookup</li>
-            <li><strong>Private Backend Servers:</strong> secure storage of application data</li>
+            <li><strong>Firebase (Google):</strong> Notifications and analytics</li>
+            <li><strong>OpenStreetMap / OpenFreeMap:</strong> Maps and address lookup</li>
+            <li><strong>Private Backend Servers:</strong> Secure storage of application data</li>
         </ul>
 
         <h2>App Permissions</h2>
@@ -276,17 +378,21 @@
         <h2>Contact Us</h2>
 
         <div class="contact">
-            <p><strong>Email</strong><br/>support@uzcoder.uz</p>
-            <p><strong>In the App</strong><br/>Profile → Help & Contact</p>
+            <div class="contact-item">
+                <h4>Email</h4>
+                <p><a href="mailto:rahim.mustafo.x@gmail.com">rahim.mustafo.x@gmail.com</a></p>
+            </div>
+            <div class="contact-item">
+                <h4>In the App</h4>
+                <p>Profile → Help & Contact</p>
+            </div>
         </div>
 
         <div class="footer">
-            © 2023 FootTopBusiness. All rights reserved.
+            © 2026 FootTopBusiness. All rights reserved.
         </div>
 
     </section>
-    ```
-
 </main>
 
 </body>
