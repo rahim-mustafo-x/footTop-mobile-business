@@ -1,7 +1,6 @@
 package uz.coder.foottopbusiness.core.ui
 
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.Canvas
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,27 +13,49 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.maplibre.compose.map.MaplibreMap
-import org.maplibre.compose.camera.rememberCameraState
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.launch
+import org.maplibre.compose.camera.CameraMoveReason
 import org.maplibre.compose.camera.CameraPosition
-import org.maplibre.spatialk.geojson.Position
-import org.maplibre.compose.util.ClickResult
+import org.maplibre.compose.camera.rememberCameraState
+import org.maplibre.compose.map.MaplibreMap
 import org.maplibre.compose.style.BaseStyle
-import kotlin.time.Duration.Companion.milliseconds
+import org.maplibre.compose.util.ClickResult
+import org.maplibre.spatialk.geojson.Position
 import uz.coder.foottopbusiness.core.platform.LocationPermissionLauncher
 import uz.coder.foottopbusiness.core.platform.PermissionStatus
 import uz.coder.foottopbusiness.core.platform.checkLocationPermissionStatus
 import uz.coder.foottopbusiness.core.platform.getCurrentLocation
-import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 /** Joriy joylashuvni aniqlash bosqichi — foydalanuvchiga holatni ko'rsatish uchun. */
-private enum class LocateState { Idle, Locating, Denied, Failed }
+private enum class LocateState { Idle, Locating, Denied, Failed, OutOfRegion }
 
+private const val TASHKENT_LAT = 41.311081
+private const val TASHKENT_LNG = 69.240562
+private const val DEFAULT_ZOOM = 12.0
+private const val SELECTED_ZOOM = 16.0
+
+/**
+ * O'zbekiston chegaralari (taxminiy). Stadionlar faqat shu yerda bo'ladi, shuning uchun
+ * undan tashqaridagi GPS natijasi (emulyatorning standart AQSh joylashuvi, eskirgan kesh)
+ * avtomatik tanlanmaydi.
+ */
+private fun isInUzbekistan(lat: Double, lng: Double) = lat in 37.0..45.8 && lng in 55.8..73.3
+
+private fun Double?.isValidCoordinate() = this != null && this != 0.0
+
+/**
+ * Joy tanlash xaritasi. Tanlangan joy — ekran markazidagi pin: foydalanuvchi xaritani
+ * suradi yoki kerakli joyga bosadi, markaz tanlanadi.
+ *
+ * @param enabled false bo'lsa faqat ko'rish rejimi (forma ichidagi kichik xarita):
+ *   kamera tanlangan joyga ergashadi, GPS so'ralmaydi.
+ */
 @Composable
 fun MapView(
     modifier: Modifier = Modifier,
@@ -43,9 +64,12 @@ fun MapView(
     enabled: Boolean = true,
     onLocationSelected: (Double, Double) -> Unit
 ) {
-    val tashkentLat = 41.311081
-    val tashkentLng = 69.240562
     val scope = rememberCoroutineScope()
+    val currentOnLocationSelected by rememberUpdatedState(onLocationSelected)
+
+    val hasSelection = initialLatitude.isValidCoordinate() && initialLongitude.isValidCoordinate()
+    // Ekran ochilgandagi holat: tahrirlashda mavjud joyni GPS bilan almashtirib yubormaymiz
+    val openedWithSelection = remember { hasSelection }
 
     var userLocation by remember { mutableStateOf<Pair<Double, Double>?>(null) }
     var locateState by remember { mutableStateOf(LocateState.Idle) }
@@ -54,25 +78,53 @@ fun MapView(
     // bo'lsa tanlovni majburan yangilaymiz, ekran ochilishidan bo'lsa - yo'q.
     var permissionFromFab by remember { mutableStateOf(false) }
     var locateAttempt by remember { mutableIntStateOf(0) }
-
-    // Tahrirlash oqimida allaqachon tanlangan joy bor - uni joriy joylashuv
-    // bilan almashtirib yubormaymiz.
-    val hasInitialSelection = initialLatitude != null && initialLatitude != 0.0 &&
-            initialLongitude != null
-
-    // Use the projection to calculate screen positions of markers
-    // This allows them to stay pinned to their geo-coordinates as the map moves
+    // Foydalanuvchi o'zi joy tanladimi. GPS kechikib kelsa uning tanlovini bosib ketmasin.
+    var userPicked by remember { mutableStateOf(false) }
 
     val cameraState = rememberCameraState(
         firstPosition = CameraPosition(
-            target = if (hasInitialSelection) {
-                Position(longitude = initialLongitude, latitude = initialLatitude)
+            target = if (hasSelection) {
+                Position(longitude = initialLongitude!!, latitude = initialLatitude!!)
             } else {
-                Position(longitude = tashkentLng, latitude = tashkentLat)
+                Position(longitude = TASHKENT_LNG, latitude = TASHKENT_LAT)
             },
-            zoom = if (hasInitialSelection) 15.0 else 12.0
+            zoom = if (hasSelection) SELECTED_ZOOM else DEFAULT_ZOOM
         )
     )
+
+    // Ko'rish rejimida kamera tanlovga ergashadi. rememberCameraState saveable:
+    // xarita ekranidan qaytganda eski kamera tiklanib, yangi joy ko'rinmay qolardi.
+    if (!enabled) {
+        LaunchedEffect(initialLatitude, initialLongitude) {
+            if (hasSelection) {
+                cameraState.position = CameraPosition(
+                    target = Position(longitude = initialLongitude!!, latitude = initialLatitude!!),
+                    zoom = SELECTED_ZOOM
+                )
+            }
+        }
+    }
+
+    // Foydalanuvchi xaritani surib to'xtatganda markaz tanlanadi
+    if (enabled) {
+        LaunchedEffect(cameraState) {
+            snapshotFlow { cameraState.isCameraMoving }
+                .drop(1)
+                .filter { moving -> !moving && cameraState.moveReason == CameraMoveReason.GESTURE }
+                .collect {
+                    userPicked = true
+                    val target = cameraState.position.target
+                    currentOnLocationSelected(target.latitude, target.longitude)
+                }
+        }
+    }
+
+    suspend fun moveCameraTo(lat: Double, lng: Double) {
+        cameraState.animateTo(
+            CameraPosition(target = Position(longitude = lng, latitude = lat), zoom = SELECTED_ZOOM),
+            duration = 800.milliseconds
+        )
+    }
 
     suspend fun locateAndSelect(forceSelect: Boolean) {
         locateState = LocateState.Locating
@@ -82,16 +134,20 @@ fun MapView(
             return
         }
         userLocation = loc
-        locateState = LocateState.Idle
-        if (forceSelect || !hasInitialSelection) {
-            onLocationSelected(loc.first, loc.second)
-            cameraState.animateTo(
-                CameraPosition(
-                    target = Position(longitude = loc.second, latitude = loc.first),
-                    zoom = 15.0
-                ),
-                duration = 1000.milliseconds
-            )
+        val (lat, lng) = loc
+        when {
+            forceSelect -> {
+                locateState = LocateState.Idle
+                currentOnLocationSelected(lat, lng)
+                moveCameraTo(lat, lng)
+            }
+            openedWithSelection || userPicked -> locateState = LocateState.Idle
+            !isInUzbekistan(lat, lng) -> locateState = LocateState.OutOfRegion
+            else -> {
+                locateState = LocateState.Idle
+                currentOnLocationSelected(lat, lng)
+                moveCameraTo(lat, lng)
+            }
         }
     }
 
@@ -114,9 +170,7 @@ fun MapView(
     )
 
     // Xarita ochilishi bilan joriy joylashuvni aniqlab, uni tanlab qo'yamiz.
-    // Ilgari ruxsat shu yerda so'ralmasdi: MapSelectionScreen alohida ekran
-    // bo'lgani uchun AddStadium'dagi ruxsat so'rovi bu yerga yetib kelmaydi va
-    // ruxsatsiz qurilmada xarita jim turardi.
+    // MapSelectionScreen alohida ekran bo'lgani uchun ruxsat shu yerda so'raladi.
     LaunchedEffect(locateAttempt, enabled) {
         if (!enabled) return@LaunchedEffect
         if (checkLocationPermissionStatus() != PermissionStatus.GRANTED) {
@@ -133,7 +187,9 @@ fun MapView(
             cameraState = cameraState,
             onMapClick = { position, _ ->
                 if (enabled) {
-                    onLocationSelected(position.latitude, position.longitude)
+                    userPicked = true
+                    currentOnLocationSelected(position.latitude, position.longitude)
+                    scope.launch { moveCameraTo(position.latitude, position.longitude) }
                     ClickResult.Consume
                 } else {
                     ClickResult.Pass
@@ -141,106 +197,33 @@ fun MapView(
             }
         )
 
-        // User Current GPS Location Marker (Blue)
+        // Foydalanuvchining GPS joylashuvi. cameraState.position o'qilishi shart:
+        // aks holda xarita surilganda marker qayta joylashmay, joyida qotib qoladi.
         userLocation?.let { (uLat, uLng) ->
-            val userPos = Position(longitude = uLng, latitude = uLat)
-            // projection?.screenLocationFromPosition keeps it pinned to geo-coordinates
-            val userOffset = cameraState.projection?.screenLocationFromPosition(userPos) ?: DpOffset.Zero
-            
-            if (userOffset != DpOffset.Zero) {
+            @Suppress("UNUSED_VARIABLE")
+            val cameraPosition = cameraState.position
+            val userOffset = cameraState.projection
+                ?.screenLocationFromPosition(Position(longitude = uLng, latitude = uLat))
+            if (userOffset != null) {
                 Icon(
                     imageVector = Icons.Default.PersonPinCircle,
                     contentDescription = "Siz shu yerdamisiz",
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
                         .size(36.dp)
-                        .absoluteOffset(
-                            x = userOffset.x - 18.dp,
-                            y = userOffset.y - 18.dp
-                        )
+                        .absoluteOffset(x = userOffset.x - 18.dp, y = userOffset.y - 18.dp)
                 )
             }
         }
 
-        // Selected Location Marker (Red)
-        if (initialLatitude != null && initialLongitude != null && initialLatitude != 0.0) {
-            val markerPosition = Position(longitude = initialLongitude, latitude = initialLatitude)
-            val screenOffset = cameraState.projection?.screenLocationFromPosition(markerPosition) ?: DpOffset.Zero
-            
-            if (screenOffset != DpOffset.Zero) {
-                // Pulsing animation for the selected location
-                val infiniteTransition = rememberInfiniteTransition()
-                val pulseScale by infiniteTransition.animateFloat(
-                    initialValue = 0.5f,
-                    targetValue = 1.8f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(2000, easing = LinearOutSlowInEasing),
-                        repeatMode = RepeatMode.Restart
-                    )
-                )
-                val pulseAlpha by infiniteTransition.animateFloat(
-                    initialValue = 0.6f,
-                    targetValue = 0.0f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(2000, easing = LinearOutSlowInEasing),
-                        repeatMode = RepeatMode.Restart
-                    )
-                )
-
-                Box(
-                    modifier = Modifier.absoluteOffset(
-                        x = screenOffset.x - 50.dp,
-                        y = screenOffset.y - 75.dp
-                    ).width(100.dp),
-                    contentAlignment = Alignment.BottomCenter
-                ) {
-                    // Pulsing effect centered at the tip of the pin
-                    Canvas(modifier = Modifier.size(60.dp).align(Alignment.BottomCenter).offset(y = 30.dp)) {
-                        drawCircle(
-                            color = Color.Red,
-                            radius = (size.minDimension / 2) * pulseScale,
-                            alpha = pulseAlpha,
-                            style = Stroke(width = 3.dp.toPx())
-                        )
-                    }
-
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(bottom = 12.dp)
-                    ) {
-                        Surface(
-                            color = Color.Red,
-                            shape = RoundedCornerShape(8.dp),
-                            shadowElevation = 6.dp,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        ) {
-                            Text(
-                                "SIZ TANLAGAN JOY",
-                                color = Color.White,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                            )
-                        }
-                        
-                        Box(contentAlignment = Alignment.Center) {
-                            // Shadow/Circle background for the pin
-                            Surface(
-                                modifier = Modifier.size(24.dp).offset(y = 12.dp),
-                                color = Color.Black.copy(alpha = 0.25f),
-                                shape = CircleShape
-                            ) {}
-                            
-                            Icon(
-                                imageVector = Icons.Default.LocationOn,
-                                contentDescription = "Tanlangan joy",
-                                tint = Color.Red,
-                                modifier = Modifier.size(52.dp)
-                            )
-                        }
-                    }
-                }
-            }
+        // Tanlangan joy — markazdagi pin. Tanlanishi mumkin bo'lgan joy ham shu (tahrirlash
+        // rejimida), shuning uchun u doim ko'rinadi; ko'rish rejimida faqat tanlov bo'lsa.
+        if (enabled || hasSelection) {
+            CenterPin(
+                lifted = enabled && cameraState.isCameraMoving,
+                showLabel = hasSelection,
+                modifier = Modifier.align(Alignment.Center)
+            )
         }
 
         // My Location FAB (Bottom Right)
@@ -267,50 +250,122 @@ fun MapView(
             }
         }
 
-        // Joylashuvni aniqlash holati. Ilgari muvaffaqiyatsizlik jim o'tib ketardi
-        // va admin nega joy tanlanmaganini bilmasdi.
+        // Joylashuvni aniqlash holati
         if (enabled && locateState != LocateState.Idle) {
+            LocateStatusChip(
+                state = locateState,
+                onAction = {
+                    if (locateState == LocateState.Denied) {
+                        permissionFromFab = true
+                        permissionRequest = true
+                    } else {
+                        scope.launch { locateAndSelect(forceSelect = true) }
+                    }
+                },
+                modifier = Modifier.align(Alignment.TopCenter).padding(12.dp)
+            )
+        } else if (enabled && !hasSelection) {
             Surface(
                 modifier = Modifier.align(Alignment.TopCenter).padding(12.dp),
                 shape = RoundedCornerShape(20.dp),
                 color = MaterialTheme.colorScheme.surface,
                 shadowElevation = 4.dp
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(start = 14.dp, end = 6.dp, top = 4.dp, bottom = 4.dp)
+                Text(
+                    "Xaritani suring yoki kerakli joyga bosing",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                )
+            }
+        }
+    }
+}
+
+/** Markazdagi pin: uchi aynan xarita markazida. Surish paytida biroz ko'tariladi. */
+@Composable
+private fun CenterPin(lifted: Boolean, showLabel: Boolean, modifier: Modifier = Modifier) {
+    val pinSize = 48.dp
+    val lift by animateDpAsState(if (lifted) 10.dp else 0.dp)
+
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        // Pin uchidagi soya — tanlanadigan nuqta
+        Surface(
+            modifier = Modifier.size(8.dp),
+            color = Color.Black.copy(alpha = 0.35f),
+            shape = CircleShape
+        ) {}
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            // Ustun pastki cheti markazga tushishi uchun yarim balandligiga yuqoriga suramiz
+            // (yorliq ~24dp). LocationOn uchi ikonka pastidan ~4dp yuqorida.
+            modifier = Modifier.offset(y = -(pinSize / 2) - (if (showLabel) 12.dp else 0.dp) - lift + 4.dp)
+        ) {
+            if (showLabel) {
+                Surface(
+                    color = Color.Red,
+                    shape = RoundedCornerShape(8.dp),
+                    shadowElevation = 6.dp,
+                    modifier = Modifier.padding(bottom = 2.dp)
                 ) {
-                    if (locateState == LocateState.Locating) {
-                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                        Spacer(Modifier.width(10.dp))
-                    }
                     Text(
-                        text = when (locateState) {
-                            LocateState.Locating -> "Joylashuv aniqlanmoqda..."
-                            LocateState.Denied -> "Joylashuvga ruxsat berilmagan"
-                            else -> "Joylashuv topilmadi"
+                        "SIZ TANLAGAN JOY",
+                        color = Color.White,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+            }
+            Icon(
+                imageVector = Icons.Default.LocationOn,
+                contentDescription = "Tanlangan joy",
+                tint = Color.Red,
+                modifier = Modifier.size(pinSize)
+            )
+        }
+    }
+}
+
+@Composable
+private fun LocateStatusChip(state: LocateState, onAction: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 4.dp
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(start = 14.dp, end = 6.dp, top = 4.dp, bottom = 4.dp)
+        ) {
+            if (state == LocateState.Locating) {
+                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                Spacer(Modifier.width(10.dp))
+            }
+            Text(
+                text = when (state) {
+                    LocateState.Locating -> "Joylashuv aniqlanmoqda..."
+                    LocateState.Denied -> "Joylashuvga ruxsat berilmagan"
+                    LocateState.OutOfRegion -> "Joylashuvingiz O'zbekistondan tashqarida"
+                    else -> "Joylashuv topilmadi"
+                },
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(vertical = if (state == LocateState.Locating) 8.dp else 0.dp)
+            )
+            if (state != LocateState.Locating) {
+                TextButton(onClick = onAction) {
+                    Text(
+                        text = when (state) {
+                            LocateState.Denied -> "Ruxsat berish"
+                            LocateState.OutOfRegion -> "Baribir tanlash"
+                            else -> "Qayta urinish"
                         },
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurface
+                        fontWeight = FontWeight.SemiBold
                     )
-                    if (locateState != LocateState.Locating) {
-                        TextButton(
-                            onClick = {
-                                if (locateState == LocateState.Denied) {
-                                    permissionFromFab = true
-                                    permissionRequest = true
-                                } else {
-                                    scope.launch { locateAndSelect(forceSelect = true) }
-                                }
-                            }
-                        ) {
-                            Text(
-                                text = if (locateState == LocateState.Denied) "Ruxsat berish" else "Qayta urinish",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                    }
                 }
             }
         }
