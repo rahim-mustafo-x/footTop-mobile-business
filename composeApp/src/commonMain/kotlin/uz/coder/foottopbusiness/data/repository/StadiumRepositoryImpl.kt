@@ -9,6 +9,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import uz.coder.foottopbusiness.core.log
+import uz.coder.foottopbusiness.core.platform.PickedImage
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.data.network.StadiumApiService
 import uz.coder.foottopbusiness.data.network.dto.BaseResponse
@@ -39,21 +40,25 @@ class StadiumRepositoryImpl(
     override fun createStadium(
         name: String, description: String, type: String, duration: String,
         capacity: Int, pricePerHour: Int, openTime: String, closeTime: String,
-        imageUrl: String, regionId: Int, districtId: Int, ownerId: Int?, phone: String?,
+        images: List<PickedImage>, regionId: Int, districtId: Int, ownerId: Int?, phone: String?,
         latitude: Double?, longitude: Double?, address: String?,
     ): Flow<StadiumResponse> = flow {
         val finalOwnerId = ownerId ?: preferencesManager.userId.first().takeIf { it != 0 }
-        val response = stadiumApiService.createStadium(
-            request = CreateStadiumRequest(
-                name = name, phone = phone, ownerId = finalOwnerId, regionId = regionId, districtId = districtId,
-                description = description, 
-                location = LocationDto(latitude = latitude, longitude = longitude, address = address),
-                type = type, duration = duration,
-                capacity = capacity, pricePerHour = pricePerHour,
-                images = if (imageUrl.isNotBlank()) listOf(ImageDto(imageUrl)) else emptyList(),
-                isActive = true
-            )
+        val request = CreateStadiumRequest(
+            name = name, phone = phone, ownerId = finalOwnerId, regionId = regionId, districtId = districtId,
+            description = description,
+            location = LocationDto(latitude = latitude, longitude = longitude, address = address),
+            type = type, duration = duration,
+            capacity = capacity, pricePerHour = pricePerHour,
+            // Rasmlar endi faqat multipart orqali qabul qilinadi, JSON'dagi images e'tiborsiz qoldiriladi
+            images = emptyList(),
+            isActive = true
         )
+        val response = if (images.isEmpty()) {
+            stadiumApiService.createStadium(request)
+        } else {
+            stadiumApiService.createStadiumWithImages(request, images)
+        }
         val data = response.data ?: throw Exception(response.message ?: "Xatolik yuz berdi")
         
         stadiumApiService.updateOpenCloseTime(
@@ -176,6 +181,21 @@ class StadiumRepositoryImpl(
         emit(Unit)
     }.catch {
         log("StadiumRepository", "updateOpenCloseTime error: ${it.message}")
+    }
+
+    override fun addStadiumImages(id: Int, images: List<PickedImage>): Flow<StadiumResponse> = flow {
+        val response = stadiumApiService.addStadiumImages(id.toLong(), images)
+        emit(response.data ?: throw Exception(response.message ?: "Xatolik yuz berdi"))
+    }.catch {
+        log("StadiumRepository", "addStadiumImages error: ${it.message}")
+        throw it
+    }
+
+    override fun deleteStadiumImage(id: Int, url: String): Flow<StadiumResponse?> = flow {
+        emit(stadiumApiService.deleteStadiumImage(id.toLong(), url).data)
+    }.catch {
+        log("StadiumRepository", "deleteStadiumImage error: ${it.message}")
+        throw it
     }
 
     override fun deleteStadium(id: Int) = flow {

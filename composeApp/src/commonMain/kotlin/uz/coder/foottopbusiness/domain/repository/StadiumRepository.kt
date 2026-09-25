@@ -1,6 +1,7 @@
 package uz.coder.foottopbusiness.domain.repository
 
 import kotlinx.coroutines.flow.Flow
+import uz.coder.foottopbusiness.core.platform.PickedImage
 import uz.coder.foottopbusiness.data.network.dto.stadium.ImageDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.PageStadiumResponseDto
@@ -17,7 +18,8 @@ interface StadiumRepository {
         pricePerHour: Int,
         openTime: String,
         closeTime: String,
-        imageUrl: String,
+        /** Stadion bilan birga multipart orqali yuboriladigan rasmlar (ko'pi bilan 10 ta). */
+        images: List<PickedImage> = emptyList(),
         regionId: Int,
         districtId: Int,
         ownerId: Int? = null,
@@ -74,6 +76,12 @@ interface StadiumRepository {
 
     fun getRegions(): Flow<List<RegionDto>>
     fun getDistricts(regionId: Int): Flow<List<DistrictDto>>
+
+    /** Mavjud stadionga rasm qo'shadi. Yangilangan stadionni qaytaradi. */
+    fun addStadiumImages(id: Int, images: List<PickedImage>): Flow<StadiumResponse>
+
+    /** Rasmni o'chiradi. Server stadionni qaytarmasa null. */
+    fun deleteStadiumImage(id: Int, url: String): Flow<StadiumResponse?>
 
     suspend fun saveRegionId(id: Int)
     suspend fun saveDistrictId(id: Int)

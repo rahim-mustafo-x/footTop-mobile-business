@@ -365,6 +365,15 @@ interface Language {
     val conflict: String
     val badRequest: String
     val unknownNetworkError: String
+
+    val imageUnsupportedType: String
+    val imageTooLarge: String
+    val tooManyImages: String
+    val stadiumPhotos: String
+    val deletePhotoConfirm: String
+    val chooseFromGallery: String
+    val takePhoto: String
+    val cameraUnavailable: String
 }
 
 class EnLanguage : Language {
@@ -708,6 +717,15 @@ class EnLanguage : Language {
     override val conflict = "Data already exists or conflict occurred"
     override val badRequest = "Bad request"
     override val unknownNetworkError = "Network error"
+
+    override val imageUnsupportedType = "Only JPG, PNG or WEBP images are allowed"
+    override val imageTooLarge = "Image is too large (max 5 MB per image, 30 MB total)"
+    override val tooManyImages = "A stadium can have at most 10 photos"
+    override val stadiumPhotos = "Stadium photos"
+    override val deletePhotoConfirm = "Delete this photo? It will be removed from the stadium immediately."
+    override val chooseFromGallery = "Choose from gallery"
+    override val takePhoto = "Take a photo"
+    override val cameraUnavailable = "Camera is not available on this device"
 }
 
 class RuLanguage : Language {
@@ -1051,6 +1069,15 @@ class RuLanguage : Language {
     override val conflict = "Данные уже существуют или возник конфликт"
     override val badRequest = "Неверный запрос"
     override val unknownNetworkError = "Ошибка сети"
+
+    override val imageUnsupportedType = "Допускаются только изображения JPG, PNG или WEBP"
+    override val imageTooLarge = "Изображение слишком большое (до 5 МБ каждое, всего до 30 МБ)"
+    override val tooManyImages = "У стадиона может быть не более 10 фото"
+    override val stadiumPhotos = "Фото стадиона"
+    override val deletePhotoConfirm = "Удалить это фото? Оно сразу будет удалено у стадиона."
+    override val chooseFromGallery = "Выбрать из галереи"
+    override val takePhoto = "Сделать фото"
+    override val cameraUnavailable = "Камера недоступна на этом устройстве"
 }
 
 class UzLanguage : Language {
@@ -1394,4 +1421,13 @@ class UzLanguage : Language {
     override val conflict = "Bunday ma'lumot allaqachon mavjud yoki ziddiyat yuzaga keldi"
     override val badRequest = "Xato so'rov yuborildi"
     override val unknownNetworkError = "Tarmoq xatosi"
+
+    override val imageUnsupportedType = "Faqat JPG, PNG yoki WEBP rasm yuklash mumkin"
+    override val imageTooLarge = "Rasm hajmi juda katta (har biri 5 MB, jami 30 MB gacha)"
+    override val tooManyImages = "Bitta stadionda ko'pi bilan 10 ta rasm bo'lishi mumkin"
+    override val stadiumPhotos = "Stadion rasmlari"
+    override val deletePhotoConfirm = "Rasm o'chirilsinmi? U stadiondan darhol olib tashlanadi."
+    override val chooseFromGallery = "Galereyadan tanlash"
+    override val takePhoto = "Kamerada suratga olish"
+    override val cameraUnavailable = "Bu qurilmada kamera mavjud emas"
 }

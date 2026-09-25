@@ -4,5 +4,9 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Stadion rasmini suratga olib yuklash uchun kameraga ruxsat kerak.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Stadion joylashuvini xaritada belgilash uchun joriy joylashuvingiz kerak.</string>
 </dict>
 </plist>

@@ -1,7 +1,11 @@
 package uz.coder.foottopbusiness.data.network
 
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.delete
+import io.ktor.client.request.forms.FormBuilder
+import io.ktor.client.request.forms.formData
+import io.ktor.client.request.forms.submitFormWithBinaryData
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.put
@@ -9,10 +13,13 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
 import io.ktor.http.appendPathSegments
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.serialization.json.Json
+import uz.coder.foottopbusiness.core.platform.PickedImage
 import uz.coder.foottopbusiness.data.network.dto.BaseResponse
 import uz.coder.foottopbusiness.data.network.dto.SimpleResponse
 import uz.coder.foottopbusiness.data.network.dto.stadium.CreateStadiumRequest
@@ -28,7 +35,14 @@ class StadiumApiService(private val client: HttpClient) {
         coerceInputValues = true
     }
 
+    /** Multipart `data` qismi uchun — ContentNegotiation'dagi sozlamalar bilan bir xil. */
+    private val requestJson = Json {
+        explicitNulls = false
+        encodeDefaults = true
+    }
+
     companion object {
+        private const val UPLOAD_TIMEOUT_MS = 120_000L
         private const val CREATE_STADIUM = "/v1/stadiums/create"
         private const val STADIUMS = "/v1/stadiums"
         private const val REGIONS = "/v1/region-districts/regions"
@@ -56,6 +70,74 @@ class StadiumApiService(private val client: HttpClient) {
             contentType(ContentType.Application.Json)
         }
         return safeDecode(response)
+    }
+
+    /**
+     * Stadionni rasmlari bilan bitta multipart so'rovda yaratadi:
+     * `data` — StadiumRequestDto JSON (part Content-Type: application/json shart),
+     * `files` — rasmlar. Rasm xato bo'lsa stadion ham yaratilmaydi.
+     */
+    suspend fun createStadiumWithImages(
+        request: CreateStadiumRequest,
+        images: List<PickedImage>,
+    ): BaseResponse<StadiumResponse> {
+        val response = client.submitFormWithBinaryData(
+            url = CREATE_STADIUM,
+            formData = formData {
+                append(
+                    "data",
+                    requestJson.encodeToString(CreateStadiumRequest.serializer(), request),
+                    Headers.build { append(HttpHeaders.ContentType, ContentType.Application.Json.toString()) }
+                )
+                images.forEach { image -> appendImage(image) }
+            }
+        ) {
+            // Rasmlar yuklanishi umumiy 30 soniyadan uzoq cho'zilishi mumkin
+            timeout {
+                requestTimeoutMillis = UPLOAD_TIMEOUT_MS
+                socketTimeoutMillis = UPLOAD_TIMEOUT_MS
+            }
+        }
+        return safeDecode(response)
+    }
+
+    /** Mavjud stadionga rasm qo'shadi (oxiriga). Javob — yangilangan stadion. */
+    suspend fun addStadiumImages(id: Long, images: List<PickedImage>): BaseResponse<StadiumResponse> {
+        val response = client.submitFormWithBinaryData(
+            url = "$STADIUMS/$id/images",
+            formData = formData {
+                images.forEach { image -> appendImage(image) }
+            }
+        ) {
+            timeout {
+                requestTimeoutMillis = UPLOAD_TIMEOUT_MS
+                socketTimeoutMillis = UPLOAD_TIMEOUT_MS
+            }
+        }
+        return safeDecode(response)
+    }
+
+    /** [url] — `images[].urls` dagi qiymatning aynan o'zi. Javobda stadion bo'lmasligi mumkin. */
+    suspend fun deleteStadiumImage(id: Long, url: String): BaseResponse<StadiumResponse> {
+        val response = client.delete(STADIUMS) {
+            url {
+                appendPathSegments(id.toString(), "images")
+                parameters.append("url", url)
+            }
+        }
+        if (response.bodyAsText().isBlank()) return BaseResponse(success = true)
+        return safeDecode(response)
+    }
+
+    private fun FormBuilder.appendImage(image: PickedImage) {
+        append(
+            "files",
+            image.bytes,
+            Headers.build {
+                append(HttpHeaders.ContentType, image.mimeType)
+                append(HttpHeaders.ContentDisposition, "filename=\"${image.fileName}\"")
+            }
+        )
     }
 
     suspend fun updateStadium(id: Long, request: CreateStadiumRequest): HttpResponse =

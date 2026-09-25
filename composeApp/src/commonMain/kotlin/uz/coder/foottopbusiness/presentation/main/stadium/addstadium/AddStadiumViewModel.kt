@@ -22,6 +22,8 @@ import uz.coder.foottopbusiness.domain.usecase.user.UserIdUseCase
 import uz.coder.foottopbusiness.core.platform.getCurrentLocation
 import uz.coder.foottopbusiness.core.platform.checkLocationPermissionStatus
 import uz.coder.foottopbusiness.core.platform.PermissionStatus
+import uz.coder.foottopbusiness.core.platform.PickedImage
+import uz.coder.foottopbusiness.presentation.main.stadium.components.applyImageLimits
 
 class AddStadiumViewModel(
     private val createStadiumUseCase: CreateStadiumUseCase,
@@ -81,7 +83,10 @@ class AddStadiumViewModel(
             is AddStadiumContract.Event.PricePerHour -> updateState { copy(pricePerHour = event.value, showErrors = false) }
             is AddStadiumContract.Event.OpenTime -> updateState { copy(openTime = event.value, showErrors = false) }
             is AddStadiumContract.Event.CloseTime -> updateState { copy(closeTime = event.value, showErrors = false) }
-            is AddStadiumContract.Event.ImageUrl -> updateState { copy(imageUrl = event.value, showErrors = false) }
+            is AddStadiumContract.Event.AddImages -> addImages(event.images)
+            is AddStadiumContract.Event.RemoveImage -> updateState {
+                copy(images = images.filterIndexed { index, _ -> index != event.index })
+            }
             is AddStadiumContract.Event.SelectRegion -> onRegionSelected(event.region)
             is AddStadiumContract.Event.SelectDistrict -> onDistrictSelected(event.district)
             is AddStadiumContract.Event.SelectOwner -> {
@@ -115,6 +120,18 @@ class AddStadiumViewModel(
             is AddStadiumContract.Event.TriggerLocationPermission -> updateState { copy(triggerLocationPermission = event.trigger) }
             is AddStadiumContract.Event.Save -> save()
         }
+    }
+
+    /** Backend limitlarini oldindan tekshiradi, aks holda butun stadion yaratilmay qoladi. */
+    private fun addImages(picked: List<PickedImage>) {
+        val current = state.value.images
+        val result = applyImageLimits(
+            currentCount = current.size,
+            currentBytes = current.sumOf { it.bytes.size },
+            picked = picked
+        )
+        if (result.accepted.isNotEmpty()) updateState { copy(images = images + result.accepted) }
+        result.errorCode?.let { sendEffect(AddStadiumContract.Effect.ShowToast(it)) }
     }
 
     private fun handleLocationRequest() {
@@ -221,7 +238,7 @@ class AddStadiumViewModel(
                     pricePerHour = s.pricePerHour.toIntOrNull() ?: 0,
                     openTime = s.openTime,
                     closeTime = s.closeTime,
-                    imageUrl = s.imageUrl,
+                    images = s.images,
                     regionId = regionId,
                     districtId = districtId,
                     ownerId = s.selectedOwner?.id?.toInt(),
