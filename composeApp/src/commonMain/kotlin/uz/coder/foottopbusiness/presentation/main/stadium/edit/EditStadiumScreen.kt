@@ -31,6 +31,12 @@ import uz.coder.foottopbusiness.core.localization.ErrorMapper
 import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.ui.GradientHeader
 import uz.coder.foottopbusiness.core.platform.LocationPermissionLauncher
+import uz.coder.foottopbusiness.core.platform.rememberCameraCapture
+import uz.coder.foottopbusiness.core.platform.rememberImagePicker
+import kotlinx.coroutines.launch
+import uz.coder.foottopbusiness.data.network.dto.stadium.fullUrl
+import uz.coder.foottopbusiness.presentation.main.stadium.components.MAX_STADIUM_IMAGES
+import uz.coder.foottopbusiness.presentation.main.stadium.components.StadiumImagesPicker
 import uz.coder.foottopbusiness.core.visualTransformation.AmountTransformation
 import uz.coder.foottopbusiness.core.visualTransformation.PhoneTransformation
 import uz.coder.foottopbusiness.domain.model.UserRole
@@ -68,17 +74,34 @@ fun EditStadiumScreen(viewModel: EditStadiumViewModel, onBack: () -> Unit) {
 
     var showOpenTimePicker by remember { mutableStateOf(false) }
     var showCloseTimePicker by remember { mutableStateOf(false) }
-    var showFeatureComingSoonDialog by remember { mutableStateOf(false) }
+    var imagePendingDelete by remember { mutableStateOf<String?>(null) }
 
-    if (showFeatureComingSoonDialog) {
+    val pickImages = rememberImagePicker(
+        maxItems = (MAX_STADIUM_IMAGES - state.existingImages.size).coerceAtLeast(1)
+    ) { picked ->
+        viewModel.handleEvent(EditStadiumContract.Event.AddImages(picked))
+    }
+    val snackbarScope = rememberCoroutineScope()
+    val takePhoto = rememberCameraCapture(
+        onCaptured = { viewModel.handleEvent(EditStadiumContract.Event.AddImages(listOf(it))) },
+        onUnavailable = { snackbarScope.launch { hostState.showSnackbar(strings.cameraUnavailable) } }
+    )
+
+    imagePendingDelete?.let { url ->
         AlertDialog(
-            onDismissRequest = { showFeatureComingSoonDialog = false },
-            title = { Text(strings.addPhoto) },
-            text = { Text(strings.featureComingSoon) },
+            onDismissRequest = { imagePendingDelete = null },
+            title = { Text(strings.delete) },
+            text = { Text(strings.deletePhotoConfirm) },
             confirmButton = {
-                TextButton(onClick = { showFeatureComingSoonDialog = false }) {
-                    Text(strings.understand)
+                TextButton(onClick = {
+                    viewModel.handleEvent(EditStadiumContract.Event.DeleteImage(url))
+                    imagePendingDelete = null
+                }) {
+                    Text(strings.delete, color = MaterialTheme.colorScheme.error)
                 }
+            },
+            dismissButton = {
+                TextButton(onClick = { imagePendingDelete = null }) { Text(strings.cancel) }
             }
         )
     }
@@ -397,20 +420,18 @@ fun EditStadiumScreen(viewModel: EditStadiumViewModel, onBack: () -> Unit) {
                         }
                     }
 
-                    Button(
-                        onClick = { showFeatureComingSoonDialog = true },
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        ),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
-                    ) {
-                        Icon(Icons.Default.AddPhotoAlternate, null, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(strings.addPhoto, fontWeight = FontWeight.SemiBold)
-                    }
+                    StadiumImagesPicker(
+                        images = state.existingImages.map { it.fullUrl },
+                        enabled = !state.isLoading && state.deletingImageUrl == null,
+                        onPickFromGallery = pickImages,
+                        onTakePhoto = takePhoto,
+                        onRemove = { index ->
+                            state.existingImages.getOrNull(index)?.let { imagePendingDelete = it.urls }
+                        },
+                        busyIndex = state.existingImages.indexOfFirst { it.urls == state.deletingImageUrl }
+                            .takeIf { it >= 0 },
+                        isUploading = state.isUploadingImages
+                    )
                 }
             }
 

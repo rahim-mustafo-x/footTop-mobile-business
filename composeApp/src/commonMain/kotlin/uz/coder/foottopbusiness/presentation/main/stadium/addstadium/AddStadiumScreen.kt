@@ -34,6 +34,11 @@ import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.ui.GradientHeader
 import uz.coder.foottopbusiness.core.log
 import uz.coder.foottopbusiness.core.platform.LocationPermissionLauncher
+import uz.coder.foottopbusiness.core.platform.rememberCameraCapture
+import uz.coder.foottopbusiness.core.platform.rememberImagePicker
+import kotlinx.coroutines.launch
+import uz.coder.foottopbusiness.presentation.main.stadium.components.MAX_STADIUM_IMAGES
+import uz.coder.foottopbusiness.presentation.main.stadium.components.StadiumImagesPicker
 import uz.coder.foottopbusiness.core.visualTransformation.AmountTransformation
 import uz.coder.foottopbusiness.core.visualTransformation.PhoneTransformation
 import uz.coder.foottopbusiness.domain.model.UserRole
@@ -72,20 +77,16 @@ fun AddStadiumScreen(viewModel: AddStadiumViewModel, onBack: () -> Unit) {
 
     var showOpenTimePicker by remember { mutableStateOf(false) }
     var showCloseTimePicker by remember { mutableStateOf(false) }
-    var showFeatureComingSoonDialog by remember { mutableStateOf(false) }
-
-    if (showFeatureComingSoonDialog) {
-        AlertDialog(
-            onDismissRequest = { showFeatureComingSoonDialog = false },
-            title = { Text(strings.addPhoto) },
-            text = { Text(strings.featureComingSoon) },
-            confirmButton = {
-                TextButton(onClick = { showFeatureComingSoonDialog = false }) {
-                    Text(strings.understand)
-                }
-            }
-        )
+    val pickImages = rememberImagePicker(
+        maxItems = (MAX_STADIUM_IMAGES - state.images.size).coerceAtLeast(1)
+    ) { picked ->
+        viewModel.handleEvent(AddStadiumContract.Event.AddImages(picked))
     }
+    val snackbarScope = rememberCoroutineScope()
+    val takePhoto = rememberCameraCapture(
+        onCaptured = { viewModel.handleEvent(AddStadiumContract.Event.AddImages(listOf(it))) },
+        onUnavailable = { snackbarScope.launch { hostState.showSnackbar(strings.cameraUnavailable) } }
+    )
 
     if (showOpenTimePicker) {
         val initialHour = try { state.openTime.split(":")[0].toInt() } catch (_: Exception) { 8 }
@@ -317,20 +318,13 @@ fun AddStadiumScreen(viewModel: AddStadiumViewModel, onBack: () -> Unit) {
                     }
                 }
 
-                Button(
-                    onClick = { showFeatureComingSoonDialog = true },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
-                ) {
-                    Icon(Icons.Outlined.AddAPhoto, null, modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(strings.addPhoto, fontWeight = FontWeight.SemiBold)
-                }
+                StadiumImagesPicker(
+                    images = state.images.map { it.bytes },
+                    enabled = !state.isLoading,
+                    onPickFromGallery = pickImages,
+                    onTakePhoto = takePhoto,
+                    onRemove = { viewModel.handleEvent(AddStadiumContract.Event.RemoveImage(it)) }
+                )
             }
 
             Spacer(Modifier.height(12.dp))

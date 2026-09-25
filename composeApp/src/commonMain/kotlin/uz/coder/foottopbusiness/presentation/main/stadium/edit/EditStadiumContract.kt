@@ -3,6 +3,7 @@ package uz.coder.foottopbusiness.presentation.main.stadium.edit
 import uz.coder.foottopbusiness.core.mvi.MviEffect
 import uz.coder.foottopbusiness.core.mvi.MviEvent
 import uz.coder.foottopbusiness.core.mvi.MviState
+import uz.coder.foottopbusiness.core.platform.PickedImage
 import uz.coder.foottopbusiness.data.network.dto.UserDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.ImageDto
@@ -23,7 +24,6 @@ sealed interface EditStadiumContract {
         val pricePerHour: String = "",
         val openTime: String = "",
         val closeTime: String = "",
-        val imageUrl: String = "",
         val latitude: Double? = null,
         val longitude: Double? = null,
         val preciseAddress: String = "",
@@ -35,8 +35,14 @@ sealed interface EditStadiumContract {
         /** Stadionning hozirgi hududi -- foydalanuvchi qayta tanlamasa shu saqlanadi. */
         val originalRegionId: Int? = null,
         val originalDistrictId: Int? = null,
-        /** Mavjud rasmlar. Saqlashda qayta uzatiladi, aks holda serverda o'chib ketadi. */
+        /**
+         * Serverdagi rasmlar. Qo'shish/o'chirish darhol alohida endpoint'lar orqali
+         * bajariladi -- PUT rasmlarga tegmaydi.
+         */
         val existingImages: List<ImageDto> = emptyList(),
+        val isUploadingImages: Boolean = false,
+        /** O'chirilayotgan rasmning `urls` qiymati. */
+        val deletingImageUrl: String? = null,
         val showRegionDropdown: Boolean = false,
         val showDistrictDropdown: Boolean = false,
         // owners
@@ -67,7 +73,8 @@ sealed interface EditStadiumContract {
         data class PricePerHour(val value: String) : Event
         data class OpenTime(val value: String) : Event
         data class CloseTime(val value: String) : Event
-        data class ImageUrl(val value: String) : Event
+        data class AddImages(val images: List<PickedImage>) : Event
+        data class DeleteImage(val url: String) : Event
         data class SelectRegion(val region: RegionDto) : Event
         data class SelectDistrict(val district: DistrictDto) : Event
         data class SelectOwner(val owner: UserDto) : Event

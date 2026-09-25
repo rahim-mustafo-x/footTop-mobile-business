@@ -9,6 +9,8 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
@@ -58,11 +60,60 @@ import uz.coder.foottopbusiness.core.plusMinutes
 import uz.coder.foottopbusiness.core.toLocalDateTimeSafe
 import uz.coder.foottopbusiness.core.ui.shimmer
 import uz.coder.foottopbusiness.data.network.dto.stadium.SlotDto
+import uz.coder.foottopbusiness.data.network.dto.stadium.fullUrl
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.stadium.edit.EditStadiumVoyager
 import kotlin.time.Clock
 import uz.coder.foottopbusiness.core.platform.NotificationPermissionLauncher
 import uz.coder.foottopbusiness.core.ui.Success
+
+/**
+ * Stadion rasmlari: suriladigan galereya va "1/5" ko'rsatkichi.
+ * Rasm bo'lmasa neytral joy egallovchi ko'rsatiladi.
+ */
+@Composable
+private fun StadiumImageGallery(imageUrls: List<String>, modifier: Modifier = Modifier) {
+    if (imageUrls.isEmpty()) {
+        Box(
+            modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Default.SportsSoccer,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                modifier = Modifier.size(72.dp)
+            )
+        }
+        return
+    }
+
+    val pagerState = rememberPagerState { imageUrls.size }
+    Box(modifier = modifier) {
+        HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+            AsyncImage(
+                model = imageUrls[page],
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant),
+                contentScale = ContentScale.Crop
+            )
+        }
+        if (imageUrls.size > 1) {
+            Text(
+                text = "${pagerState.currentPage + 1}/${imageUrls.size}",
+                color = Color.White,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    // Pastki 24dp ma'lumotlar kartasi ostida qoladi
+                    .padding(end = 12.dp, bottom = 36.dp)
+                    .background(Color.Black.copy(alpha = 0.45f), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            )
+        }
+    }
+}
 
 // --- Slot state enum ---
 private enum class SlotRowState {
@@ -283,11 +334,9 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                 // Hero Image
                 item {
                     Box(modifier = Modifier.fillMaxWidth().height(250.dp)) {
-                        AsyncImage(
-                            model = "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=1000",
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
+                        StadiumImageGallery(
+                            imageUrls = stadium.images.orEmpty().map { it.fullUrl },
+                            modifier = Modifier.fillMaxSize()
                         )
                         Box(
                             modifier = Modifier.fillMaxSize().background(

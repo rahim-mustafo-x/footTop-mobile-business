@@ -12,6 +12,10 @@ import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.core.platform.getCurrentLocation
 import uz.coder.foottopbusiness.core.platform.checkLocationPermissionStatus
 import uz.coder.foottopbusiness.core.platform.PermissionStatus
+import uz.coder.foottopbusiness.core.platform.PickedImage
+import uz.coder.foottopbusiness.domain.usecase.stadium.AddStadiumImagesUseCase
+import uz.coder.foottopbusiness.domain.usecase.stadium.DeleteStadiumImageUseCase
+import uz.coder.foottopbusiness.presentation.main.stadium.components.applyImageLimits
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.domain.repository.UserRepository
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetDistrictsUseCase
@@ -27,6 +31,8 @@ class EditStadiumViewModel(
     private val getDistrictsUseCase: GetDistrictsUseCase,
     private val userRepository: UserRepository,
     private val preferencesManager: PreferencesManager,
+    private val addStadiumImagesUseCase: AddStadiumImagesUseCase,
+    private val deleteStadiumImageUseCase: DeleteStadiumImageUseCase,
 ) : BaseViewModel<EditStadiumContract.State, EditStadiumContract.Effect, EditStadiumContract.Event>(
     initialState = EditStadiumContract.State(
         id = stadium.id ?: 0,
@@ -37,7 +43,6 @@ class EditStadiumViewModel(
         pricePerHour = stadium.pricePerHour?.toInt()?.toString() ?: "",
         openTime = if (stadium.openTime.isNullOrBlank()) "08:00" else try { LocalDateTime.parse(stadium.openTime).formatAsTime() } catch (_: Exception) { stadium.openTime },
         closeTime = if (stadium.closeTime.isNullOrBlank()) "22:00" else try { LocalDateTime.parse(stadium.closeTime).formatAsTime() } catch (_: Exception) { stadium.closeTime },
-        imageUrl = "",
         existingImages = stadium.images ?: emptyList(),
         originalRegionId = stadium.regionId,
         originalDistrictId = stadium.districtId,
@@ -89,7 +94,8 @@ class EditStadiumViewModel(
             is EditStadiumContract.Event.PricePerHour -> updateState { copy(pricePerHour = event.value) }
             is EditStadiumContract.Event.OpenTime -> updateState { copy(openTime = event.value) }
             is EditStadiumContract.Event.CloseTime -> updateState { copy(closeTime = event.value) }
-            is EditStadiumContract.Event.ImageUrl -> updateState { copy(imageUrl = event.value) }
+            is EditStadiumContract.Event.AddImages -> uploadImages(event.images)
+            is EditStadiumContract.Event.DeleteImage -> deleteImage(event.url)
             is EditStadiumContract.Event.SelectRegion -> onRegionSelected(event.region)
             is EditStadiumContract.Event.SelectDistrict -> onDistrictSelected(event.district)
             is EditStadiumContract.Event.SelectOwner -> updateState { copy(selectedOwner = event.owner, showOwnerDropdown = false) }
@@ -113,6 +119,52 @@ class EditStadiumViewModel(
             is EditStadiumContract.Event.TriggerLocationPermission -> updateState { copy(triggerLocationPermission = event.trigger) }
             is EditStadiumContract.Event.Save -> save()
         }
+    }
+
+    /** Rasmlar darhol serverga yuklanadi (POST /{id}/images), "Saqlash"ni kutmaydi. */
+    private fun uploadImages(picked: List<PickedImage>) {
+        val s = state.value
+        if (s.isUploadingImages) return
+        // Limit bitta so'rovga tegishli, serverdagi rasmlar hajmi hisoblanmaydi
+        val result = applyImageLimits(currentCount = s.existingImages.size, currentBytes = 0, picked = picked)
+        result.errorCode?.let { sendEffect(EditStadiumContract.Effect.ShowToast(it)) }
+        if (result.accepted.isEmpty()) return
+
+        executeAsync(
+            onLoading = { updateState { copy(isUploadingImages = true) } },
+            onError = { e ->
+                updateState { copy(isUploadingImages = false) }
+                sendEffect(EditStadiumContract.Effect.ShowToast(e.message ?: "Xatolik yuz berdi"))
+            },
+            block = { addStadiumImagesUseCase(s.id, result.accepted).first() },
+            onSuccess = { stadium ->
+                updateState {
+                    copy(isUploadingImages = false, existingImages = stadium.images ?: existingImages)
+                }
+            }
+        )
+    }
+
+    private fun deleteImage(url: String) {
+        val s = state.value
+        if (s.deletingImageUrl != null) return
+
+        executeAsync(
+            onLoading = { updateState { copy(deletingImageUrl = url) } },
+            onError = { e ->
+                updateState { copy(deletingImageUrl = null) }
+                sendEffect(EditStadiumContract.Effect.ShowToast(e.message ?: "Xatolik yuz berdi"))
+            },
+            block = { deleteStadiumImageUseCase(s.id, url).first() },
+            onSuccess = { stadium ->
+                updateState {
+                    copy(
+                        deletingImageUrl = null,
+                        existingImages = stadium?.images ?: existingImages.filterNot { it.urls == url }
+                    )
+                }
+            }
+        )
     }
 
     private fun handleLocationRequest() {
@@ -199,8 +251,9 @@ class EditStadiumViewModel(
                     pricePerHour = s.pricePerHour.toIntOrNull() ?: 0,
                     openTime = s.openTime,
                     closeTime = s.closeTime,
-                    imageUrl = s.imageUrl,
-                    images = if (s.imageUrl.isBlank()) s.existingImages else null,
+                    imageUrl = "",
+                    // Backend PUT'da rasmlarni e'tiborsiz qoldiradi, bu faqat moslik uchun
+                    images = s.existingImages,
                     regionId = s.selectedRegion?.id ?: s.originalRegionId ?: 0,
                     districtId = s.selectedDistrict?.id ?: s.originalDistrictId ?: 0,
                     ownerId = s.selectedOwner?.id?.toInt(),

@@ -3,6 +3,7 @@ package uz.coder.foottopbusiness.presentation.main.stadium.addstadium
 import uz.coder.foottopbusiness.core.mvi.MviEffect
 import uz.coder.foottopbusiness.core.mvi.MviEvent
 import uz.coder.foottopbusiness.core.mvi.MviState
+import uz.coder.foottopbusiness.core.platform.PickedImage
 import uz.coder.foottopbusiness.data.network.dto.UserDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.RegionDto
@@ -30,7 +31,7 @@ sealed interface AddStadiumContract {
         val pricePerHour: String = "100000",
         val openTime: String = "08:00",
         val closeTime: String = "22:00",
-        val imageUrl: String = "",
+        val images: List<PickedImage> = emptyList(),
         // region/district
         val regions: List<RegionDto> = emptyList(),
         val districts: List<DistrictDto> = emptyList(),
@@ -70,7 +71,8 @@ sealed interface AddStadiumContract {
         data class PricePerHour(val value: String) : Event
         data class OpenTime(val value: String) : Event
         data class CloseTime(val value: String) : Event
-        data class ImageUrl(val value: String) : Event
+        data class AddImages(val images: List<PickedImage>) : Event
+        data class RemoveImage(val index: Int) : Event
         data class SelectRegion(val region: RegionDto) : Event
         data class SelectDistrict(val district: DistrictDto) : Event
         data class SelectOwner(val owner: UserDto) : Event

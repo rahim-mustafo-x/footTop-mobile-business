@@ -1,5 +1,6 @@
 package uz.coder.foottopbusiness.domain.usecase.stadium
 
+import uz.coder.foottopbusiness.core.platform.PickedImage
 import uz.coder.foottopbusiness.domain.repository.StadiumRepository
 
 data class CreateStadiumUseCase(private val stadiumRepository: StadiumRepository) {
@@ -12,7 +13,7 @@ data class CreateStadiumUseCase(private val stadiumRepository: StadiumRepository
         pricePerHour: Int,
         openTime: String,
         closeTime: String,
-        imageUrl: String,
+        images: List<PickedImage> = emptyList(),
         regionId: Int,
         districtId: Int,
         ownerId: Int? = null,
@@ -29,7 +30,7 @@ data class CreateStadiumUseCase(private val stadiumRepository: StadiumRepository
         pricePerHour = pricePerHour,
         openTime = openTime,
         closeTime = closeTime,
-        imageUrl = imageUrl,
+        images = images,
         regionId = regionId,
         districtId = districtId,
         ownerId = ownerId,

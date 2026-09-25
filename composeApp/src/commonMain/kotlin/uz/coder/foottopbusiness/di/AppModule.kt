@@ -27,7 +27,9 @@ import uz.coder.foottopbusiness.domain.usecase.match.GetMatchesUseCase
 import uz.coder.foottopbusiness.domain.usecase.notification.RegisterDeviceTokenUseCase
 import uz.coder.foottopbusiness.domain.usecase.notification.SendNotificationUseCase
 import uz.coder.foottopbusiness.domain.usecase.notification.SendToAllUseCase
+import uz.coder.foottopbusiness.domain.usecase.stadium.AddStadiumImagesUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.CreateStadiumUseCase
+import uz.coder.foottopbusiness.domain.usecase.stadium.DeleteStadiumImageUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.DeleteStadiumUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetDistrictsUseCase
 import uz.coder.foottopbusiness.domain.usecase.stadium.GetRegionsUseCase
@@ -103,6 +105,8 @@ val appModule = module {
     factory { GetStadiumByIdUseCase(get()) }
     factory { UpdateOpenCloseTimeUseCase(get()) }
     factory { DeleteStadiumUseCase(get()) }
+    factory { AddStadiumImagesUseCase(get()) }
+    factory { DeleteStadiumImageUseCase(get()) }
     factory { GetRegionsUseCase(get()) }
     factory { GetDistrictsUseCase(get()) }
     factory { SaveRegionIdUseCase(get()) }
@@ -141,7 +145,7 @@ val appModule = module {
     factory { ReportsViewModel(get(), get(), get()) }
     factory { StadiumViewModel(get(), get(), get()) }
     factory { AddStadiumViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    factory { (stadium: StadiumResponse) -> EditStadiumViewModel(stadium, get(), get(), get(), get(), get()) }
+    factory { (stadium: StadiumResponse) -> EditStadiumViewModel(stadium, get(), get(), get(), get(), get(), get(), get()) }
     factory { (stadium: StadiumResponse) -> StadiumDetailsViewModel(stadium, get(), get(), get(), get(), get()) }
     factory { BookingListViewModel(get(), get(), get(), get()) }
     factory { CoachesViewModel(get(), get(), get()) }

@@ -2,6 +2,7 @@ package uz.coder.foottopbusiness.data.network.dto.stadium
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import uz.coder.foottopbusiness.core.NetworkConfig
 import uz.coder.foottopbusiness.core.Serializable as KmpSerializable
 
 @Serializable
@@ -32,3 +33,14 @@ data class LocationDto(
 data class ImageDto(
     @SerialName("urls") val urls: String,
 ) : KmpSerializable
+
+/**
+ * Rasmni yuklash uchun to'liq manzil. Server nisbiy yo'l qaytaradi
+ * (`/v1/files/stadiums/<uuid>.jpg`), eski yozuvlarda esa to'liq URL bo'lishi mumkin.
+ */
+val ImageDto.fullUrl: String
+    get() = if (urls.startsWith("http://") || urls.startsWith("https://")) {
+        urls
+    } else {
+        NetworkConfig.BASE_URL.trimEnd('/') + "/" + urls.trimStart('/')
+    }

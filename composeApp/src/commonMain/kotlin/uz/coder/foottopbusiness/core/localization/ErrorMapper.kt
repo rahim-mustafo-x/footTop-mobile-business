@@ -27,6 +27,11 @@ object ErrorMapper {
             error.contains("BOOKING_NOT_PENDING") -> strings.bookingNotPending
             error.contains("BOOKING_ALREADY_CONFIRMED") -> strings.bookingNotPending
 
+            // Stadion rasmlari
+            error.contains("UNSUPPORTED_IMAGE_TYPE") -> strings.imageUnsupportedType
+            error.contains("FILE_TOO_LARGE") -> strings.imageTooLarge
+            error.contains("TOO_MANY_IMAGES") -> strings.tooManyImages
+
             else -> error
         }
     }
