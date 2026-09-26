@@ -241,6 +241,9 @@ class HomeViewModel(
                             totalPrice = totalPrice,
                             status = "PENDING",
                             paymentMethod = "CASH",
+                            paymentTiming = event.options.paymentTiming,
+                            bookingType = event.options.bookingType,
+                            recurrenceCount = event.options.recurrenceCountOrNull,
                             // Mijoz ma'lumoti: dialogda so'raladi, lekin ilgari
                             // so'rovga qo'shilmasdan yo'qolib ketardi
                             name = event.name.trim(),

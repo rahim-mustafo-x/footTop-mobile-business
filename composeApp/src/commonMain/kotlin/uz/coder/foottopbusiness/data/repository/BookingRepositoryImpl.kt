@@ -6,6 +6,7 @@ import uz.coder.foottopbusiness.data.network.BookingApiService
 import uz.coder.foottopbusiness.data.network.dto.booking.BookingRequestDto
 import uz.coder.foottopbusiness.data.network.dto.booking.BookingResponseDto
 import uz.coder.foottopbusiness.data.network.dto.booking.CancelBookingRequestDto
+import uz.coder.foottopbusiness.data.network.dto.booking.PaymentStatusRequestDto
 import uz.coder.foottopbusiness.domain.repository.BookingRepository
 
 class BookingRepositoryImpl(private val api: BookingApiService) : BookingRepository {
@@ -65,6 +66,42 @@ class BookingRepositoryImpl(private val api: BookingApiService) : BookingReposit
             response.data?.let { emit(it) } ?: throw Exception("Tasdiqlandi, lekin ma'lumotlar qaytmadi")
         } else {
             throw Exception(response.message ?: "Tasdiqlashda xatolik")
+        }
+    }
+
+    override fun updatePaymentStatus(id: Long, paymentStatus: String): Flow<BookingResponseDto> = flow {
+        val response = api.updatePaymentStatus(id, PaymentStatusRequestDto(paymentStatus))
+        if (response.success == true) {
+            response.data?.let { emit(it) } ?: throw Exception("To'lov belgilandi, lekin ma'lumotlar qaytmadi")
+        } else {
+            throw Exception(response.message ?: "To'lovni belgilashda xatolik")
+        }
+    }
+
+    override fun confirmSeries(groupId: String): Flow<List<BookingResponseDto>> = flow {
+        val response = api.confirmSeries(groupId)
+        if (response.success == true) {
+            emit(response.data ?: emptyList())
+        } else {
+            throw Exception(response.message ?: "Tasdiqlashda xatolik")
+        }
+    }
+
+    override fun rejectSeries(groupId: String, reason: String): Flow<List<BookingResponseDto>> = flow {
+        val response = api.rejectSeries(groupId, CancelBookingRequestDto(reason))
+        if (response.success == true) {
+            emit(response.data ?: emptyList())
+        } else {
+            throw Exception(response.message ?: "Rad etishda xatolik")
+        }
+    }
+
+    override fun cancelSeries(groupId: String, reason: String): Flow<List<BookingResponseDto>> = flow {
+        val response = api.cancelSeries(groupId, CancelBookingRequestDto(reason))
+        if (response.success == true) {
+            emit(response.data ?: emptyList())
+        } else {
+            throw Exception(response.message ?: "Bekor qilishda xatolik")
         }
     }
 

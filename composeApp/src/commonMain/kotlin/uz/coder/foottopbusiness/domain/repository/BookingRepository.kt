@@ -23,6 +23,10 @@ interface BookingRepository {
     fun cancelBooking(id: Long, reason: String): Flow<BookingResponseDto>
     fun confirmBooking(id: Long): Flow<BookingResponseDto>
     fun rejectBooking(id: Long, reason: String): Flow<BookingResponseDto>
+    fun updatePaymentStatus(id: Long, paymentStatus: String): Flow<BookingResponseDto>
+    fun confirmSeries(groupId: String): Flow<List<BookingResponseDto>>
+    fun rejectSeries(groupId: String, reason: String): Flow<List<BookingResponseDto>>
+    fun cancelSeries(groupId: String, reason: String): Flow<List<BookingResponseDto>>
 
     companion object {
         /** Backend ham shu qiymatni default sifatida ishlatadi. */

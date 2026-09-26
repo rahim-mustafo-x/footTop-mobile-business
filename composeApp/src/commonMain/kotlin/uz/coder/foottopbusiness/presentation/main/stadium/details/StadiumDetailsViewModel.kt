@@ -18,6 +18,7 @@ import uz.coder.foottopbusiness.domain.usecase.booking.CreateBookingUseCase
 import uz.coder.foottopbusiness.domain.usecase.booking.CancelBookingUseCase
 import uz.coder.foottopbusiness.domain.usecase.booking.GetBookingsByStadiumIdUseCase
 import uz.coder.foottopbusiness.data.network.dto.booking.BookingRequestDto
+import uz.coder.foottopbusiness.presentation.main.booking.components.BookingOptions
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.Job
 import uz.coder.foottopbusiness.core.isOverlap
@@ -183,6 +184,9 @@ class StadiumDetailsViewModel(
             is StadiumDetailsContract.Event.UpdateBookerPhone -> {
                 updateState { copy(bookerPhone = event.phone, showBookerErrors = false) }
             }
+            is StadiumDetailsContract.Event.UpdateBookingOptions -> {
+                updateState { copy(bookingOptions = event.options) }
+            }
             is StadiumDetailsContract.Event.OpenCancelDialog -> {
                 updateState { copy(showCancelDialog = true, bookingToCancel = event.bookingId, cancelReason = "") }
             }
@@ -337,6 +341,7 @@ class StadiumDetailsViewModel(
         bookingJob = executeAsync(
             block = {
                 val userId = preferencesManager.userId.first().toLong()
+                val options = state.value.bookingOptions
                 val request = BookingRequestDto(
                     userId = userId,
                     stadiumId = event.stadiumId.toLong(),
@@ -345,6 +350,9 @@ class StadiumDetailsViewModel(
                     totalPrice = event.price,
                     status = "PENDING",
                     paymentMethod = "CASH",
+                    paymentTiming = options.paymentTiming,
+                    bookingType = options.bookingType,
+                    recurrenceCount = options.recurrenceCountOrNull,
                     name = event.name,
                     phone = event.phone
                 )
@@ -360,7 +368,8 @@ class StadiumDetailsViewModel(
                         selectedPitchIndex = null,
                         selectedStartIndex = null,
                         bookerName = "",
-                        bookerPhone = ""
+                        bookerPhone = "",
+                        bookingOptions = BookingOptions()
                     ) 
                 }
                 sendEffect(StadiumDetailsContract.Effect.NavigateBack)

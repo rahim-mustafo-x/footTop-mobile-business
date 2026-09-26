@@ -13,6 +13,12 @@ data class BookingRequestDto(
     @SerialName("totalPrice") val totalPrice: Double? = null,
     @SerialName("status") val status: String? = "PENDING",
     @SerialName("paymentMethod") val paymentMethod: String? = "CASH",
+    /** PREPAID - oldindan, PAY_AFTER_GAME - o'yindan keyin. */
+    @SerialName("paymentTiming") val paymentTiming: String? = null,
+    /** ONE_TIME yoki RECURRING (har hafta shu kun/vaqtda). */
+    @SerialName("bookingType") val bookingType: String? = null,
+    /** Faqat RECURRING uchun: jami necha hafta (2..12). */
+    @SerialName("recurrenceCount") val recurrenceCount: Int? = null,
     @SerialName("name") val name: String? = null,
     @SerialName("phone") val phone: String? = null
 )

@@ -49,6 +49,7 @@ import uz.coder.foottopbusiness.presentation.main.reports.ReportItem
 import uz.coder.foottopbusiness.presentation.main.settings.SettingsVoyager
 import uz.coder.foottopbusiness.presentation.main.settings.notification.SendNotificationVoyager
 import uz.coder.foottopbusiness.presentation.main.stadium.addstadium.AddStadiumVoyager
+import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentDetailContent
 import uz.coder.foottopbusiness.presentation.main.tournaments.TournamentsVoyager
 import uz.coder.foottopbusiness.presentation.main.booking.list.BookingListVoyager
 import uz.coder.foottopbusiness.core.platform.NotificationPermissionLauncher
@@ -149,7 +150,7 @@ fun HomeScreen(
     // yuborardi. O'tish faqat aniq amal orqali - stadion tanlanganda.
 
     state.selectedTournament?.let { t ->
-        TournamentDetailScreen(t, onBack = { viewModel.handleEvent(HomeContract.Event.ClearTournament) })
+        TournamentDetailContent(t, onBack = { viewModel.handleEvent(HomeContract.Event.ClearTournament) })
         return
     }
 
@@ -711,92 +712,6 @@ private fun PermanentlyDeniedDialog(onOpenSettings: () -> Unit, onDismiss: () ->
         },
         shape = RoundedCornerShape(28.dp)
     )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TournamentDetailScreen(tournament: TournamentResponseDto, onBack: () -> Unit) {
-    val strings = Localization.current
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(strings.tournamentDetails) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = strings.back)
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                ) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text(tournament.name ?: "", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                        Text(tournament.sportType ?: "FOOTBALL", style = MaterialTheme.typography.labelMedium)
-                    }
-                }
-            }
-
-            item {
-                InfoSection(strings.location, tournament.address ?: strings.noDataYet, Icons.Default.LocationOn)
-            }
-
-            item {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    InfoSection(strings.tournamentDate, "${tournament.startDate} - ${tournament.endDate}", Icons.Default.CalendarToday, Modifier.weight(1f))
-                    val startTime = tournament.startTime?.toString() ?: ""
-                    val endTime = tournament.endTime?.toString() ?: ""
-                    InfoSection(strings.tournamentTime, "$startTime - $endTime", Icons.Default.AccessTime, Modifier.weight(1f))
-                }
-            }
-
-            item {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    InfoSection(strings.participants, "${tournament.teamApplied ?: 0} / ${tournament.maxTeams ?: 0}", Icons.Default.Groups, Modifier.weight(1f))
-                    InfoSection(strings.entryFee, Money.withCurrency(tournament.entryFee ?: 0.0, strings.currency), Icons.Default.Payments, Modifier.weight(1f))
-                }
-            }
-
-            item {
-                InfoSection(strings.prizes, tournament.prizes ?: strings.noDataYet, Icons.Default.EmojiEvents)
-            }
-
-            item {
-                InfoSection(strings.rules, tournament.rules ?: strings.noDataYet, Icons.Default.Description)
-            }
-            
-            item { Spacer(Modifier.height(32.dp)) }
-        }
-    }
-}
-
-@Composable
-private fun InfoSection(label: String, value: String, icon: ImageVector, modifier: Modifier = Modifier) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Icon(icon, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
-            Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-        }
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        ) {
-            Text(value, modifier = Modifier.padding(12.dp), style = MaterialTheme.typography.bodyMedium)
-        }
-    }
 }
 
 @Composable

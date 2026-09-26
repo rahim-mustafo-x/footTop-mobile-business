@@ -53,4 +53,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.play.services)
     
     debugImplementation(libs.compose.uiTooling)
+    debugImplementation(libs.chucker.library)
+    releaseImplementation(libs.chucker.library.no.op)
 }

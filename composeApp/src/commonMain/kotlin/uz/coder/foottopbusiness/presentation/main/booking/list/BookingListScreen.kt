@@ -349,7 +349,24 @@ fun BookingItem(
                 val start = booking.startTime.toLocalDateTimeSafe()
                 Text("${start?.date} | ${booking.startTime.formatToTime()} - ${booking.endTime.formatToTime()}")
             }
-            
+
+            // To'lov holati va takroriylik - egasi to'lanmagan bronlarni ro'yxatning
+            // o'zida ko'rishi uchun
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                val isPaid = booking.paymentStatus == "PAID"
+                BookingTag(
+                    text = if (isPaid) strings.paymentPaid else strings.paymentUnpaid,
+                    color = if (isPaid) Success else Warning
+                )
+                if (booking.paymentTiming == "PREPAID") {
+                    BookingTag(strings.paymentPrepaid, MaterialTheme.colorScheme.primary)
+                }
+                if (!booking.recurrenceGroupId.isNullOrBlank()) {
+                    BookingTag(strings.bookingRecurring, MaterialTheme.colorScheme.tertiary)
+                }
+            }
+
             Spacer(Modifier.height(12.dp))
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Spacer(Modifier.height(12.dp))
@@ -399,5 +416,21 @@ fun BookingItem(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun BookingTag(text: String, color: Color) {
+    Surface(
+        color = color.copy(alpha = 0.12f),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Text(
+            text,
+            color = color,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        )
     }
 }

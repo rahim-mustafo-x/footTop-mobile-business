@@ -14,6 +14,11 @@ data class BookingResponseDto(
     @SerialName("totalPrice") val totalPrice: Double? = null,
     @SerialName("status") val status: String? = null,
     @SerialName("paymentMethod") val paymentMethod: String? = null,
+    @SerialName("paymentTiming") val paymentTiming: String? = null,
+    @SerialName("paymentStatus") val paymentStatus: String? = null,
+    @SerialName("paidAt") val paidAt: String? = null,
+    @SerialName("bookingType") val bookingType: String? = null,
+    @SerialName("recurrenceGroupId") val recurrenceGroupId: String? = null,
     @SerialName("name") val name: String? = null,
     @SerialName("phone") val phone: String? = null
 )

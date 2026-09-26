@@ -216,8 +216,6 @@ interface Language {
     val uzsPerHour: String
     val currency: String
     val download: String
-    val history: String
-    val allFinishedMatches: String
     val fileSaveError: String
     val fileSaved: String
     val bookingDetails: String
@@ -357,6 +355,44 @@ interface Language {
     val enterFullPhone: String
     val confirm: String
     val time: String
+
+    // Bron tafsilotlari
+    val date: String
+    val customerInfo: String
+    val paymentInfo: String
+    val paymentMethod: String
+    val paymentCash: String
+    val paymentCard: String
+    val statusConfirmed: String
+    val statusPending: String
+    val statusCancelled: String
+    val statusRejected: String
+    val statusCompleted: String
+
+    // Bron turi va to'lov
+    val bookingTypeLabel: String
+    val bookingOneTime: String
+    val bookingRecurring: String
+    val recurrenceWeeks: String
+    val weeksShort: String
+    val paymentTimingLabel: String
+    val paymentPrepaid: String
+    val paymentAfterGame: String
+    val paymentStatusLabel: String
+    val paymentPaid: String
+    val paymentUnpaid: String
+    val markAsPaid: String
+    val markAsUnpaid: String
+    val paymentStatusUpdated: String
+    val recurringSeries: String
+    val confirmSeries: String
+    val rejectSeries: String
+    val cancelSeries: String
+    val seriesUpdatedMsg: String
+    val recurringTimeTaken: String
+    val invalidRecurrenceCount: String
+    val seriesNothingToCancel: String
+    val bookingNotPayable: String
 
     val serverError: String
     val sessionExpired: String
@@ -596,8 +632,6 @@ class EnLanguage : Language {
     override val uzsPerHour = "UZS/hr"
     override val currency = "UZS"
     override val download = "Download"
-    override val history = "History"
-    override val allFinishedMatches = "All finished matches"
     override val fileSaveError = "Failed to save the file"
     override val fileSaved = "File saved"
     override val bookingDetails = "Booking details"
@@ -709,6 +743,41 @@ class EnLanguage : Language {
     override val enterFullPhone = "Enter full phone number"
     override val confirm = "Confirm"
     override val time = "Time"
+
+    override val date = "Date"
+    override val customerInfo = "Customer information"
+    override val paymentInfo = "Payment information"
+    override val paymentMethod = "Payment method"
+    override val paymentCash = "Cash"
+    override val paymentCard = "Card"
+    override val statusConfirmed = "Confirmed"
+    override val statusPending = "Pending"
+    override val statusCancelled = "Cancelled"
+    override val statusRejected = "Rejected"
+    override val bookingTypeLabel = "Booking type"
+    override val bookingOneTime = "One-time"
+    override val bookingRecurring = "Weekly"
+    override val recurrenceWeeks = "Number of weeks"
+    override val weeksShort = "weeks"
+    override val paymentTimingLabel = "Payment"
+    override val paymentPrepaid = "Prepaid"
+    override val paymentAfterGame = "After the game"
+    override val paymentStatusLabel = "Payment status"
+    override val paymentPaid = "Paid"
+    override val paymentUnpaid = "Unpaid"
+    override val markAsPaid = "Mark as paid"
+    override val markAsUnpaid = "Mark as unpaid"
+    override val paymentStatusUpdated = "Payment status updated"
+    override val recurringSeries = "Recurring booking"
+    override val confirmSeries = "Confirm all weeks"
+    override val rejectSeries = "Reject all weeks"
+    override val cancelSeries = "Cancel upcoming weeks"
+    override val seriesUpdatedMsg = "Series updated"
+    override val recurringTimeTaken = "This time is already taken on some weeks"
+    override val invalidRecurrenceCount = "Number of weeks must be between 2 and 12"
+    override val seriesNothingToCancel = "No upcoming weeks left to cancel"
+    override val bookingNotPayable = "A cancelled booking cannot be marked as paid"
+    override val statusCompleted = "Completed"
 
     override val serverError = "Server Error"
     override val sessionExpired = "Session expired. Please log in again."
@@ -948,8 +1017,6 @@ class RuLanguage : Language {
     override val uzsPerHour = "сумм/ч"
     override val currency = "сум"
     override val download = "Скачать"
-    override val history = "История"
-    override val allFinishedMatches = "Все завершённые матчи"
     override val fileSaveError = "Не удалось сохранить файл"
     override val fileSaved = "Файл сохранён"
     override val bookingDetails = "Детали бронирования"
@@ -1061,6 +1128,41 @@ class RuLanguage : Language {
     override val enterFullPhone = "Введите полный номер телефона"
     override val confirm = "Подтвердить"
     override val time = "Время"
+
+    override val date = "Дата"
+    override val customerInfo = "Данные клиента"
+    override val paymentInfo = "Данные об оплате"
+    override val paymentMethod = "Способ оплаты"
+    override val paymentCash = "Наличные"
+    override val paymentCard = "Карта"
+    override val statusConfirmed = "Подтверждено"
+    override val statusPending = "Ожидает"
+    override val statusCancelled = "Отменено"
+    override val statusRejected = "Отклонено"
+    override val bookingTypeLabel = "Тип брони"
+    override val bookingOneTime = "Разовая"
+    override val bookingRecurring = "Еженедельно"
+    override val recurrenceWeeks = "Количество недель"
+    override val weeksShort = "нед."
+    override val paymentTimingLabel = "Оплата"
+    override val paymentPrepaid = "Предоплата"
+    override val paymentAfterGame = "После игры"
+    override val paymentStatusLabel = "Статус оплаты"
+    override val paymentPaid = "Оплачено"
+    override val paymentUnpaid = "Не оплачено"
+    override val markAsPaid = "Отметить как оплачено"
+    override val markAsUnpaid = "Снять отметку оплаты"
+    override val paymentStatusUpdated = "Статус оплаты обновлён"
+    override val recurringSeries = "Повторяющаяся бронь"
+    override val confirmSeries = "Подтвердить все недели"
+    override val rejectSeries = "Отклонить все недели"
+    override val cancelSeries = "Отменить будущие недели"
+    override val seriesUpdatedMsg = "Серия обновлена"
+    override val recurringTimeTaken = "В некоторые недели это время уже занято"
+    override val invalidRecurrenceCount = "Количество недель должно быть от 2 до 12"
+    override val seriesNothingToCancel = "Не осталось будущих недель для отмены"
+    override val bookingNotPayable = "Отменённую бронь нельзя отметить как оплаченную"
+    override val statusCompleted = "Завершено"
 
     override val serverError = "Ошибка сервера"
     override val sessionExpired = "Сессия истекла. Пожалуйста, войдите снова."
@@ -1300,8 +1402,6 @@ class UzLanguage : Language {
     override val uzsPerHour = "so'm/s"
     override val currency = "so'm"
     override val download = "Yuklab olish"
-    override val history = "Tarix"
-    override val allFinishedMatches = "Barcha yakunlangan o'yinlar"
     override val fileSaveError = "Faylni saqlashda xatolik"
     override val fileSaved = "Fayl saqlandi"
     override val bookingDetails = "Bron ma'lumotlari"
@@ -1413,6 +1513,41 @@ class UzLanguage : Language {
     override val enterFullPhone = "Telefon raqamini to'liq kiriting"
     override val confirm = "Tasdiqlash"
     override val time = "Vaqt"
+
+    override val date = "Sana"
+    override val customerInfo = "Mijoz ma'lumotlari"
+    override val paymentInfo = "To'lov ma'lumotlari"
+    override val paymentMethod = "To'lov turi"
+    override val paymentCash = "Naqd"
+    override val paymentCard = "Karta"
+    override val statusConfirmed = "Tasdiqlangan"
+    override val statusPending = "Kutilmoqda"
+    override val statusCancelled = "Bekor qilingan"
+    override val statusRejected = "Rad etilgan"
+    override val bookingTypeLabel = "Bron turi"
+    override val bookingOneTime = "Bir martalik"
+    override val bookingRecurring = "Har hafta"
+    override val recurrenceWeeks = "Necha hafta"
+    override val weeksShort = "hafta"
+    override val paymentTimingLabel = "To'lov"
+    override val paymentPrepaid = "Oldindan"
+    override val paymentAfterGame = "O'yindan keyin"
+    override val paymentStatusLabel = "To'lov holati"
+    override val paymentPaid = "To'langan"
+    override val paymentUnpaid = "To'lanmagan"
+    override val markAsPaid = "To'landi deb belgilash"
+    override val markAsUnpaid = "To'lov belgisini olib tashlash"
+    override val paymentStatusUpdated = "To'lov holati yangilandi"
+    override val recurringSeries = "Takroriy bron"
+    override val confirmSeries = "Barcha haftalarni tasdiqlash"
+    override val rejectSeries = "Barcha haftalarni rad etish"
+    override val cancelSeries = "Kelgusi haftalarni bekor qilish"
+    override val seriesUpdatedMsg = "Seriya yangilandi"
+    override val recurringTimeTaken = "Ba'zi haftalarda bu vaqt allaqachon band"
+    override val invalidRecurrenceCount = "Haftalar soni 2 dan 12 gacha bo'lishi kerak"
+    override val seriesNothingToCancel = "Bekor qilinadigan kelgusi hafta qolmagan"
+    override val bookingNotPayable = "Bekor qilingan bronni to'langan deb belgilab bo'lmaydi"
+    override val statusCompleted = "Yakunlangan"
 
     override val serverError = "Server Xatoligi"
     override val sessionExpired = "Sessiya muddati tugadi. Iltimos, qayta kiring."

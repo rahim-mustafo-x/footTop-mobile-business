@@ -10,6 +10,7 @@ import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.data.network.dto.UserDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.domain.model.UserRole
+import uz.coder.foottopbusiness.presentation.main.booking.components.BookingOptions
 
 sealed interface HomeContract {
     data class State(
@@ -75,7 +76,11 @@ sealed interface HomeContract {
         data class ChangeDate(val date: String) : Event
         data class ChangeDuration(val duration: String) : Event
         data class SelectSlot(val slot: Triple<LocalDateTime, LocalDateTime, Boolean>) : Event
-        data class CreateBooking(val name: String, val phone: String) : Event
+        data class CreateBooking(
+            val name: String,
+            val phone: String,
+            val options: BookingOptions = BookingOptions()
+        ) : Event
         object DismissBookingDialog : Event
         object ClearStadiumForSlots : Event
 

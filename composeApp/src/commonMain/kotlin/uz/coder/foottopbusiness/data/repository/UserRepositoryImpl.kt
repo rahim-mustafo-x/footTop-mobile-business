@@ -1,10 +1,7 @@
 package uz.coder.foottopbusiness.data.repository
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.stateIn
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.data.network.UserApiService
 import uz.coder.foottopbusiness.data.network.dto.UserRequestDto
@@ -61,8 +58,6 @@ class UserRepositoryImpl(
     }
 
     override suspend fun userId(): Long {
-        val scope = CoroutineScope(Dispatchers.IO)
-        val stateIn = preferencesManager.userId.stateIn(scope)
-        return stateIn.value.toLong()
+        return preferencesManager.userId.first().toLong()
     }
 }
