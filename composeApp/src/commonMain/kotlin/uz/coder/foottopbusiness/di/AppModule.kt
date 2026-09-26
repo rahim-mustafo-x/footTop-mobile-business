@@ -17,6 +17,10 @@ import uz.coder.foottopbusiness.domain.usecase.booking.RejectBookingUseCase
 import uz.coder.foottopbusiness.domain.usecase.booking.CreateBookingUseCase
 import uz.coder.foottopbusiness.domain.usecase.booking.GetBookingsByStadiumIdUseCase
 import uz.coder.foottopbusiness.domain.usecase.booking.GetBookingsUseCase
+import uz.coder.foottopbusiness.domain.usecase.booking.UpdatePaymentStatusUseCase
+import uz.coder.foottopbusiness.domain.usecase.booking.ConfirmSeriesUseCase
+import uz.coder.foottopbusiness.domain.usecase.booking.RejectSeriesUseCase
+import uz.coder.foottopbusiness.domain.usecase.booking.CancelSeriesUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.ChangePasswordUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.IsLoginInUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.LoginUseCase
@@ -50,6 +54,8 @@ import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.UserIdUseCase
 import uz.coder.foottopbusiness.presentation.auth.login.LoginViewModel
 import uz.coder.foottopbusiness.presentation.main.booking.list.BookingListViewModel
+import uz.coder.foottopbusiness.presentation.main.booking.details.BookingDetailsViewModel
+import uz.coder.foottopbusiness.data.network.dto.booking.BookingResponseDto
 import uz.coder.foottopbusiness.presentation.main.coaches.CoachesViewModel
 import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
 import uz.coder.foottopbusiness.presentation.main.reports.ReportsViewModel
@@ -135,6 +141,10 @@ val appModule = module {
     factory { RejectBookingUseCase(get()) }
     factory { GetBookingsByStadiumIdUseCase(get()) }
     factory { GetBookingsUseCase(get()) }
+    factory { UpdatePaymentStatusUseCase(get()) }
+    factory { ConfirmSeriesUseCase(get()) }
+    factory { RejectSeriesUseCase(get()) }
+    factory { CancelSeriesUseCase(get()) }
 
 
     // viewModels
@@ -148,6 +158,7 @@ val appModule = module {
     factory { (stadium: StadiumResponse) -> EditStadiumViewModel(stadium, get(), get(), get(), get(), get(), get(), get()) }
     factory { (stadium: StadiumResponse) -> StadiumDetailsViewModel(stadium, get(), get(), get(), get(), get()) }
     factory { BookingListViewModel(get(), get(), get(), get()) }
+    factory { (booking: BookingResponseDto) -> BookingDetailsViewModel(booking, get(), get(), get(), get(), get(), get()) }
     factory { CoachesViewModel(get(), get(), get()) }
     factory { TournamentsViewModel(get(), get(), get(), get(), get(), get(), get()) }
     factory { SettingsViewModel(get(), get(), get(), get(), get()) }

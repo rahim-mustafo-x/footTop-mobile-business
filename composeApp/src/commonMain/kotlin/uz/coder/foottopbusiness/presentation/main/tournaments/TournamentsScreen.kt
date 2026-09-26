@@ -52,10 +52,11 @@ fun TournamentsScreen(viewModel: TournamentsViewModel) {
         viewModel.handleEvent(TournamentsContract.Event.Load)
     }
 
-    if (state.selectedTournament != null) {
-        TournamentDetailScreen(
-            tournament = state.selectedTournament!!,
-            onBack = { viewModel.handleEvent(TournamentsContract.Event.ClearDetail) }
+    state.selectedTournament?.let { tournament ->
+        TournamentDetailContent(
+            tournament = tournament,
+            onBack = { viewModel.handleEvent(TournamentsContract.Event.ClearDetail) },
+            onEdit = { navigator.push(TournamentEditScreen(tournament)) }
         )
         return
     }
@@ -290,44 +291,6 @@ private fun StatusBadge(status: String?) {
             fontWeight = FontWeight.Black,
             letterSpacing = 0.5.sp
         )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TournamentDetailScreen(tournament: TournamentResponseDto, onBack: () -> Unit) {
-    val scrollState = rememberScrollState()
-    val strings = Localization.current
-    val navigator = LocalNavigator.currentOrThrow
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(strings.tournamentDetails, fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { navigator.push(TournamentEditScreen(tournament)) }) {
-                        Icon(Icons.Outlined.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary)
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(scrollState)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Details implementation...
-            Text("Turnir: ${tournament.name}", style = MaterialTheme.typography.headlineMedium)
-        }
     }
 }
 

@@ -75,6 +75,8 @@ import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.plusMinutes
 import uz.coder.foottopbusiness.core.visualTransformation.PhoneTransformation
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
+import uz.coder.foottopbusiness.presentation.main.booking.components.BookingOptions
+import uz.coder.foottopbusiness.presentation.main.booking.components.BookingOptionsSection
 import uz.coder.foottopbusiness.presentation.main.home.HomeContract
 import uz.coder.foottopbusiness.presentation.main.home.HomeViewModel
 
@@ -340,6 +342,7 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
             
             var fullName by remember { mutableStateOf("") }
             var phone by remember { mutableStateOf("") }
+            var options by remember { mutableStateOf(BookingOptions()) }
             val durationText = when(state.selectedDuration) {
                 "SIXTY" -> "60 min"
                 "NINETY" -> "90 min"
@@ -433,11 +436,13 @@ fun SlotsControlScreen(stadium: StadiumResponse, state: HomeContract.State, view
                                 )
                             }
                         )
+
+                        BookingOptionsSection(options = options, onChange = { options = it })
                     }
                 },
                 confirmButton = {
                     Button(
-                        onClick = { viewModel.handleEvent(HomeContract.Event.CreateBooking(fullName, phone)) },
+                        onClick = { viewModel.handleEvent(HomeContract.Event.CreateBooking(fullName, phone, options)) },
                         enabled = fullName.isNotBlank() && phone.length == 9
                     ) {
                         Text(strings.save)

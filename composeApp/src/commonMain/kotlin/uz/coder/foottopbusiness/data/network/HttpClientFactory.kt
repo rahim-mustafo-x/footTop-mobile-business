@@ -80,7 +80,7 @@ class HttpClientFactory(
                         // Priority to SessionManager's immediate token, fallback to Preferences
                         val accessToken = sessionManager.token.value ?: preferencesManager.token.first()
                         val refreshToken = preferencesManager.refreshToken.first()
-                        log("Auth", "loadTokens: ${accessToken?.take(10)}...")
+                        log("Auth", "loadTokens: hasToken=${!accessToken.isNullOrBlank()}")
                         if (!accessToken.isNullOrBlank() && !refreshToken.isNullOrBlank()) {
                             BearerTokens(accessToken, refreshToken)
                         } else {
@@ -89,7 +89,7 @@ class HttpClientFactory(
                     }
                     refreshTokens {
                         val refreshToken = preferencesManager.refreshToken.first()
-                        log("Auth", "refreshTokens: ${refreshToken?.take(10)}...")
+                        log("Auth", "refreshTokens: hasRefreshToken=${!refreshToken.isNullOrBlank()}")
                         if (!refreshToken.isNullOrBlank()) {
                             sessionManager.refreshToken(refreshToken)
                         } else {

@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.SystemClock
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -211,19 +212,21 @@ actual suspend fun getCurrentLocation(): Pair<Double, Double>? {
     
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
-    // lastLocation ko'p holatda null qaytaradi: yangi qurilma, emulyator yoki GPS
-    // uzoq vaqt ishlatilmagan bo'lsa kesh bo'sh bo'ladi. Ilgari shunda xarita jim
-    // turardi va joylashuv umuman tanlanmasdi, shuning uchun kesh bo'sh chiqsa
-    // qurilmadan yangi fix so'raymiz.
+    // Kesh faqat yangi bo'lsa ishlatiladi. Ilgari istalgan yoshdagi lastLocation
+    // qaytarilardi -- soatlab oldingi (boshqa shahar/davlatdagi) joy tanlanib qolardi.
+    // Kesh bo'sh bo'lishi ham mumkin (yangi qurilma, emulyator).
     val cached = try {
         fusedLocationClient.lastLocation.await()
     } catch (_: Exception) {
         null
     }
-    if (cached != null) return cached.latitude to cached.longitude
+    if (cached != null) {
+        val ageMs = (SystemClock.elapsedRealtimeNanos() - cached.elapsedRealtimeNanos) / 1_000_000
+        if (ageMs <= FRESH_LOCATION_MAX_AGE_MS) return cached.latitude to cached.longitude
+    }
 
     val cancellationSource = CancellationTokenSource()
-    return try {
+    val fresh = try {
         withTimeoutOrNull(FRESH_LOCATION_TIMEOUT_MS) {
             fusedLocationClient.getCurrentLocation(
                 CurrentLocationRequest.Builder()
@@ -232,13 +235,15 @@ actual suspend fun getCurrentLocation(): Pair<Double, Double>? {
                     .build(),
                 cancellationSource.token
             ).await()
-        }?.let { it.latitude to it.longitude }
+        }
     } catch (_: Exception) {
         null
     } finally {
         // Timeout yoki xatoda GPS so'rovi osilib qolmasligi uchun.
         cancellationSource.cancel()
     }
+    // Yangi fix olinmasa (bino ichida, GPS o'chiq) eski kesh hech narsadan yaxshi
+    return (fresh ?: cached)?.let { it.latitude to it.longitude }
 }
 
 /** Yangi GPS fix'ini kutish muddati. Ochiq havoda odatda 2-5 soniya. */

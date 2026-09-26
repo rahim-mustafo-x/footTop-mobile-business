@@ -10,6 +10,10 @@ object ErrorMapper {
             error.contains("DISTRICT_SCOPE_VIOLATION") -> strings.districtScopeViolation
             error.contains("DATA_INTEGRITY_VIOLATION") -> strings.dataIntegrityViolation
             error.contains("BOOKING_TIME_ALREADY_TAKEN") -> strings.bookingTimeAlreadyTaken
+            error.contains("BOOKING_RECURRING_TIME_TAKEN") -> strings.recurringTimeTaken
+            error.contains("BOOKING_INVALID_RECURRENCE_COUNT") -> strings.invalidRecurrenceCount
+            error.contains("BOOKING_SERIES_NOTHING_TO_CANCEL") -> strings.seriesNothingToCancel
+            error.contains("BOOKING_NOT_PAYABLE") -> strings.bookingNotPayable
 
             // Rate limiting (429) — login, OTP yuborish
             error.contains("RATE_LIMIT_EXCEEDED") -> strings.rateLimitExceeded

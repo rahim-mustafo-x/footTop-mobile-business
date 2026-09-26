@@ -11,6 +11,7 @@ import platform.Foundation.NSBundle
 import platform.UIKit.UIApplicationOpenSettingsURLString
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import platform.CoreLocation.*
@@ -116,10 +117,43 @@ actual suspend fun checkLocationPermissionStatus(): PermissionStatus {
     }
 }
 
+/**
+ * Foydalanuvchi ruxsat dialogiga javob berguncha kutadi. Ilgari so'rov yuborilgan zahoti
+ * holat (hali NotDetermined, ya'ni DENIED) qaytarilardi, CLLocationManager esa darhol
+ * yo'q qilinib, dialog ham yopilib ketishi mumkin edi.
+ */
 actual suspend fun requestLocationPermission(): PermissionStatus {
-    val locationManager = CLLocationManager()
-    locationManager.requestWhenInUseAuthorization()
-    return checkLocationPermissionStatus()
+    if (CLLocationManager.authorizationStatus() != kCLAuthorizationStatusNotDetermined) {
+        return checkLocationPermissionStatus()
+    }
+    return suspendCancellableCoroutine { continuation ->
+        val locationManager = CLLocationManager()
+        val delegate = AuthorizationDelegate { status ->
+            if (status != kCLAuthorizationStatusNotDetermined && continuation.isActive) {
+                locationManager.delegate = null
+                continuation.resume(
+                    if (status == kCLAuthorizationStatusAuthorizedAlways ||
+                        status == kCLAuthorizationStatusAuthorizedWhenInUse
+                    ) PermissionStatus.GRANTED else PermissionStatus.DENIED
+                )
+            }
+        }
+        locationManager.delegate = delegate
+        locationManager.requestWhenInUseAuthorization()
+        // Handler manager va delegate'ni javob kelguncha tirik ushlab turadi (delegate weak)
+        continuation.invokeOnCancellation {
+            locationManager.delegate = null
+            delegate.hashCode()
+        }
+    }
+}
+
+private class AuthorizationDelegate(
+    private val onStatus: (CLAuthorizationStatus) -> Unit
+) : NSObject(), CLLocationManagerDelegateProtocol {
+    override fun locationManager(manager: CLLocationManager, didChangeAuthorizationStatus: CLAuthorizationStatus) {
+        onStatus(didChangeAuthorizationStatus)
+    }
 }
 
 @Composable
@@ -152,37 +186,47 @@ private class LocationDelegate(
     }
     
     override fun locationManager(manager: CLLocationManager, didChangeAuthorizationStatus: CLAuthorizationStatus) {
-        if (didChangeAuthorizationStatus == kCLAuthorizationStatusAuthorizedAlways || 
+        if (didChangeAuthorizationStatus == kCLAuthorizationStatusAuthorizedAlways ||
             didChangeAuthorizationStatus == kCLAuthorizationStatusAuthorizedWhenInUse) {
-            manager.startUpdatingLocation()
-        } else if (didChangeAuthorizationStatus == kCLAuthorizationStatusDenied || 
+            // Bir martalik aniq joylashuv (startUpdatingLocation birinchi bo'lib eski keshni berardi)
+            manager.requestLocation()
+        } else if (didChangeAuthorizationStatus == kCLAuthorizationStatusDenied ||
                    didChangeAuthorizationStatus == kCLAuthorizationStatusRestricted) {
             onLocationUpdate(null)
         }
     }
 }
 
-actual suspend fun getCurrentLocation(): Pair<Double, Double>? = suspendCancellableCoroutine { continuation ->
-    val locationManager = CLLocationManager()
-    val delegate = LocationDelegate { location ->
-        locationManager.stopUpdatingLocation()
-        if (continuation.isActive) {
-            continuation.resume(location)
+actual suspend fun getCurrentLocation(): Pair<Double, Double>? = withTimeoutOrNull(LOCATION_TIMEOUT_MS) {
+    suspendCancellableCoroutine { continuation ->
+        val locationManager = CLLocationManager()
+        locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
+        val delegate = LocationDelegate { location ->
+            if (continuation.isActive) {
+                locationManager.delegate = null
+                continuation.resume(location)
+            }
+        }
+        locationManager.delegate = delegate
+
+        val status = CLLocationManager.authorizationStatus()
+        when (status) {
+            // Ruxsat berilgach delegate requestLocation() ni o'zi chaqiradi
+            kCLAuthorizationStatusNotDetermined -> locationManager.requestWhenInUseAuthorization()
+            kCLAuthorizationStatusAuthorizedAlways, kCLAuthorizationStatusAuthorizedWhenInUse ->
+                locationManager.requestLocation()
+            else -> continuation.resume(null)
+        }
+
+        // Handler manager va delegate'ni natija kelguncha tirik ushlaydi (delegate weak).
+        // Ilgari delegate GC bo'lib ketsa, "Joylashuv aniqlanmoqda" abadiy qolardi.
+        continuation.invokeOnCancellation {
+            locationManager.stopUpdatingLocation()
+            locationManager.delegate = null
+            delegate.hashCode()
         }
     }
-    locationManager.delegate = delegate
-    
-    val status = CLLocationManager.authorizationStatus()
-    if (status == kCLAuthorizationStatusNotDetermined) {
-        locationManager.requestWhenInUseAuthorization()
-    } else if (status == kCLAuthorizationStatusAuthorizedAlways || status == kCLAuthorizationStatusAuthorizedWhenInUse) {
-        locationManager.startUpdatingLocation()
-    } else {
-        continuation.resume(null)
-    }
-
-    continuation.invokeOnCancellation {
-        locationManager.stopUpdatingLocation()
-        locationManager.delegate = null
-    }
 }
+
+/** Joylashuvni kutish muddati. Bino ichida GPS uzoq cho'zilishi mumkin. */
+private const val LOCATION_TIMEOUT_MS = 15_000L

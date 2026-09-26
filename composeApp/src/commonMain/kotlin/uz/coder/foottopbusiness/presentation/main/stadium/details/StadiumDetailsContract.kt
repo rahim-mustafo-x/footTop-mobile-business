@@ -7,6 +7,7 @@ import uz.coder.foottopbusiness.data.network.dto.booking.BookingResponseDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.SlotDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.domain.model.UserRole
+import uz.coder.foottopbusiness.presentation.main.booking.components.BookingOptions
 
 sealed interface StadiumDetailsContract {
     companion object {
@@ -47,6 +48,7 @@ sealed interface StadiumDetailsContract {
         val hasConflict: Boolean = false,
         val bookerName: String = "",
         val bookerPhone: String = "",
+        val bookingOptions: BookingOptions = BookingOptions(),
         val showBookerErrors: Boolean = false,
         val showCancelDialog: Boolean = false,
         val cancelReason: String = "",
@@ -88,6 +90,7 @@ sealed interface StadiumDetailsContract {
         ) : Event
         data class UpdateBookerName(val name: String) : Event
         data class UpdateBookerPhone(val phone: String) : Event
+        data class UpdateBookingOptions(val options: BookingOptions) : Event
         data class OpenCancelDialog(val bookingId: Long) : Event
         object DismissCancelDialog : Event
         data class UpdateCancelReason(val reason: String) : Event

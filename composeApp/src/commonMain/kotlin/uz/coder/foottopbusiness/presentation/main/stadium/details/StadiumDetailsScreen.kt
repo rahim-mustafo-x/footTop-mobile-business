@@ -62,6 +62,7 @@ import uz.coder.foottopbusiness.data.network.dto.stadium.SlotDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.fullUrl
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.stadium.edit.EditStadiumVoyager
+import uz.coder.foottopbusiness.presentation.main.booking.components.BookingOptionsSection
 import kotlin.time.Clock
 import uz.coder.foottopbusiness.core.platform.NotificationPermissionLauncher
 import uz.coder.foottopbusiness.core.ui.Success
@@ -553,6 +554,8 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                     .padding(horizontal = 24.dp)
                     .padding(bottom = 32.dp)
                     .navigationBarsPadding()
+                    // Bron turi/to'lov tanlovlari qo'shilgach kichik ekranda sig'maydi
+                    .verticalScroll(rememberScrollState())
             ) {
                 Text(
                     text = strings.bookingInfo,
@@ -623,6 +626,13 @@ fun StadiumDetailsScreen(viewModel: StadiumDetailsViewModel, onBack: () -> Unit)
                         leadingIcon = { Icon(Icons.Default.Phone, null, tint = if (phoneError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary) }
                     )
                 }
+
+                Spacer(Modifier.height(24.dp))
+
+                BookingOptionsSection(
+                    options = state.bookingOptions,
+                    onChange = { viewModel.handleEvent(StadiumDetailsContract.Event.UpdateBookingOptions(it)) }
+                )
 
                 Spacer(Modifier.height(32.dp))
 
