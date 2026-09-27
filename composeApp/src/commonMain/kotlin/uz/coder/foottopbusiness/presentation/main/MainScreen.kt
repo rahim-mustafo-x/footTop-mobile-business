@@ -20,7 +20,6 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.Tab
@@ -38,6 +37,9 @@ import uz.coder.foottopbusiness.presentation.main.coaches.CoachesVoyager
 import uz.coder.foottopbusiness.presentation.main.home.HomeVoyager
 import uz.coder.foottopbusiness.presentation.main.reports.ReportsScreen
 import uz.coder.foottopbusiness.presentation.main.stadium.StadiumVoyager
+import uz.coder.foottopbusiness.core.ui.AnimatedCurrentTab
+import uz.coder.foottopbusiness.core.ui.AnimatedNavigatorDisposeBehavior
+import uz.coder.foottopbusiness.core.ui.AnimatedScreens
 
 val LocalBottomBarVisible = staticCompositionLocalOf<MutableState<Boolean>> {
     error("No BottomBarVisible provided")
@@ -174,21 +176,9 @@ fun MainScreen() {
                 }
             ) { paddingValues ->
                 Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-                    tabs.forEach { CurrentTabContent(it.tab) }
+                    AnimatedCurrentTab(LocalTabNavigator.current, Modifier.fillMaxSize())
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun CurrentTabContent(tab: Tab) {
-    val tabNavigator = LocalTabNavigator.current
-    val isSelected = tabNavigator.current == tab
-    
-    Box(modifier = Modifier.fillMaxSize(), propagateMinConstraints = true) {
-        if (isSelected) {
-            tab.Content()
         }
     }
 }
@@ -236,11 +226,11 @@ internal object HomeTab : Tab {
     @Composable
     override fun Content() {
         val visibility = LocalBottomBarVisible.current
-        Navigator(HomeVoyager) { navigator ->
+        Navigator(HomeVoyager, disposeBehavior = AnimatedNavigatorDisposeBehavior) { navigator ->
             LaunchedEffect(navigator.size) {
                 visibility.value = navigator.size <= 1
             }
-            CurrentScreen()
+            AnimatedScreens(navigator)
         }
     }
 }
@@ -262,11 +252,11 @@ internal object StadiumTab : Tab {
     @Composable
     override fun Content() {
         val visibility = LocalBottomBarVisible.current
-        Navigator(StadiumVoyager) { navigator ->
+        Navigator(StadiumVoyager, disposeBehavior = AnimatedNavigatorDisposeBehavior) { navigator ->
             LaunchedEffect(navigator.size) {
                 visibility.value = navigator.size <= 1
             }
-            CurrentScreen()
+            AnimatedScreens(navigator)
         }
     }
 }
@@ -289,11 +279,11 @@ internal object UsersTab : Tab {
     @Composable
     override fun Content() {
         val visibility = LocalBottomBarVisible.current
-        Navigator(CoachesVoyager) { navigator ->
+        Navigator(CoachesVoyager, disposeBehavior = AnimatedNavigatorDisposeBehavior) { navigator ->
             LaunchedEffect(navigator.size) {
                 visibility.value = navigator.size <= 1
             }
-            CurrentScreen()
+            AnimatedScreens(navigator)
         }
     }
 }
@@ -316,11 +306,11 @@ internal object BookingsTab : Tab {
     @Composable
     override fun Content() {
         val visibility = LocalBottomBarVisible.current
-        Navigator(BookingListVoyager(isRoot = true)) { navigator ->
+        Navigator(BookingListVoyager(isRoot = true), disposeBehavior = AnimatedNavigatorDisposeBehavior) { navigator ->
             LaunchedEffect(navigator.size) {
                 visibility.value = navigator.size <= 1
             }
-            CurrentScreen()
+            AnimatedScreens(navigator)
         }
     }
 }

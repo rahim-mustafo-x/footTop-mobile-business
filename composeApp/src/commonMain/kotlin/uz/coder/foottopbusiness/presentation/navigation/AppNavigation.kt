@@ -33,6 +33,8 @@ import uz.coder.foottopbusiness.core.SessionManager
 import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.presentation.auth.login.LoginVoyager
 import uz.coder.foottopbusiness.presentation.splash.SplashVoyager
+import uz.coder.foottopbusiness.core.ui.AnimatedNavigatorDisposeBehavior
+import uz.coder.foottopbusiness.core.ui.AnimatedScreens
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -83,7 +85,7 @@ fun AppNavigation() {
         }
 
         Box(modifier = Modifier.fillMaxSize()) {
-            Navigator(SplashVoyager) { navigator ->
+            Navigator(SplashVoyager, disposeBehavior = AnimatedNavigatorDisposeBehavior) { navigator ->
                 LaunchedEffect(Unit) {
                     sessionManager.networkError.collect { error ->
                         val baseMessage = when (error.code) {
@@ -124,7 +126,7 @@ fun AppNavigation() {
             }
         }
     }
-                navigator.lastItem.Content()
+                AnimatedScreens(navigator)
             }
         }
     }
