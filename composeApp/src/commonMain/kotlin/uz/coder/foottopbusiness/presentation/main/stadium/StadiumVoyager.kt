@@ -2,9 +2,11 @@ package uz.coder.foottopbusiness.presentation.main.stadium
 
 import androidx.compose.runtime.Composable
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.core.screen.ScreenKey
+import cafe.adriel.voyager.core.screen.uniqueScreenKey
+import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.presentation.main.stadium.details.StadiumDetailsScreen
@@ -15,12 +17,12 @@ object StadiumVoyager : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        ContentWithNav(onNavigateToAddStadium = { navigator.push(AddStadiumVoyager) })
+        ContentWithNav(onNavigateToAddStadium = { navigator.push(AddStadiumVoyager()) })
     }
 
     @Composable
     fun ContentWithNav(onNavigateToAddStadium: (() -> Unit)? = null) {
-        val viewModel = koinInject<StadiumViewModel>()
+        val viewModel = getScreenModel<StadiumViewModel>()
         val navigator = LocalNavigator.currentOrThrow
 
         StadiumScreen(
@@ -43,10 +45,12 @@ object StadiumVoyager : Screen {
 }
 
 data class StadiumDetailsVoyager(val stadium: StadiumResponse) : Screen {
+    override val key: ScreenKey = uniqueScreenKey
+
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val viewModel = koinInject<StadiumDetailsViewModel> { parametersOf(stadium) }
+        val viewModel = getScreenModel<StadiumDetailsViewModel> { parametersOf(stadium) }
         StadiumDetailsScreen(
             viewModel = viewModel,
             onBack = { navigator.pop() }

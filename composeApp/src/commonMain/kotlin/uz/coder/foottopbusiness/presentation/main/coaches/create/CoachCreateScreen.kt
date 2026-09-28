@@ -31,10 +31,11 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.core.screen.ScreenKey
+import cafe.adriel.voyager.core.screen.uniqueScreenKey
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import org.koin.compose.koinInject
 import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.ui.GradientHeader
 import uz.coder.foottopbusiness.core.visualTransformation.AmountTransformation
@@ -42,11 +43,13 @@ import uz.coder.foottopbusiness.presentation.main.coaches.CoachesContract
 import uz.coder.foottopbusiness.presentation.main.coaches.CoachesViewModel
 
 class CoachCreateScreen : Screen {
+    override val key: ScreenKey = uniqueScreenKey
+
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val viewModel = koinInject<CoachesViewModel>()
+        val viewModel = getScreenModel<CoachesViewModel>()
         val state by viewModel.state.collectAsState()
         val strings = Localization.current
         var userId by remember { mutableStateOf("") }

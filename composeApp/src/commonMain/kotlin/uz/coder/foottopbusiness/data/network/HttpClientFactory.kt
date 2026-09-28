@@ -48,7 +48,6 @@ class HttpClientFactory(
         val config: HttpClientConfig<*>.() -> Unit = {
             install(ContentNegotiation) {
                 json(Json {
-                    prettyPrint = true
                     isLenient = true
                     ignoreUnknownKeys = true
                     explicitNulls = false

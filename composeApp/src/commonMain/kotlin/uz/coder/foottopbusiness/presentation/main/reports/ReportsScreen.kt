@@ -75,8 +75,7 @@ import uz.coder.foottopbusiness.core.ui.shimmer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReportsScreen() {
-    val viewModel = koinInject<ReportsViewModel>()
+fun ReportsScreen(viewModel: ReportsViewModel) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val strings = Localization.current

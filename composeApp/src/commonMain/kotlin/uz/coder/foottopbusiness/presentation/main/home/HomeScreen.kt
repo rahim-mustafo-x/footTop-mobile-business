@@ -176,7 +176,7 @@ fun HomeScreen(
                     UserRole.DISTRICT_ADMIN, UserRole.SUPER_ADMIN -> {
                         AdminHomeTab(
                             state = state,
-                            onAddStadium = { navigator.push(AddStadiumVoyager) },
+                            onAddStadium = { navigator.push(AddStadiumVoyager()) },
                             onAddUser = { navigator.push(uz.coder.foottopbusiness.presentation.main.home.user.UserCreateScreen()) },
                             onAddTournament = { navigator.push(TournamentsVoyager) },
                             onProfileClick = { navigator.push(SettingsVoyager) },
@@ -191,7 +191,7 @@ fun HomeScreen(
                     UserRole.OWNER -> {
                         OwnerHomeTab(
                             state = state,
-                            onAddStadium = { navigator.push(AddStadiumVoyager) },
+                            onAddStadium = { navigator.push(AddStadiumVoyager()) },
                             onAddTournament = { navigator.push(TournamentsVoyager) },
                             onAddCoach = { navigator.push(uz.coder.foottopbusiness.presentation.main.home.user.UserCreateScreen()) },
                             onProfileClick = { navigator.push(SettingsVoyager) },
