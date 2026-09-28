@@ -29,7 +29,7 @@ import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.home.HomeContract.Effect.*
 import kotlinx.coroutines.launch
 
-private fun durationMinutesKey(key: String): Int = when(key) {
+internal fun durationMinutesKey(key: String): Int = when(key) {
     "SIXTY" -> 60
     "NINETY" -> 90
     "ONE_HUNDRED_TWENTY" -> 120
@@ -454,6 +454,7 @@ class HomeViewModel(
                         activeStadiums = dashboard.activeStadiumsCount,
                         totalTournaments = dashboard.tournamentsCount,
                         totalUsers = dashboard.usersCount,
+                        stadiumRevenues = dashboard.stadiumRevenues,
                         totalEarnings = dashboard.stadiumRevenues.sumOf { it.totalRevenue }
                     )
                 }
