@@ -1,5 +1,9 @@
 package uz.coder.foottopbusiness.core.localization
 
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.number
+
 interface Language {
     val welcome: String
     val loginDescription: String
@@ -247,6 +251,31 @@ interface Language {
     // shuning uchun oddiy birlashtirish emas, funksiya
     fun stadiumCount(count: Int): String
     fun tournamentCount(count: Int): String
+
+    // Ega bosh sahifasi
+    fun greeting(name: String): String
+    fun longDate(date: LocalDate): String
+    fun bookingCount(count: Int): String
+    val createBookingHint: String
+    fun todayBookingsHint(count: Int): String
+    val nextMatch: String
+    fun untilTime(time: String): String
+    fun startsIn(hours: Int, minutes: Int): String
+    val matchInProgress: String
+    val laterToday: String
+    fun minutesShort(minutes: Int): String
+    val noMoreMatchesToday: String
+    fun seeAllCount(count: Int): String
+
+    // Admin bosh sahifasi
+    val usersLabel: String
+    val addEmployeeHintSuperAdmin: String
+    val addEmployeeHintDistrictAdmin: String
+    val addStadiumHint: String
+    val sendMessage: String
+    val revenueByStadium: String
+    val noRevenueYet: String
+
     val underRepair: String
     val closed: String
 
@@ -642,6 +671,31 @@ class EnLanguage : Language {
     override val call = "Call"
     override fun stadiumCount(count: Int) = if (count == 1) "1 stadium" else "$count stadiums"
     override fun tournamentCount(count: Int) = if (count == 1) "1 tournament" else "$count tournaments"
+    override fun greeting(name: String) = "Hello, $name"
+    override fun longDate(date: LocalDate): String {
+        val weekdays = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+        val months = listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+        return "${weekdays[date.dayOfWeek.isoDayNumber - 1]}, ${months[date.month.number - 1]} ${date.day}"
+    }
+    override fun bookingCount(count: Int) = if (count == 1) "1 booking" else "$count bookings"
+    override val createBookingHint = "Reserve a free slot"
+    override fun todayBookingsHint(count: Int) = "$count today · view"
+    override val nextMatch = "Next match"
+    override fun untilTime(time: String) = "until $time"
+    override fun startsIn(hours: Int, minutes: Int) =
+        if (hours > 0) "Starts in ${hours}h ${minutes}m" else "Starts in $minutes min"
+    override val matchInProgress = "In progress now"
+    override val laterToday = "Later today"
+    override fun minutesShort(minutes: Int) = "$minutes min"
+    override val noMoreMatchesToday = "No more matches today"
+    override fun seeAllCount(count: Int) = "See all ($count)"
+    override val usersLabel = "Users"
+    override val addEmployeeHintSuperAdmin = "District admin or stadium owner"
+    override val addEmployeeHintDistrictAdmin = "Stadium owner"
+    override val addStadiumHint = "Register a new venue"
+    override val sendMessage = "Send message"
+    override val revenueByStadium = "Revenue by stadium"
+    override val noRevenueYet = "No revenue yet"
     override val underRepair = "Under Repair"
     override val closed = "Closed"
 
@@ -1027,6 +1081,31 @@ class RuLanguage : Language {
     override val call = "Позвонить"
     override fun stadiumCount(count: Int) = "$count стадионов"
     override fun tournamentCount(count: Int) = "$count турниров"
+    override fun greeting(name: String) = "Привет, $name"
+    override fun longDate(date: LocalDate): String {
+        val weekdays = listOf("Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье")
+        val months = listOf("января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря")
+        return "${weekdays[date.dayOfWeek.isoDayNumber - 1]}, ${date.day} ${months[date.month.number - 1]}"
+    }
+    override fun bookingCount(count: Int) = "$count брон."
+    override val createBookingHint = "Забронируйте свободное время"
+    override fun todayBookingsHint(count: Int) = "Сегодня: $count · открыть"
+    override val nextMatch = "Следующая игра"
+    override fun untilTime(time: String) = "до $time"
+    override fun startsIn(hours: Int, minutes: Int) =
+        if (hours > 0) "Начнётся через $hours ч $minutes мин" else "Начнётся через $minutes мин"
+    override val matchInProgress = "Идёт сейчас"
+    override val laterToday = "Позже сегодня"
+    override fun minutesShort(minutes: Int) = "$minutes мин"
+    override val noMoreMatchesToday = "Сегодня больше игр нет"
+    override fun seeAllCount(count: Int) = "Все ($count)"
+    override val usersLabel = "Пользователи"
+    override val addEmployeeHintSuperAdmin = "Админ района или владелец стадиона"
+    override val addEmployeeHintDistrictAdmin = "Владелец стадиона"
+    override val addStadiumHint = "Зарегистрируйте новую площадку"
+    override val sendMessage = "Отправить сообщение"
+    override val revenueByStadium = "Доход по стадионам"
+    override val noRevenueYet = "Дохода пока нет"
     override val underRepair = "На ремонте"
     override val closed = "Закрыто"
 
@@ -1412,6 +1491,31 @@ class UzLanguage : Language {
     override val call = "Qo'ng'iroq"
     override fun stadiumCount(count: Int) = "$count ta stadion"
     override fun tournamentCount(count: Int) = "$count ta turnir"
+    override fun greeting(name: String) = "Salom, $name"
+    override fun longDate(date: LocalDate): String {
+        val weekdays = listOf("Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba", "Yakshanba")
+        val months = listOf("yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr")
+        return "${weekdays[date.dayOfWeek.isoDayNumber - 1]}, ${date.day}-${months[date.month.number - 1]}"
+    }
+    override fun bookingCount(count: Int) = "$count bron"
+    override val createBookingHint = "Bo'sh vaqtni band qiling"
+    override fun todayBookingsHint(count: Int) = "Bugun $count ta · ko'rish"
+    override val nextMatch = "Keyingi o'yin"
+    override fun untilTime(time: String) = "$time gacha"
+    override fun startsIn(hours: Int, minutes: Int) =
+        if (hours > 0) "$hours soat $minutes daqiqadan so'ng boshlanadi" else "$minutes daqiqadan so'ng boshlanadi"
+    override val matchInProgress = "Hozir davom etmoqda"
+    override val laterToday = "Bugun keyinroq"
+    override fun minutesShort(minutes: Int) = "$minutes daq"
+    override val noMoreMatchesToday = "Bugun boshqa o'yin yo'q"
+    override fun seeAllCount(count: Int) = "Barchasi ($count)"
+    override val usersLabel = "Foydalanuvchilar"
+    override val addEmployeeHintSuperAdmin = "Tuman admini yoki stadion egasi"
+    override val addEmployeeHintDistrictAdmin = "Stadion egasi"
+    override val addStadiumHint = "Yangi maydonni ro'yxatga oling"
+    override val sendMessage = "Xabar yuborish"
+    override val revenueByStadium = "Daromad bo'yicha stadionlar"
+    override val noRevenueYet = "Hozircha daromad yo'q"
     override val underRepair = "Ta'mirda"
     override val closed = "Yopiq"
 

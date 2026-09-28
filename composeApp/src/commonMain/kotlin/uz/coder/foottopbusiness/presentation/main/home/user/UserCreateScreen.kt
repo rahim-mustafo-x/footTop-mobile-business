@@ -80,12 +80,7 @@ class UserCreateScreen : Screen {
                 if (isPrivileged) {
                     add(Triple("ROLE_OWNER", strings.roleOwner, strings.roleOwnerDesc))
                 }
-                if (isPrivileged || currentRole == UserRole.OWNER) {
-                    add(Triple("ROLE_COACH", strings.roleCoach, strings.roleCoachDesc))
-                }
-                if (isPrivileged) {
-                    add(Triple("ROLE_PLAYER", strings.rolePlayer, strings.rolePlayerDesc))
-                }
+                // Murabbiy va o'yinchi qo'shish hozircha o'chirilgan - hech bir rol yarata olmaydi
             }
         }
 

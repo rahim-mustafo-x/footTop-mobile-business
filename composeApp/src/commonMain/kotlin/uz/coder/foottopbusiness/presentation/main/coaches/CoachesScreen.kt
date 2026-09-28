@@ -67,7 +67,7 @@ fun CoachesScreen(viewModel: CoachesViewModel) {
                 actions = {
                     HeaderIconButton(
                         icon = Icons.Default.Add,
-                        onClick = { navigator.push(uz.coder.foottopbusiness.presentation.main.home.user.UserCreateTypeScreen()) },
+                        onClick = { navigator.push(uz.coder.foottopbusiness.presentation.main.home.user.UserCreateScreen()) },
                         contentDescription = strings.createUser
                     )
                 }

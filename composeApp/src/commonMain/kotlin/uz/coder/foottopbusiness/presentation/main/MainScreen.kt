@@ -20,6 +20,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.core.annotation.InternalVoyagerApi
+import cafe.adriel.voyager.core.model.ScreenModelStore
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.Tab
@@ -226,6 +228,7 @@ internal object HomeTab : Tab {
     override fun Content() {
         val visibility = LocalBottomBarVisible.current
         Navigator(HomeVoyager, disposeBehavior = AnimatedNavigatorDisposeBehavior) { navigator ->
+            DisposeOnSessionEnd(navigator)
             LaunchedEffect(navigator.size) {
                 visibility.value = navigator.size <= 1
             }
@@ -252,6 +255,7 @@ internal object StadiumTab : Tab {
     override fun Content() {
         val visibility = LocalBottomBarVisible.current
         Navigator(StadiumVoyager, disposeBehavior = AnimatedNavigatorDisposeBehavior) { navigator ->
+            DisposeOnSessionEnd(navigator)
             LaunchedEffect(navigator.size) {
                 visibility.value = navigator.size <= 1
             }
@@ -279,6 +283,7 @@ internal object UsersTab : Tab {
     override fun Content() {
         val visibility = LocalBottomBarVisible.current
         Navigator(CoachesVoyager, disposeBehavior = AnimatedNavigatorDisposeBehavior) { navigator ->
+            DisposeOnSessionEnd(navigator)
             LaunchedEffect(navigator.size) {
                 visibility.value = navigator.size <= 1
             }
@@ -306,10 +311,37 @@ internal object BookingsTab : Tab {
     override fun Content() {
         val visibility = LocalBottomBarVisible.current
         Navigator(BookingListVoyager(isRoot = true), disposeBehavior = AnimatedNavigatorDisposeBehavior) { navigator ->
+            DisposeOnSessionEnd(navigator)
             LaunchedEffect(navigator.size) {
                 visibility.value = navigator.size <= 1
             }
             AnimatedScreens(navigator)
+        }
+    }
+}
+
+/**
+ * Sessiya tugaganda tab stekidagi ekranlarning ScreenModel'larini tozalaydi.
+ *
+ * Tab navigatorlari `disposeSteps = false` bilan ishlaydi, ildiz ekranlari
+ * (HomeVoyager va h.k.) esa stekdan hech qachon chiqmaydi - shuning uchun
+ * ularning ViewModel'lari ScreenModelStore'da abadiy qolardi. Logout'dan keyin
+ * boshqa akkaunt bilan kirilganda eski nusxa qayta ishlatilib, sarlavhada
+ * oldingi foydalanuvchining ismi va ma'lumotlari ko'rinib qolardi.
+ *
+ * Logout'da UserSession rolni UNKNOWN qiladi va MainScreen tablarni darhol
+ * kompozitsiyadan chiqaradi - shu payt tozalaymiz. Oddiy tab almashishda rol
+ * ma'lum bo'ladi, holat esa avvalgidek saqlanib qoladi.
+ */
+@OptIn(InternalVoyagerApi::class)
+@Composable
+private fun DisposeOnSessionEnd(navigator: Navigator) {
+    val userSession = koinInject<UserSession>()
+    DisposableEffect(navigator) {
+        onDispose {
+            if (userSession.role.value == UserRole.UNKNOWN) {
+                navigator.items.forEach { navigator.dispose(it) }
+            }
         }
     }
 }
@@ -330,6 +362,14 @@ internal object ReportsTab : Tab {
 
     @Composable
     override fun Content() {
+        // Bu tab navigatorsiz - ScreenModel'i tabning o'ziga bog'langan,
+        // shuning uchun uni ham sessiya tugaganda alohida tozalaymiz
+        val userSession = koinInject<UserSession>()
+        DisposableEffect(Unit) {
+            onDispose {
+                if (userSession.role.value == UserRole.UNKNOWN) ScreenModelStore.onDispose(ReportsTab)
+            }
+        }
         ReportsScreen(getScreenModel())
     }
 }

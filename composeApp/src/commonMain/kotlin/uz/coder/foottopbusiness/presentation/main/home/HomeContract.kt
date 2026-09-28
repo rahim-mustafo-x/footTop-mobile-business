@@ -9,6 +9,7 @@ import uz.coder.foottopbusiness.data.network.dto.MatchResponseDto
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.data.network.dto.UserDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
+import uz.coder.foottopbusiness.domain.model.StadiumRevenue
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.booking.components.BookingOptions
 
@@ -30,6 +31,8 @@ sealed interface HomeContract {
         val activeStadiums: Int = 0,
         val totalTournaments: Int = 0,
         val totalUsers: Int = 0,
+        // Har bir stadion bo'yicha daromad - admin bosh sahifasidagi reyting uchun
+        val stadiumRevenues: List<StadiumRevenue> = emptyList(),
 
         // Bron qilishda stadion tanlash ro'yxati. Statistika so'rovi allaqachon
         // birinchi sahifani olib keladi - shu ma'lumotni tashlab yubormaymiz.
