@@ -7,7 +7,6 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.outlined.EventNote
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -20,6 +19,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.Tab
@@ -27,7 +27,6 @@ import cafe.adriel.voyager.navigator.tab.TabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
-import uz.coder.foottopbusiness.core.SessionManager
 import uz.coder.foottopbusiness.core.UserSession
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.core.localization.Localization
@@ -331,6 +330,6 @@ internal object ReportsTab : Tab {
 
     @Composable
     override fun Content() {
-        ReportsScreen()
+        ReportsScreen(getScreenModel())
     }
 }

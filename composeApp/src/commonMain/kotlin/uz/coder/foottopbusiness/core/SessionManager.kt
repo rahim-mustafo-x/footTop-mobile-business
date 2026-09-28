@@ -27,6 +27,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import uz.coder.foottopbusiness.core.NetworkConfig.BASE_URL
+import uz.coder.foottopbusiness.core.platform.isDebugBuild
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.data.network.dto.auth.RefreshTokenRequest
 import uz.coder.foottopbusiness.data.network.dto.auth.TokenResponse
@@ -84,7 +85,8 @@ class SessionManager(private val preferencesManager: PreferencesManager) {
     }
 
     private fun log(tag: String, message: String) {
-        println("[$tag] $message")
+        // Release'da yozilmaydi -- ichida token bo'lishi mumkin
+        if (isDebugBuild) println("[$tag] $message")
     }
 
     suspend fun logout() {
@@ -144,7 +146,7 @@ class SessionManager(private val preferencesManager: PreferencesManager) {
                         log("Ktor-Refresh", message)
                     }
                 }
-                level = LogLevel.ALL
+                level = if (isDebugBuild) LogLevel.ALL else LogLevel.NONE
             }
             expectSuccess = true
             HttpResponseValidator {

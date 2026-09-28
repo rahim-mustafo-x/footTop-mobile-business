@@ -7,7 +7,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -15,12 +14,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -176,7 +171,7 @@ fun HomeScreen(
                     UserRole.DISTRICT_ADMIN, UserRole.SUPER_ADMIN -> {
                         AdminHomeTab(
                             state = state,
-                            onAddStadium = { navigator.push(AddStadiumVoyager) },
+                            onAddStadium = { navigator.push(AddStadiumVoyager()) },
                             onAddUser = { navigator.push(uz.coder.foottopbusiness.presentation.main.home.user.UserCreateScreen()) },
                             onAddTournament = { navigator.push(TournamentsVoyager) },
                             onProfileClick = { navigator.push(SettingsVoyager) },
@@ -191,7 +186,7 @@ fun HomeScreen(
                     UserRole.OWNER -> {
                         OwnerHomeTab(
                             state = state,
-                            onAddStadium = { navigator.push(AddStadiumVoyager) },
+                            onAddStadium = { navigator.push(AddStadiumVoyager()) },
                             onAddTournament = { navigator.push(TournamentsVoyager) },
                             onAddCoach = { navigator.push(uz.coder.foottopbusiness.presentation.main.home.user.UserCreateScreen()) },
                             onProfileClick = { navigator.push(SettingsVoyager) },
