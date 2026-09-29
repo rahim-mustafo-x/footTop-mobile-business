@@ -46,7 +46,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import uz.coder.foottopbusiness.core.minutesBetween
 import uz.coder.foottopbusiness.core.plusMinutes
-import uz.coder.foottopbusiness.data.network.dto.MatchResponseDto
+import uz.coder.foottopbusiness.data.network.dto.admin.HomeBookingDto
 import uz.coder.foottopbusiness.core.ui.AppCard
 import uz.coder.foottopbusiness.core.ui.AppCardShape
 import uz.coder.foottopbusiness.core.ui.IconBadge
@@ -597,8 +597,8 @@ private fun OwnerHomeTab(
 ) {
     val strings = Localization.current
     val now = rememberCurrentMinute()
-    val today = remember(state.matches, state.stadiums, now.date) {
-        todaySchedule(state.matches, state.stadiums, now.date)
+    val today = remember(state.todayBookings, state.stadiums, now.date) {
+        todaySchedule(state.todayBookings, state.stadiums, now.date)
     }
     // Hali tugamagan birinchi o'yin - davom etayotgan yoki navbatdagisi
     val nextIndex = today.indexOfFirst { it.end > now }
@@ -616,7 +616,7 @@ private fun OwnerHomeTab(
         item {
             OwnerStatChips(
                 todayCount = today.size,
-                earnings = state.totalEarnings,
+                earnings = state.monthRevenue,
                 stadiumCount = state.activeStadiums
             )
         }
@@ -668,7 +668,7 @@ private fun OwnerHomeTab(
             ) {
                 SectionHeader(strings.nextMatch)
                 when {
-                    state.isLoadingMatches && state.matches.isEmpty() -> Box(
+                    state.isLoadingTodayBookings && state.todayBookings.isEmpty() -> Box(
                         modifier = Modifier.fillMaxWidth().height(150.dp).clip(AppCardShape).shimmer()
                     )
                     next != null -> NextMatchCard(next, now)
@@ -720,24 +720,33 @@ private data class ScheduledMatch(
     val price: Double?
 )
 
+/**
+ * Bugungi jadval /v1/admin/dashboard/home dagi bronlardan tuziladi. Ilgari
+ * bu yer /v1/matches (o'yinchilar yig'adigan o'yinlar) dan olinardi - shuning
+ * uchun bronlar bo'lsa ham "Bronlar: 0" va bo'sh "Keyingi o'yin" chiqardi.
+ *
+ * Backend bekor qilingan/rad etilganlarni allaqachon chiqarib tashlaydi, lekin
+ * javob eskirgan bo'lsa ham jadval to'g'ri kunni ko'rsatsin - sanani tekshiramiz.
+ */
 private fun todaySchedule(
-    matches: List<MatchResponseDto>,
+    bookings: List<HomeBookingDto>,
     stadiums: List<StadiumResponse>,
     date: LocalDate
 ): List<ScheduledMatch> {
     val stadiumNames = stadiums.associate { it.id?.toLong() to it.name }
-    return matches.mapNotNull { match ->
-        val start = match.dateTime.toLocalDateTimeSafe() ?: return@mapNotNull null
+    return bookings.mapNotNull { booking ->
+        if (booking.status == "CANCELLED" || booking.status == "REJECTED") return@mapNotNull null
+        val start = booking.startTime.toLocalDateTimeSafe() ?: return@mapNotNull null
         if (start.date != date) return@mapNotNull null
-        val minutes = durationMinutesKey(match.duration ?: "")
+        val end = booking.endTime.toLocalDateTimeSafe()?.takeIf { it > start } ?: start.plusMinutes(60)
         ScheduledMatch(
-            title = match.title,
+            title = booking.name?.takeIf { it.isNotBlank() },
             start = start,
-            end = start.plusMinutes(minutes),
-            minutes = minutes,
-            stadiumName = stadiumNames[match.stadiumId],
-            stadiumId = match.stadiumId,
-            price = match.pricePerPlayer
+            end = end,
+            minutes = minutesBetween(start, end),
+            stadiumName = booking.stadiumName ?: stadiumNames[booking.stadiumId],
+            stadiumId = booking.stadiumId,
+            price = booking.totalPrice
         )
     }.sortedBy { it.start }
 }
@@ -845,7 +854,7 @@ private fun OwnerStatChips(todayCount: Int, earnings: Double, stadiumCount: Int)
     ) {
         StatChip(label = strings.today, value = strings.bookingCount(todayCount))
         StatChip(
-            label = strings.totalRevenue,
+            label = strings.monthRevenue,
             value = Money.compactWithCurrency(earnings, strings.currency),
             valueColor = MaterialTheme.colorScheme.tertiary
         )

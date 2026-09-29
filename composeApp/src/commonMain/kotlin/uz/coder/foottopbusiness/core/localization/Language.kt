@@ -291,6 +291,7 @@ interface Language {
     val filter: String
     val noDataYet: String
     val totalRevenue: String
+    val monthRevenue: String
     val activeStadiums: String
     val totalTournaments: String
     val totalMatches: String
@@ -710,6 +711,7 @@ class EnLanguage : Language {
     override val filter = "Filter"
     override val noDataYet = "No data yet"
     override val totalRevenue = "Total revenue"
+    override val monthRevenue = "This month"
     override val activeStadiums = "Active stadiums"
     override val totalTournaments = "Total tournaments"
     override val totalMatches = "Total matches"
@@ -1120,6 +1122,7 @@ class RuLanguage : Language {
     override val filter = "Фильтр"
     override val noDataYet = "Пока нет данных"
     override val totalRevenue = "Общий доход"
+    override val monthRevenue = "За месяц"
     override val activeStadiums = "Активные стадионы"
     override val totalTournaments = "Всего турниров"
     override val totalMatches = "Всего матчей"
@@ -1530,6 +1533,7 @@ class UzLanguage : Language {
     override val filter = "Filtrlash"
     override val noDataYet = "Hozircha ma'lumotlar yo'q"
     override val totalRevenue = "Jami daromad"
+    override val monthRevenue = "Oy tushumi"
     override val activeStadiums = "Aktiv stadionlar"
     override val totalTournaments = "Jami turnirlar"
     override val totalMatches = "Jami o'yinlar"

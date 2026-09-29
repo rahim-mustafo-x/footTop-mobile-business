@@ -7,6 +7,7 @@ import uz.coder.foottopbusiness.core.log
 import uz.coder.foottopbusiness.data.network.AdminApiService
 import uz.coder.foottopbusiness.data.network.dto.UserDto
 import uz.coder.foottopbusiness.data.network.dto.admin.CreateStaffUserDto
+import uz.coder.foottopbusiness.data.network.dto.admin.HomeDto
 import uz.coder.foottopbusiness.domain.model.Dashboard
 import uz.coder.foottopbusiness.domain.model.WeeklyReport
 import uz.coder.foottopbusiness.domain.repository.AdminRepository
@@ -61,6 +62,15 @@ class AdminRepositoryImpl(private val apiService: AdminApiService) : AdminReposi
             )
         } else if (response.success == false) {
             throw Exception(response.message ?: "Weekly report loading failed")
+        }
+    }
+
+    override fun home(): Flow<HomeDto> = flow {
+        val response = apiService.home()
+        if (response.success == true && response.data != null) {
+            emit(response.data)
+        } else {
+            throw Exception(response.message ?: "Home loading failed")
         }
     }
 

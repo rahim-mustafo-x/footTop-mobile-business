@@ -25,6 +25,7 @@ import uz.coder.foottopbusiness.core.plusMinutes
 import uz.coder.foottopbusiness.core.isOverlap
 import uz.coder.foottopbusiness.core.toLocalDateTimeSafe
 import uz.coder.foottopbusiness.domain.usecase.booking.GetBookingsByStadiumIdUseCase
+import uz.coder.foottopbusiness.domain.usecase.admin.HomeUseCase
 import uz.coder.foottopbusiness.domain.model.UserRole
 import uz.coder.foottopbusiness.presentation.main.home.HomeContract.Effect.*
 import kotlinx.coroutines.launch
@@ -121,6 +122,7 @@ class HomeViewModel(
     private val getTournamentsUseCase: GetTournamentsUseCase,
     private val createBookingUseCase: CreateBookingUseCase,
     private val getBookingsByStadiumIdUseCase: GetBookingsByStadiumIdUseCase,
+    private val homeUseCase: HomeUseCase,
     private val userSession: UserSession
 ) : BaseViewModel<HomeContract.State, HomeContract.Effect, HomeContract.Event>(
     // Rol va foydalanuvchi sessiyada allaqachon bor (MainScreen shusiz bu
@@ -447,6 +449,7 @@ class HomeViewModel(
             return
         }
 
+        loadHome()
         executeAsync {
             dashboardUseCase().collect { dashboard ->
                 updateState {
@@ -505,6 +508,34 @@ class HomeViewModel(
                 updateLocalStats()
             }
         }
+    }
+
+    /**
+     * Bosh sahifa ma'lumotlari (/v1/admin/dashboard/home): bugungi bronlar,
+     * oylik tushum va sonlar. Backend ularni rol doirasida qaytaradi - ega
+     * faqat o'z stadionlarini, tuman admini o'z tumanini, super admin hammasini
+     * ko'radi. Endpoint faqat admin va egaga ochiq.
+     */
+    private fun loadHome() {
+        updateState { copy(isLoadingTodayBookings = true) }
+        executeAsync(
+            block = { homeUseCase().first() },
+            onSuccess = { home ->
+                updateState {
+                    copy(
+                        todayBookings = home.todaySchedule.orEmpty(),
+                        monthRevenue = home.monthRevenue ?: 0.0,
+                        activeStadiums = home.activeStadiumsCount ?: activeStadiums,
+                        totalTournaments = home.tournamentsCount ?: totalTournaments,
+                        totalUsers = home.usersCount ?: totalUsers,
+                        isLoadingTodayBookings = false
+                    )
+                }
+            },
+            onError = {
+                updateState { copy(isLoadingTodayBookings = false) }
+            }
+        )
     }
 
     private fun loadTournaments() {

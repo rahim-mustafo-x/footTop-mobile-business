@@ -52,9 +52,6 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.koin.android)
             implementation(libs.ktor.client.okhttp)
-            // Faqat kompilyatsiya uchun: haqiqiy kutubxona androidApp'da
-            // debug -> chucker, release -> chucker no-op sifatida ulanadi
-            compileOnly(libs.chucker.library)
 
             implementation(project.dependencies.platform(libs.firebase.bom))
             implementation(libs.firebase.analytics)
