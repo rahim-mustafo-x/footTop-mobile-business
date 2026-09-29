@@ -10,6 +10,7 @@ import uz.coder.foottopbusiness.data.repository.*
 import uz.coder.foottopbusiness.domain.repository.*
 import uz.coder.foottopbusiness.domain.usecase.admin.CreateStaffUseCase
 import uz.coder.foottopbusiness.domain.usecase.admin.DashboardUseCase
+import uz.coder.foottopbusiness.domain.usecase.admin.HomeUseCase
 import uz.coder.foottopbusiness.domain.usecase.admin.WeeklyReportUseCase
 import uz.coder.foottopbusiness.domain.usecase.booking.CancelBookingUseCase
 import uz.coder.foottopbusiness.domain.usecase.booking.ConfirmBookingUseCase
@@ -133,6 +134,7 @@ val appModule = module {
     factory { SendToAllUseCase(get()) }
     factory { RegisterDeviceTokenUseCase(get()) }
     factory { DashboardUseCase(get()) }
+    factory { HomeUseCase(get()) }
     factory { WeeklyReportUseCase(get()) }
     factory { CreateStaffUseCase(get()) }
     factory { CreateBookingUseCase(get()) }
@@ -151,7 +153,7 @@ val appModule = module {
     factory { SplashViewModel(get(), get(), get(), get(), get()) }
     factory { AccessViewModel(get(), get(), get(), get()) }
     factory { LoginViewModel(get(), get(), get(), get()) }
-    factory { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    factory { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { ReportsViewModel(get(), get(), get()) }
     factory { StadiumViewModel(get(), get(), get()) }
     factory { AddStadiumViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }

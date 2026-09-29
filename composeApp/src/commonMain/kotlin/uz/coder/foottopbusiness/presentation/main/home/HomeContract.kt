@@ -8,6 +8,7 @@ import uz.coder.foottopbusiness.core.platform.PermissionStatus
 import uz.coder.foottopbusiness.data.network.dto.MatchResponseDto
 import uz.coder.foottopbusiness.data.network.dto.TournamentResponseDto
 import uz.coder.foottopbusiness.data.network.dto.UserDto
+import uz.coder.foottopbusiness.data.network.dto.admin.HomeBookingDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
 import uz.coder.foottopbusiness.domain.model.StadiumRevenue
 import uz.coder.foottopbusiness.domain.model.UserRole
@@ -58,6 +59,14 @@ sealed interface HomeContract {
         // O'yinlar
         val matches: List<MatchResponseDto> = emptyList(),
         val isLoadingMatches: Boolean = false,
+
+        // Bugungi bronlar (/v1/admin/dashboard/home) - ega bosh sahifasidagi jadval,
+        // "Keyingi o'yin" va "Bronlar" tugmasidagi son shulardan olinadi.
+        // Backend ularni rol doirasida qaytaradi.
+        val todayBookings: List<HomeBookingDto> = emptyList(),
+        // Joriy oyda boshlanadigan bronlar summasi
+        val monthRevenue: Double = 0.0,
+        val isLoadingTodayBookings: Boolean = false,
 
         // Bildirishnoma ruxsati
         val showNotificationPermissionDialog: Boolean = false,
