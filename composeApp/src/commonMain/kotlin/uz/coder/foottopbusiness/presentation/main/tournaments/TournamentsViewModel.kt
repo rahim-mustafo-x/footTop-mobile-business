@@ -133,7 +133,7 @@ class TournamentsViewModel(
                                 } else null
                             )
                         ).collect { result = it }
-                        result!!
+                        result ?: throw Exception("Turnir yaratilmadi")
                     },
                     onSuccess = { created ->
                         updateState { copy(isCreating = false, tournaments = tournaments + created) }
@@ -170,7 +170,7 @@ class TournamentsViewModel(
                                 } else null
                             )
                         ).collect { result = it }
-                        result!!
+                        result ?: throw Exception("Turnir yangilanmadi")
                     },
                     onSuccess = { updated ->
                         updateState {
@@ -200,7 +200,7 @@ class TournamentsViewModel(
             block = {
                 var result: PageTournamentResponseDto? = null
                 getTournamentsUseCase(page = page, filters = state.value.filters).collect { result = it }
-                result!!
+                result ?: PageTournamentResponseDto()
             },
             onSuccess = { pageData ->
                 val newItems = pageData.content ?: emptyList()

@@ -49,8 +49,12 @@ class MapSelectionScreen(
                 if (selectedLat != null && selectedLng != null && selectedLat != 0.0) {
                     FloatingActionButton(
                         onClick = {
-                            onSelected(selectedLat!!, selectedLng!!)
-                            navigator.pop()
+                            selectedLat?.let { lat ->
+                                selectedLng?.let { lng ->
+                                    onSelected(lat, lng)
+                                    navigator.pop()
+                                }
+                            }
                         },
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary,

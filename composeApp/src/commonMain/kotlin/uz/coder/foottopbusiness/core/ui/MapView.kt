@@ -84,7 +84,7 @@ fun MapView(
     val cameraState = rememberCameraState(
         firstPosition = CameraPosition(
             target = if (hasSelection) {
-                Position(longitude = initialLongitude!!, latitude = initialLatitude!!)
+                Position(longitude = initialLongitude ?: TASHKENT_LNG, latitude = initialLatitude ?: TASHKENT_LAT)
             } else {
                 Position(longitude = TASHKENT_LNG, latitude = TASHKENT_LAT)
             },
@@ -96,9 +96,9 @@ fun MapView(
     // xarita ekranidan qaytganda eski kamera tiklanib, yangi joy ko'rinmay qolardi.
     if (!enabled) {
         LaunchedEffect(initialLatitude, initialLongitude) {
-            if (hasSelection) {
+            if (hasSelection && initialLatitude != null && initialLongitude != null) {
                 cameraState.position = CameraPosition(
-                    target = Position(longitude = initialLongitude!!, latitude = initialLatitude!!),
+                    target = Position(longitude = initialLongitude, latitude = initialLatitude),
                     zoom = SELECTED_ZOOM
                 )
             }

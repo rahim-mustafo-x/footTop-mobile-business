@@ -16,8 +16,8 @@ android {
         applicationId = "uz.coder.foottopbusiness"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 4
-        versionName = "1.03"
+        versionCode = 5
+        versionName = "1.05"
     }
     packaging {
         resources {
