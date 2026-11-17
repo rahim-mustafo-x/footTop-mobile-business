@@ -19,9 +19,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.core.annotation.InternalVoyagerApi
-import cafe.adriel.voyager.core.model.ScreenModelStore
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.Tab
@@ -36,8 +34,10 @@ import uz.coder.foottopbusiness.core.ui.AccessGateScreen
 import uz.coder.foottopbusiness.presentation.main.booking.list.BookingListVoyager
 import uz.coder.foottopbusiness.presentation.main.coaches.CoachesVoyager
 import uz.coder.foottopbusiness.presentation.main.home.HomeVoyager
-import uz.coder.foottopbusiness.presentation.main.reports.ReportsScreen
+import uz.coder.foottopbusiness.presentation.main.reports.ReportsVoyager
+import cafe.adriel.voyager.core.model.ScreenModelStore
 import uz.coder.foottopbusiness.presentation.main.stadium.StadiumVoyager
+import uz.coder.foottopbusiness.presentation.main.schedule.ScheduleVoyager
 import uz.coder.foottopbusiness.core.ui.AnimatedCurrentTab
 import uz.coder.foottopbusiness.core.ui.AnimatedNavigatorDisposeBehavior
 import uz.coder.foottopbusiness.core.ui.AnimatedScreens
@@ -80,7 +80,8 @@ private fun tabsForRole(role: UserRole): List<RoleTab> {
         )
         UserRole.OWNER -> listOf(
             RoleTab(HomeTab, strings.tabHome, Icons.Outlined.Home),
-            RoleTab(StadiumTab, strings.tabSchedule, Icons.Outlined.CalendarMonth),
+            RoleTab(ScheduleTab, strings.tabSchedule, Icons.Outlined.CalendarMonth),
+            RoleTab(StadiumTab, strings.tabStadium, Icons.Outlined.Place),
             RoleTab(ReportsTab, strings.tabRevenue, Icons.Outlined.Payments),
         )
         // Murabbiyga stadion ro'yxati emas, bronlar kerak
@@ -103,6 +104,19 @@ fun MainScreen() {
     val strings = Localization.current
 
     val currentRole by userSession.role.collectAsState()
+
+    // Sessiya tugab Main yopilganda hamma tab ildiz ekranlarining ScreenModel'larini
+    // tozalaymiz. Ular object (kaliti doimiy), shuning uchun keyingi login - hatto boshqa
+    // akkaunt bilan - eski ViewModel'ni qayta olardi. DisposeOnSessionEnd faqat ochiq turgan
+    // tabni tozalaydi: boshqa tablar (masalan Jadval) oldingi foydalanuvchida qolib ketardi.
+    DisposableEffect(Unit) {
+        onDispose {
+            if (userSession.role.value == UserRole.UNKNOWN) {
+                listOf(HomeVoyager, StadiumVoyager, ScheduleVoyager, CoachesVoyager, ReportsVoyager)
+                    .forEach { ScreenModelStore.onDispose(it) }
+            }
+        }
+    }
 
     // Rol kelguncha kutamiz, lekin cheksiz emas. Splash foydalanuvchini
     // yuklashdagi xatoni yutib yuborishi mumkin - u holda rol hech qachon
@@ -264,6 +278,34 @@ internal object StadiumTab : Tab {
     }
 }
 
+/** Egasining kunlik jadvali: hamma maydonlar, bronlar, yopiq vaqt va bo'sh joylar. */
+internal object ScheduleTab : Tab {
+    override val options: TabOptions
+        @Composable
+        get() {
+            val icon = rememberVectorPainter(Icons.Outlined.CalendarMonth)
+            return remember {
+                TabOptions(
+                    index = 5u,
+                    title = "Jadval",
+                    icon = icon
+                )
+            }
+        }
+
+    @Composable
+    override fun Content() {
+        val visibility = LocalBottomBarVisible.current
+        Navigator(ScheduleVoyager, disposeBehavior = AnimatedNavigatorDisposeBehavior) { navigator ->
+            DisposeOnSessionEnd(navigator)
+            LaunchedEffect(navigator.size) {
+                visibility.value = navigator.size <= 1
+            }
+            AnimatedScreens(navigator)
+        }
+    }
+}
+
 /** Xodimlar ro'yxati - faqat super admin uchun tab. */
 internal object UsersTab : Tab {
     override val options: TabOptions
@@ -362,14 +404,14 @@ internal object ReportsTab : Tab {
 
     @Composable
     override fun Content() {
-        // Bu tab navigatorsiz - ScreenModel'i tabning o'ziga bog'langan,
-        // shuning uchun uni ham sessiya tugaganda alohida tozalaymiz
-        val userSession = koinInject<UserSession>()
-        DisposableEffect(Unit) {
-            onDispose {
-                if (userSession.role.value == UserRole.UNKNOWN) ScreenModelStore.onDispose(ReportsTab)
+        // Qarzdor bronini bosganda tafsilot shu tab ichida ochilsin
+        val visibility = LocalBottomBarVisible.current
+        Navigator(ReportsVoyager, disposeBehavior = AnimatedNavigatorDisposeBehavior) { navigator ->
+            DisposeOnSessionEnd(navigator)
+            LaunchedEffect(navigator.size) {
+                visibility.value = navigator.size <= 1
             }
+            AnimatedScreens(navigator)
         }
-        ReportsScreen(getScreenModel())
     }
 }

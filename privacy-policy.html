@@ -269,8 +269,8 @@
             <h1>FootTopBusiness</h1>
         </div>
         <div class="doc-meta-table">
-            <span><strong>Document Ref:</strong> PRIV-2026-V2</span>
-            <span><strong>Effective Date:</strong> October 27, 2026</span>
+            <span><strong>Document Ref:</strong> PRIV-2026-V3</span>
+            <span><strong>Effective Date:</strong> November 10, 2026</span>
             <span><strong>Status:</strong> Active</span>
         </div>
     </header>
@@ -337,7 +337,7 @@
         <ul>
             <li><strong>Firebase (Google LLC):</strong> Push notifications and app telemetry</li>
             <li><strong>OpenStreetMap / OpenFreeMap:</strong> Mapping interfaces and geocoding</li>
-            <li><strong>Private Infrastructure:</strong> Encrypted backend databases</li>
+            <li><strong>Private Infrastructure:</strong> Our own backend servers that store account, stadium and booking data</li>
         </ul>
 
         <h2>System Permissions</h2>
@@ -355,7 +355,7 @@
                     <td>Maintains active link to application servers for data synchronization.</td>
                 </tr>
                 <tr>
-                    <td><code>ACCESS_FINE_LOCATION</code></td>
+                    <td><code>ACCESS_COARSE_LOCATION</code></td>
                     <td>Renders user position to assist coordinate selection for venues.</td>
                 </tr>
                 <tr>
@@ -365,13 +365,28 @@
             </tbody>
         </table>
 
-        <h2>Retention & Erasure</h2>
+        <h2 id="account-deletion">Retention & Account Deletion</h2>
         <p>
             Data is maintained only for periods required to fulfill operational services or for the duration of active accounts.
         </p>
+        <h3>Delete your account inside the app</h3>
+        <ul>
+            <li>Open FootTop Business and sign in.</li>
+            <li>Go to <strong>Settings → Danger zone → Delete Account</strong>.</li>
+            <li>Type your username to confirm and tap <strong>Delete</strong>. Your account is deleted immediately and you are signed out.</li>
+        </ul>
+        <h3>Request deletion without the app</h3>
         <p>
-            Account deletion requests may be initiated via a District or Super Administrator. Upon confirmation, associated personal records are purged from active primary databases.
+            If you cannot access the app, send an email to
+            <a href="mailto:rahim.mustafo.x@gmail.com?subject=FootTop%20Business%20account%20deletion">rahim.mustafo.x@gmail.com</a>
+            with the subject “FootTop Business account deletion” and the username or phone number of the account. We verify ownership and complete the deletion within 30 days.
         </p>
+        <h3>What is deleted and what is kept</h3>
+        <ul>
+            <li><strong>Deleted:</strong> your name, phone number, username, password, profile image, role and device notification tokens.</li>
+            <li><strong>Kept for up to 90 days, then removed:</strong> backups of the database.</li>
+            <li><strong>Kept in anonymized form:</strong> booking and payment records that other users or stadiums depend on, where the law requires us to keep accounting records.</li>
+        </ul>
 
         <h2>Security Protocol</h2>
         <p>

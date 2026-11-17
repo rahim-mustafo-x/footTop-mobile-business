@@ -1,5 +1,7 @@
 package uz.coder.foottopbusiness.presentation.main.stadium.addstadium
 
+import uz.coder.foottopbusiness.presentation.main.stadium.components.PeakPricingSection
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -238,6 +240,9 @@ fun AddStadiumScreen(viewModel: AddStadiumViewModel, onBack: () -> Unit) {
                 ) {
                     viewModel.handleEvent(AddStadiumContract.Event.PricePerHour(it))
                 }
+
+                Text(strings.peakPricing, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                PeakPricingSection(state.peak) { viewModel.handleEvent(AddStadiumContract.Event.Peak(it)) }
             }
 
             PremiumCard(

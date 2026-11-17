@@ -29,6 +29,11 @@ data class StadiumResponse(
     @SerialName("closeTime") val closeTime: String? = null,
     @SerialName("slots") val slots: List<SlotDto>? = null,
     @SerialName("earliestAvailable") val earliestAvailable: String? = null,
+    /** Gavjum soat narxi; 0 yoki null - gavjum narx yo'q. */
+    @SerialName("peakPricePerHour") val peakPricePerHour: Double? = null,
+    @SerialName("peakStartTime") val peakStartTime: String? = null,
+    @SerialName("peakEndTime") val peakEndTime: String? = null,
+    @SerialName("peakWeekends") val peakWeekends: Boolean? = null,
 ) : KmpSerializable
 
 @Serializable
@@ -36,4 +41,6 @@ data class SlotDto(
     @SerialName("start") val start: String? = null,
     @SerialName("end") val end: String? = null,
     @SerialName("status") val status: String? = null,
+    /** Shu slot narxi (gavjum soatlar hisobga olingan). */
+    @SerialName("price") val price: Double? = null,
 ) : KmpSerializable

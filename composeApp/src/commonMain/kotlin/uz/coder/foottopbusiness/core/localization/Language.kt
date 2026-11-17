@@ -106,6 +106,8 @@ interface Language {
     val helpAndContactSubtitle: String
     val rateAppSubtitle: String
     val aboutAppSubtitle: String
+    val privacyPolicy: String
+    val privacyPolicySubtitle: String
     val danger: String
     val deleteAccountSubtitle: String
     val logoutConfirmTitle: String
@@ -440,6 +442,95 @@ interface Language {
     val chooseFromGallery: String
     val takePhoto: String
     val cameraUnavailable: String
+    val noShow: String
+    val markNoShow: String
+    val unmarkNoShow: String
+    val noShowSaved: String
+    val customerHistory: String
+    val regularCustomer: String
+    val newCustomer: String
+    val unreliableCustomer: String
+    val statPlayed: String
+    val statUpcoming: String
+    val statCancelled: String
+    val statNoShow: String
+    val paidTotal: String
+    val debt: String
+    val firstBooking: String
+    val recentBookings: String
+    val paidLabel: String
+    val loadFailed: String
+    val errTimeBlocked: String
+    val errBlockOverlapsBookings: String
+    val errBlockOverlapsBlock: String
+    val errInvalidTimeRange: String
+    val errTimeInPast: String
+    val errBlockTooLong: String
+    val errNotStarted: String
+    val errNotConfirmed: String
+    val errReplyTooLong: String
+    val errReportRange: String
+    val scheduleTitle: String
+    val schedBookingsUnit: String
+    val schedPendingUnit: String
+    val scheduleHint: String
+    val schedFree: String
+    val schedFreePast: String
+    val closedTime: String
+    val confirmedShort: String
+    val blockTime: String
+    val chooseAction: String
+    val slotNotEnoughForDuration: String
+    val timeFrom: String
+    val timeTo: String
+    val reopenTime: String
+    val reopenConfirm: String
+    val blockDeleted: String
+    val blockCreated: String
+    val blockTimeHint: String
+    val pitch: String
+    val wholeDay: String
+    val blockReason: String
+    val optional: String
+    val blockReasonPlaceholder: String
+    val noStadiumsYet: String
+    val bookingCreated: String
+    val weekdaysShort: String
+    val period7: String
+    val period30: String
+    val periodMonth: String
+    val unpaidLabel: String
+    val occupancy: String
+    val cancelledShort: String
+    val debtors: String
+    val debtorsHint: String
+    val noDebtors: String
+    val dailyRevenue: String
+    val peakHours: String
+    val byPitch: String
+    val noOccupancyData: String
+    val hoursUnit: String
+    val reviewsHint: String
+    val averageRating: String
+    val all: String
+    val unanswered: String
+    val noReviews: String
+    val anonymousPlayer: String
+    val yourReply: String
+    val editReply: String
+    val replyAction: String
+    val replySaved: String
+    val replyDeleted: String
+    val deleteReply: String
+    val replyPlaceholder: String
+    val telegramNotifications: String
+    val telegramLinkedText: String
+    val telegramNotLinkedText: String
+    val peakPricing: String
+    val peakPricingHint: String
+    val peakPrice: String
+    val peakWeekends: String
+    val peakNeedsWindow: String
 }
 
 class EnLanguage : Language {
@@ -576,6 +667,8 @@ class EnLanguage : Language {
     override val helpAndContactSubtitle = "Contact us"
     override val rateAppSubtitle = "Your opinion is important to us"
     override val aboutAppSubtitle = "Version"
+    override val privacyPolicy = "Privacy Policy"
+    override val privacyPolicySubtitle = "How we handle your data"
     override val danger = "DANGER"
     override val deleteAccountSubtitle = "Data cannot be recovered"
     override val logoutConfirmTitle = "Logout"
@@ -851,6 +944,95 @@ class EnLanguage : Language {
     override val chooseFromGallery = "Choose from gallery"
     override val takePhoto = "Take a photo"
     override val cameraUnavailable = "Camera is not available on this device"
+    override val noShow = "No-show"
+    override val markNoShow = "Mark as no-show"
+    override val unmarkNoShow = "Came (undo)"
+    override val noShowSaved = "Saved"
+    override val customerHistory = "Customer history"
+    override val regularCustomer = "Regular customer"
+    override val newCustomer = "New customer"
+    override val unreliableCustomer = "This customer has missed games before — consider asking for prepayment"
+    override val statPlayed = "Played"
+    override val statUpcoming = "Upcoming"
+    override val statCancelled = "Cancelled"
+    override val statNoShow = "No-shows"
+    override val paidTotal = "Paid"
+    override val debt = "Owes"
+    override val firstBooking = "First booking"
+    override val recentBookings = "Recent bookings"
+    override val paidLabel = "Paid"
+    override val loadFailed = "Could not load data"
+    override val errTimeBlocked = "This time is closed"
+    override val errBlockOverlapsBookings = "There are bookings in this range. Cancel them first."
+    override val errBlockOverlapsBlock = "This time is already closed"
+    override val errInvalidTimeRange = "The end must be after the start"
+    override val errTimeInPast = "Past time can't be closed"
+    override val errBlockTooLong = "At most 31 days can be closed at once"
+    override val errNotStarted = "The game hasn't started yet"
+    override val errNotConfirmed = "Only for confirmed bookings"
+    override val errReplyTooLong = "Keep the reply under 500 characters"
+    override val errReportRange = "The period must be 92 days or less"
+    override val scheduleTitle = "Daily schedule"
+    override val schedBookingsUnit = "bookings"
+    override val schedPendingUnit = "pending"
+    override val scheduleHint = "Tap a free spot to add a booking or close the time"
+    override val schedFree = "Free"
+    override val schedFreePast = "Left free"
+    override val closedTime = "Closed"
+    override val confirmedShort = "Confirmed"
+    override val blockTime = "Close time"
+    override val chooseAction = "What would you like to do?"
+    override val slotNotEnoughForDuration = "Not enough free time for the selected duration"
+    override val timeFrom = "From"
+    override val timeTo = "Until"
+    override val reopenTime = "Reopen time"
+    override val reopenConfirm = "Open this time for booking again?"
+    override val blockDeleted = "Time reopened"
+    override val blockCreated = "Time closed"
+    override val blockTimeHint = "Players can't book this time (repairs, event, weather). Reports stay accurate."
+    override val pitch = "Pitch"
+    override val wholeDay = "All day"
+    override val blockReason = "Reason"
+    override val optional = "optional"
+    override val blockReasonPlaceholder = "e.g. repairs"
+    override val noStadiumsYet = "No stadiums yet"
+    override val bookingCreated = "Booked successfully"
+    override val weekdaysShort = "Mon,Tue,Wed,Thu,Fri,Sat,Sun"
+    override val period7 = "7 days"
+    override val period30 = "30 days"
+    override val periodMonth = "This month"
+    override val unpaidLabel = "Unpaid"
+    override val occupancy = "Occupancy"
+    override val cancelledShort = "Cancelled"
+    override val debtors = "Unpaid games"
+    override val debtorsHint = "Played but not yet paid"
+    override val noDebtors = "Everyone has paid 👍"
+    override val dailyRevenue = "Daily revenue"
+    override val peakHours = "Busiest hours"
+    override val byPitch = "By pitch"
+    override val noOccupancyData = "No working hours set"
+    override val hoursUnit = "h"
+    override val reviewsHint = "Player ratings and comments"
+    override val averageRating = "Average rating"
+    override val all = "All"
+    override val unanswered = "Unanswered"
+    override val noReviews = "No reviews yet"
+    override val anonymousPlayer = "Player"
+    override val yourReply = "Your reply"
+    override val editReply = "Edit reply"
+    override val replyAction = "Reply"
+    override val replySaved = "Reply saved"
+    override val replyDeleted = "Reply removed"
+    override val deleteReply = "Delete reply"
+    override val replyPlaceholder = "Reply to the player..."
+    override val telegramNotifications = "Telegram notifications"
+    override val telegramLinkedText = "Connected — new bookings arrive in Telegram and can be confirmed there"
+    override val telegramNotLinkedText = "Send your phone number to the bot to connect"
+    override val peakPricing = "Peak-hour price"
+    override val peakPricingHint = "A different price for evenings or weekends. Leave empty for one price all the time."
+    override val peakPrice = "Peak price (per hour)"
+    override val peakWeekends = "Sat–Sun all day"
+    override val peakNeedsWindow = "Set the peak hours or weekends for the peak price"
 }
 
 class RuLanguage : Language {
@@ -987,6 +1169,8 @@ class RuLanguage : Language {
     override val helpAndContactSubtitle = "Свяжитесь с нами"
     override val rateAppSubtitle = "Ваше мнение важно для нас"
     override val aboutAppSubtitle = "Версия"
+    override val privacyPolicy = "Политика конфиденциальности"
+    override val privacyPolicySubtitle = "Как мы обрабатываем ваши данные"
     override val danger = "ОПАСНО"
     override val deleteAccountSubtitle = "Данные не могут быть восстановлены"
     override val logoutConfirmTitle = "Выход"
@@ -1262,6 +1446,95 @@ class RuLanguage : Language {
     override val chooseFromGallery = "Выбрать из галереи"
     override val takePhoto = "Сделать фото"
     override val cameraUnavailable = "Камера недоступна на этом устройстве"
+    override val noShow = "Не пришёл"
+    override val markNoShow = "Отметить «не пришёл»"
+    override val unmarkNoShow = "Пришёл (снять отметку)"
+    override val noShowSaved = "Сохранено"
+    override val customerHistory = "История клиента"
+    override val regularCustomer = "Постоянный клиент"
+    override val newCustomer = "Новый клиент"
+    override val unreliableCustomer = "Клиент несколько раз не пришёл — лучше брать предоплату"
+    override val statPlayed = "Сыграно"
+    override val statUpcoming = "Предстоит"
+    override val statCancelled = "Отменено"
+    override val statNoShow = "Не пришёл"
+    override val paidTotal = "Оплачено"
+    override val debt = "Долг"
+    override val firstBooking = "Первая бронь"
+    override val recentBookings = "Последние брони"
+    override val paidLabel = "Оплачено"
+    override val loadFailed = "Не удалось загрузить данные"
+    override val errTimeBlocked = "Это время закрыто"
+    override val errBlockOverlapsBookings = "В этом интервале есть брони. Сначала отмените их."
+    override val errBlockOverlapsBlock = "Это время уже закрыто"
+    override val errInvalidTimeRange = "Конец должен быть позже начала"
+    override val errTimeInPast = "Нельзя закрыть прошедшее время"
+    override val errBlockTooLong = "За раз можно закрыть не более 31 дня"
+    override val errNotStarted = "Игра ещё не началась"
+    override val errNotConfirmed = "Только для подтверждённой брони"
+    override val errReplyTooLong = "Ответ не длиннее 500 символов"
+    override val errReportRange = "Период не больше 92 дней"
+    override val scheduleTitle = "Расписание на день"
+    override val schedBookingsUnit = "брон."
+    override val schedPendingUnit = "ожидают"
+    override val scheduleHint = "Нажмите на свободное время: создайте бронь или закройте время"
+    override val schedFree = "Свободно"
+    override val schedFreePast = "Осталось свободным"
+    override val closedTime = "Закрыто"
+    override val confirmedShort = "Подтверждено"
+    override val blockTime = "Закрыть время"
+    override val chooseAction = "Что сделать?"
+    override val slotNotEnoughForDuration = "В выбранном интервале недостаточно свободного времени"
+    override val timeFrom = "Начало"
+    override val timeTo = "Конец"
+    override val reopenTime = "Открыть время"
+    override val reopenConfirm = "Снова открыть это время для брони?"
+    override val blockDeleted = "Время снова открыто"
+    override val blockCreated = "Время закрыто"
+    override val blockTimeHint = "Игроки не смогут забронировать это время (ремонт, мероприятие, погода). На отчёты не влияет."
+    override val pitch = "Поле"
+    override val wholeDay = "Весь день"
+    override val blockReason = "Причина"
+    override val optional = "необязательно"
+    override val blockReasonPlaceholder = "Например: ремонт"
+    override val noStadiumsYet = "Стадионов пока нет"
+    override val bookingCreated = "Успешно забронировано"
+    override val weekdaysShort = "Пн,Вт,Ср,Чт,Пт,Сб,Вс"
+    override val period7 = "7 дней"
+    override val period30 = "30 дней"
+    override val periodMonth = "Этот месяц"
+    override val unpaidLabel = "Не оплачено"
+    override val occupancy = "Загрузка"
+    override val cancelledShort = "Отмена"
+    override val debtors = "Должники"
+    override val debtorsHint = "Сыгранные, но не оплаченные брони"
+    override val noDebtors = "Все оплатили 👍"
+    override val dailyRevenue = "Выручка по дням"
+    override val peakHours = "Пиковые часы"
+    override val byPitch = "По полям"
+    override val noOccupancyData = "Не указано время работы"
+    override val hoursUnit = "ч"
+    override val reviewsHint = "Оценки и отзывы игроков"
+    override val averageRating = "Средняя оценка"
+    override val all = "Все"
+    override val unanswered = "Без ответа"
+    override val noReviews = "Отзывов пока нет"
+    override val anonymousPlayer = "Игрок"
+    override val yourReply = "Ваш ответ"
+    override val editReply = "Изменить ответ"
+    override val replyAction = "Ответить"
+    override val replySaved = "Ответ сохранён"
+    override val replyDeleted = "Ответ удалён"
+    override val deleteReply = "Удалить ответ"
+    override val replyPlaceholder = "Ответ игроку..."
+    override val telegramNotifications = "Уведомления в Telegram"
+    override val telegramLinkedText = "Подключено — новые брони приходят в Telegram, их можно подтвердить там же"
+    override val telegramNotLinkedText = "Чтобы подключить, отправьте боту свой номер"
+    override val peakPricing = "Цена в часы пик"
+    override val peakPricingHint = "Другая цена для вечера или выходных. Пусто — всегда одна цена."
+    override val peakPrice = "Цена в пик (в час)"
+    override val peakWeekends = "Сб–Вс весь день"
+    override val peakNeedsWindow = "Для цены в пик укажите время или выходные"
 }
 
 class UzLanguage : Language {
@@ -1398,6 +1671,8 @@ class UzLanguage : Language {
     override val helpAndContactSubtitle = "Biz bilan bog'laning"
     override val rateAppSubtitle = "Fikringiz biz uchun muhim"
     override val aboutAppSubtitle = "Versiya"
+    override val privacyPolicy = "Maxfiylik siyosati"
+    override val privacyPolicySubtitle = "Ma'lumotlaringiz qanday ishlatiladi"
     override val danger = "XAVFLI"
     override val deleteAccountSubtitle = "Ma'lumotlar qaytarilmaydi"
     override val logoutConfirmTitle = "Chiqish"
@@ -1673,4 +1948,93 @@ class UzLanguage : Language {
     override val chooseFromGallery = "Galereyadan tanlash"
     override val takePhoto = "Kamerada suratga olish"
     override val cameraUnavailable = "Bu qurilmada kamera mavjud emas"
+    override val noShow = "Kelmadi"
+    override val markNoShow = "Kelmadi deb belgilash"
+    override val unmarkNoShow = "Keldi (belgini olib tashlash)"
+    override val noShowSaved = "Saqlandi"
+    override val customerHistory = "Mijoz tarixi"
+    override val regularCustomer = "Doimiy mijoz"
+    override val newCustomer = "Yangi mijoz"
+    override val unreliableCustomer = "Bu mijoz bir necha marta kelmagan — oldindan to'lov so'rash tavsiya etiladi"
+    override val statPlayed = "O'ynagan"
+    override val statUpcoming = "Kelgusi"
+    override val statCancelled = "Bekor qilgan"
+    override val statNoShow = "Kelmagan"
+    override val paidTotal = "To'lagan"
+    override val debt = "Qarz"
+    override val firstBooking = "Birinchi bron"
+    override val recentBookings = "Oxirgi bronlar"
+    override val paidLabel = "To'langan"
+    override val loadFailed = "Ma'lumotni yuklab bo'lmadi"
+    override val errTimeBlocked = "Bu vaqt yopilgan"
+    override val errBlockOverlapsBookings = "Bu oraliqda bronlar bor. Avval ularni bekor qiling."
+    override val errBlockOverlapsBlock = "Bu vaqt allaqachon yopilgan"
+    override val errInvalidTimeRange = "Tugash vaqti boshlanishidan keyin bo'lishi kerak"
+    override val errTimeInPast = "O'tib ketgan vaqtni yopib bo'lmaydi"
+    override val errBlockTooLong = "Bir martada ko'pi bilan 31 kun yopish mumkin"
+    override val errNotStarted = "O'yin hali boshlanmagan"
+    override val errNotConfirmed = "Faqat tasdiqlangan bron uchun"
+    override val errReplyTooLong = "Javob 500 belgidan oshmasin"
+    override val errReportRange = "Davr 92 kundan oshmasin"
+    override val scheduleTitle = "Kunlik jadval"
+    override val schedBookingsUnit = "ta bron"
+    override val schedPendingUnit = "ta kutilmoqda"
+    override val scheduleHint = "Bo'sh joyni bosing: bron yarating yoki vaqtni yoping"
+    override val schedFree = "Bo'sh"
+    override val schedFreePast = "Bo'sh qolgan"
+    override val closedTime = "Yopiq"
+    override val confirmedShort = "Tasdiqlangan"
+    override val blockTime = "Vaqtni yopish"
+    override val chooseAction = "Nima qilamiz?"
+    override val slotNotEnoughForDuration = "Tanlangan vaqt oralig'ida bo'sh joy yetarli emas"
+    override val timeFrom = "Boshlanishi"
+    override val timeTo = "Tugashi"
+    override val reopenTime = "Vaqtni ochish"
+    override val reopenConfirm = "Bu vaqt yana bron uchun ochilsinmi?"
+    override val blockDeleted = "Vaqt qayta ochildi"
+    override val blockCreated = "Vaqt yopildi"
+    override val blockTimeHint = "Bu vaqtga o'yinchilar bron qila olmaydi (ta'mirlash, tadbir, ob-havo). Hisobotga ta'sir qilmaydi."
+    override val pitch = "Maydon"
+    override val wholeDay = "Kun bo'yi"
+    override val blockReason = "Sabab"
+    override val optional = "ixtiyoriy"
+    override val blockReasonPlaceholder = "Masalan: ta'mirlash"
+    override val noStadiumsYet = "Hali stadion qo'shilmagan"
+    override val bookingCreated = "Muvaffaqiyatli band qilindi"
+    override val weekdaysShort = "Du,Se,Ch,Pa,Ju,Sh,Ya"
+    override val period7 = "7 kun"
+    override val period30 = "30 kun"
+    override val periodMonth = "Shu oy"
+    override val unpaidLabel = "To'lanmagan"
+    override val occupancy = "Bandlik"
+    override val cancelledShort = "Bekor"
+    override val debtors = "Qarzdorlar"
+    override val debtorsHint = "O'ynalgan, lekin hali to'lanmagan bronlar"
+    override val noDebtors = "Hamma to'lagan 👍"
+    override val dailyRevenue = "Kunlik tushum"
+    override val peakHours = "Gavjum soatlar"
+    override val byPitch = "Maydonlar bo'yicha"
+    override val noOccupancyData = "Ish vaqti kiritilmagan"
+    override val hoursUnit = "soat"
+    override val reviewsHint = "O'yinchilar baholari va izohlari"
+    override val averageRating = "O'rtacha baho"
+    override val all = "Barchasi"
+    override val unanswered = "Javobsiz"
+    override val noReviews = "Hali sharh yo'q"
+    override val anonymousPlayer = "O'yinchi"
+    override val yourReply = "Sizning javobingiz"
+    override val editReply = "Javobni tahrirlash"
+    override val replyAction = "Javob berish"
+    override val replySaved = "Javob saqlandi"
+    override val replyDeleted = "Javob o'chirildi"
+    override val deleteReply = "Javobni o'chirish"
+    override val replyPlaceholder = "Mijozga javob..."
+    override val telegramNotifications = "Telegram xabarlari"
+    override val telegramLinkedText = "Ulangan — yangi bronlar Telegramga keladi va shu yerda tasdiqlanadi"
+    override val telegramNotLinkedText = "Ulash uchun botga telefon raqamingizni yuboring"
+    override val peakPricing = "Gavjum vaqt narxi"
+    override val peakPricingHint = "Kechki soatlar yoki dam olish kunlari uchun boshqa narx. Bo'sh qoldirilsa — doim bir xil narx."
+    override val peakPrice = "Gavjum narx (soatiga)"
+    override val peakWeekends = "Shanba-yakshanba kun bo'yi"
+    override val peakNeedsWindow = "Gavjum narx uchun vaqtni yoki dam olish kunlarini belgilang"
 }

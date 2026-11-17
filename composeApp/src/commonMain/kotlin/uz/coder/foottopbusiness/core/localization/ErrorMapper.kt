@@ -36,6 +36,20 @@ object ErrorMapper {
             error.contains("FILE_TOO_LARGE") -> strings.imageTooLarge
             error.contains("TOO_MANY_IMAGES") -> strings.tooManyImages
 
+            // Yopilgan vaqt, kelmadi belgisi, sharhlar, hisobot
+            error.contains("BOOKING_TIME_BLOCKED") -> strings.errTimeBlocked
+            error.contains("BLOCK_OVERLAPS_BOOKINGS") -> strings.errBlockOverlapsBookings
+            error.contains("BLOCK_OVERLAPS_BLOCK") -> strings.errBlockOverlapsBlock
+            error.contains("BLOCK_INVALID_TIME_RANGE") -> strings.errInvalidTimeRange
+            error.contains("BLOCK_TIME_IN_PAST") -> strings.errTimeInPast
+            error.contains("BLOCK_TOO_LONG") -> strings.errBlockTooLong
+            error.contains("BOOKING_NOT_STARTED") -> strings.errNotStarted
+            error.contains("BOOKING_NOT_CONFIRMED") -> strings.errNotConfirmed
+            error.contains("RATING_REPLY_TOO_LONG") -> strings.errReplyTooLong
+            error.contains("REPORT_INVALID_DATE_RANGE") -> strings.errReportRange
+            // Formadagi tekshiruv (backend kodi emas)
+            error.contains("PEAK_NEEDS_WINDOW") -> strings.peakNeedsWindow
+
             else -> error
         }
     }

@@ -2,6 +2,7 @@ package uz.coder.foottopbusiness.data.network.dto.booking
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
+import uz.coder.foottopbusiness.core.Serializable as KmpSerializable
 
 @Serializable
 data class BookingResponseDto(
@@ -20,5 +21,10 @@ data class BookingResponseDto(
     @SerialName("bookingType") val bookingType: String? = null,
     @SerialName("recurrenceGroupId") val recurrenceGroupId: String? = null,
     @SerialName("name") val name: String? = null,
-    @SerialName("phone") val phone: String? = null
-)
+    @SerialName("phone") val phone: String? = null,
+    @SerialName("stadiumName") val stadiumName: String? = null,
+    @SerialName("cancelReason") val cancelReason: String? = null,
+    /** Tasdiqlangan, lekin o'yinchi kelmagan. */
+    @SerialName("noShow") val noShow: Boolean? = null,
+    @SerialName("createdAt") val createdAt: String? = null
+) : KmpSerializable // BookingDetailsScreen'da turadi: ilova fonga o'tganda ekran holati saqlanadi

@@ -4,6 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 import uz.coder.foottopbusiness.data.network.dto.stadium.LocationDto
+import uz.coder.foottopbusiness.core.Serializable as KmpSerializable
 
 @Serializable
 data class TimeDto(
@@ -40,4 +41,4 @@ data class TournamentResponseDto(
     // Backend bu maydonni qaytarmasa null bo'ladi - tahrirlashda stadion
     // oldindan tanlanmaydi, qolgan hamma narsa ishlayveradi
     @SerialName("stadiumId") val stadiumId: Long? = null,
-)
+) : KmpSerializable // TournamentEditScreen'da turadi: ekran holati saqlanadi

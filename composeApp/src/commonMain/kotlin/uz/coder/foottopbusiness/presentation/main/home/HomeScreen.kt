@@ -58,6 +58,8 @@ import uz.coder.foottopbusiness.core.ui.StatCardHeight
 import uz.coder.foottopbusiness.core.ui.shimmer
 import uz.coder.foottopbusiness.core.toLocalDateTimeSafe
 import uz.coder.foottopbusiness.presentation.main.reports.ReportItem
+import uz.coder.foottopbusiness.presentation.main.reviews.ReviewsScreen
+import androidx.compose.material.icons.outlined.StarOutline
 import uz.coder.foottopbusiness.presentation.main.settings.SettingsVoyager
 import uz.coder.foottopbusiness.presentation.main.settings.notification.SendNotificationVoyager
 import uz.coder.foottopbusiness.presentation.main.stadium.addstadium.AddStadiumVoyager
@@ -205,6 +207,7 @@ fun HomeScreen(
                             state = state,
                             onAddStadium = { navigator.push(AddStadiumVoyager()) },
                             onAddTournament = { navigator.push(TournamentsVoyager) },
+                            onReviews = { navigator.push(ReviewsScreen()) },
                             onProfileClick = { navigator.push(SettingsVoyager) },
                             onShowBookings = { navigator.push(BookingListVoyager()) },
                             onCreateBooking = {
@@ -591,6 +594,7 @@ private fun OwnerHomeTab(
     state: HomeContract.State,
     onAddStadium: () -> Unit,
     onAddTournament: () -> Unit,
+    onReviews: () -> Unit,
     onProfileClick: () -> Unit,
     onShowBookings: () -> Unit,
     onCreateBooking: () -> Unit
@@ -658,6 +662,7 @@ private fun OwnerHomeTab(
             ) {
                 SmallActionTile(strings.addStadium, Icons.Outlined.Home, Info, onAddStadium, Modifier.weight(1f))
                 SmallActionTile(strings.createTournament, Icons.Outlined.EmojiEvents, Warning, onAddTournament, Modifier.weight(1f))
+                SmallActionTile(strings.reviews, Icons.Outlined.StarOutline, Warning, onReviews, Modifier.weight(1f))
             }
         }
 

@@ -1,5 +1,7 @@
 package uz.coder.foottopbusiness.presentation.main.stadium.edit
 
+import uz.coder.foottopbusiness.presentation.main.stadium.components.PeakPricingSection
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -314,6 +316,9 @@ fun EditStadiumScreen(viewModel: EditStadiumViewModel, onBack: () -> Unit) {
                     ) {
                         viewModel.handleEvent(EditStadiumContract.Event.PricePerHour(it))
                     }
+
+                    Text(strings.peakPricing, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    PeakPricingSection(state.peak) { viewModel.handleEvent(EditStadiumContract.Event.Peak(it)) }
                 }
             }
 

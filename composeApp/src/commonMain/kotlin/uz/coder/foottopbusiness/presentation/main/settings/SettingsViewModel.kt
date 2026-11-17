@@ -14,6 +14,7 @@ import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.data.network.dto.UserDto
 import uz.coder.foottopbusiness.domain.usecase.auth.ChangePasswordUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.LogoutUseCase
+import uz.coder.foottopbusiness.domain.usecase.user.DeleteAccountUseCase
 import uz.coder.foottopbusiness.domain.usecase.user.GetUserUseCase
 
 class SettingsViewModel(
@@ -22,6 +23,7 @@ class SettingsViewModel(
     private val changePasswordUseCase: ChangePasswordUseCase,
     private val logoutUseCase: LogoutUseCase,
     private val userSession: UserSession,
+    private val deleteAccountUseCase: DeleteAccountUseCase,
 ) : BaseViewModel<SettingsContract.State, SettingsContract.Effect, SettingsContract.Event>(
     initialState = SettingsContract.State()
 ) {
@@ -99,17 +101,17 @@ class SettingsViewModel(
                 if (state.deleteConfirmText == username) {
                     updateState { copy(isDeleting = true) }
                     executeAsync(
-                        block = {
-                            // TODO: Add DeleteAccountUseCase
-                            logoutUseCase()
-                        },
+                        // Hisob serverda haqiqatan o'chiriladi, keyin sessiya tozalanadi.
+                        // Ilgari bu yerda faqat logout qilinardi -- Google Play buni
+                        // "Account Deletion" siyosatining buzilishi deb hisoblaydi.
+                        block = { deleteAccountUseCase() },
                         onSuccess = {
                             updateState { copy(isDeleting = false, showDeleteAccountDialog = false) }
                             sendEffect(SettingsContract.Effect.NavigateToAuth)
                         },
-                        onError = {
+                        onError = { error ->
                             updateState { copy(isDeleting = false) }
-                            sendEffect(SettingsContract.Effect.ShowToast("Xatolik yuz berdi"))
+                            sendEffect(SettingsContract.Effect.ShowToast(error.message ?: "Xatolik yuz berdi"))
                         }
                     )
                 } else {

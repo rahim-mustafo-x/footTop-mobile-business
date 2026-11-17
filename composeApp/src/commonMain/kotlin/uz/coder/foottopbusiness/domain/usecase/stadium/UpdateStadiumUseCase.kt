@@ -1,6 +1,7 @@
 package uz.coder.foottopbusiness.domain.usecase.stadium
 
 import uz.coder.foottopbusiness.data.network.dto.stadium.ImageDto
+import uz.coder.foottopbusiness.data.network.dto.stadium.PeakPricing
 import uz.coder.foottopbusiness.domain.repository.StadiumRepository
 
 class UpdateStadiumUseCase(private val repository: StadiumRepository) {
@@ -24,6 +25,7 @@ class UpdateStadiumUseCase(private val repository: StadiumRepository) {
         latitude: Double? = null,
         longitude: Double? = null,
         address: String? = null,
+        peak: PeakPricing? = null,
     ) = repository.updateStadium(
         id = id,
         name = name,
@@ -43,6 +45,7 @@ class UpdateStadiumUseCase(private val repository: StadiumRepository) {
         phone = phone,
         latitude = latitude,
         longitude = longitude,
-        address = address
+        address = address,
+        peak = peak
     )
 }

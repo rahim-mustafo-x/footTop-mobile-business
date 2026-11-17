@@ -15,6 +15,7 @@ import uz.coder.foottopbusiness.data.network.StadiumApiService
 import uz.coder.foottopbusiness.data.network.dto.BaseResponse
 import uz.coder.foottopbusiness.data.network.dto.stadium.CreateStadiumRequest
 import uz.coder.foottopbusiness.data.network.dto.stadium.ImageDto
+import uz.coder.foottopbusiness.data.network.dto.stadium.PeakPricing
 import uz.coder.foottopbusiness.data.network.dto.stadium.LocationDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.PageStadiumResponseDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.StadiumResponse
@@ -41,7 +42,7 @@ class StadiumRepositoryImpl(
         name: String, description: String, type: String, duration: String,
         capacity: Int, pricePerHour: Int, openTime: String, closeTime: String,
         images: List<PickedImage>, regionId: Int, districtId: Int, ownerId: Int?, phone: String?,
-        latitude: Double?, longitude: Double?, address: String?,
+        latitude: Double?, longitude: Double?, address: String?, peak: PeakPricing?,
     ): Flow<StadiumResponse> = flow {
         val finalOwnerId = ownerId ?: preferencesManager.userId.first().takeIf { it != 0 }
         val request = CreateStadiumRequest(
@@ -53,7 +54,7 @@ class StadiumRepositoryImpl(
             // Rasmlar endi faqat multipart orqali qabul qilinadi, JSON'dagi images e'tiborsiz qoldiriladi
             images = emptyList(),
             isActive = true
-        )
+        ).withPeak(peak)
         val response = if (images.isEmpty()) {
             stadiumApiService.createStadium(request)
         } else {
@@ -93,6 +94,7 @@ class StadiumRepositoryImpl(
         latitude: Double?,
         longitude: Double?,
         address: String?,
+        peak: PeakPricing?,
     ): Flow<StadiumResponse> = flow {
         val response = stadiumApiService.updateStadium(
             id = id.toLong(),
@@ -104,7 +106,7 @@ class StadiumRepositoryImpl(
                 capacity = capacity, pricePerHour = pricePerHour,
                 images = images ?: if (imageUrl.isNotBlank()) listOf(ImageDto(imageUrl)) else emptyList(),
                 isActive = isActive
-            )
+            ).withPeak(peak)
         )
 
         // If 204 No Content, we construct a response from the request data
@@ -145,10 +147,11 @@ class StadiumRepositoryImpl(
     override fun getStadiums(
         name: String?, type: String?, isActive: Boolean?, page: Int, size: Int,
     ): Flow<PageStadiumResponseDto> = flow {
-        val ownerId = preferencesManager.userId.first()
+        // ownerId yuborilmaydi: backend ro'yxatni tokendagi rolga qarab o'zi cheklaydi
+        // (egasi - o'z stadionlari, super admin - hammasi). ownerId=superAdminId 0 ta qaytarardi.
         val response = stadiumApiService.getStadiums(
             name = name, type = type,
-            ownerId = ownerId.toLong(), isActive = isActive, page = page, size = size,
+            isActive = isActive, page = page, size = size,
         )
         if (response.success == true) {
             emit(response.data ?: PageStadiumResponseDto())

@@ -26,6 +26,7 @@ sealed interface BookingDetailsContract {
         object BookingConfirmed : Effect
         object BookingRejected : Effect
         object PaymentStatusUpdated : Effect
+        object NoShowSaved : Effect
         object SeriesUpdated : Effect
     }
 
@@ -38,6 +39,9 @@ sealed interface BookingDetailsContract {
 
         /** PAID <-> UNPAID. */
         object TogglePaymentStatus : Event
+
+        /** Kelmadi <-> keldi (faqat tasdiqlangan, boshlangan bron). */
+        object ToggleNoShow : Event
 
         object ConfirmSeries : Event
         object OpenRejectSeriesDialog : Event

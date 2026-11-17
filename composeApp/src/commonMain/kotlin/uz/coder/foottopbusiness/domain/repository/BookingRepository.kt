@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import uz.coder.foottopbusiness.data.network.dto.booking.BookingRequestDto
 import uz.coder.foottopbusiness.data.network.dto.booking.BookingResponseDto
 import uz.coder.foottopbusiness.data.network.dto.booking.CancelBookingRequestDto
+import uz.coder.foottopbusiness.data.network.dto.booking.CustomerSummaryDto
 
 interface BookingRepository {
     fun createBooking(request: BookingRequestDto): Flow<BookingResponseDto>
@@ -27,6 +28,8 @@ interface BookingRepository {
     fun confirmSeries(groupId: String): Flow<List<BookingResponseDto>>
     fun rejectSeries(groupId: String, reason: String): Flow<List<BookingResponseDto>>
     fun cancelSeries(groupId: String, reason: String): Flow<List<BookingResponseDto>>
+    fun markNoShow(id: Long, noShow: Boolean): Flow<BookingResponseDto>
+    fun getCustomerSummary(phone: String): Flow<CustomerSummaryDto>
 
     companion object {
         /** Backend ham shu qiymatni default sifatida ishlatadi. */

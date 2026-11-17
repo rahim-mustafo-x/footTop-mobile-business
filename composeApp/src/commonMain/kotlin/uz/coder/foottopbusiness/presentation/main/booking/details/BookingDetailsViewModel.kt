@@ -6,6 +6,7 @@ import uz.coder.foottopbusiness.data.network.dto.booking.BookingResponseDto
 import uz.coder.foottopbusiness.domain.usecase.booking.CancelSeriesUseCase
 import uz.coder.foottopbusiness.domain.usecase.booking.ConfirmBookingUseCase
 import uz.coder.foottopbusiness.domain.usecase.booking.ConfirmSeriesUseCase
+import uz.coder.foottopbusiness.domain.usecase.booking.MarkNoShowUseCase
 import uz.coder.foottopbusiness.domain.usecase.booking.RejectBookingUseCase
 import uz.coder.foottopbusiness.domain.usecase.booking.RejectSeriesUseCase
 import uz.coder.foottopbusiness.domain.usecase.booking.UpdatePaymentStatusUseCase
@@ -17,7 +18,8 @@ class BookingDetailsViewModel(
     private val updatePaymentStatusUseCase: UpdatePaymentStatusUseCase,
     private val confirmSeriesUseCase: ConfirmSeriesUseCase,
     private val rejectSeriesUseCase: RejectSeriesUseCase,
-    private val cancelSeriesUseCase: CancelSeriesUseCase
+    private val cancelSeriesUseCase: CancelSeriesUseCase,
+    private val markNoShowUseCase: MarkNoShowUseCase
 ) : BaseViewModel<BookingDetailsContract.State, BookingDetailsContract.Effect, BookingDetailsContract.Event>(
     initialState = BookingDetailsContract.State(booking = booking)
 ) {
@@ -40,6 +42,7 @@ class BookingDetailsViewModel(
                 if (state.value.rejectWholeSeries) rejectSeries() else reject()
             }
             BookingDetailsContract.Event.TogglePaymentStatus -> togglePaymentStatus()
+            BookingDetailsContract.Event.ToggleNoShow -> toggleNoShow()
             BookingDetailsContract.Event.ConfirmSeries -> confirmSeries()
             BookingDetailsContract.Event.OpenCancelSeriesDialog -> {
                 updateState { copy(showCancelSeriesDialog = true, cancelSeriesReason = "") }
@@ -95,6 +98,21 @@ class BookingDetailsViewModel(
             onSuccess = { updated ->
                 updateState { copy(booking = updated, isProcessing = false) }
                 sendEffect(BookingDetailsContract.Effect.PaymentStatusUpdated)
+            },
+            onError = ::onError
+        )
+    }
+
+    private fun toggleNoShow() {
+        val s = state.value
+        val id = s.booking.id ?: return
+        if (s.isProcessing) return
+        executeAsync(
+            onLoading = { updateState { copy(isProcessing = true) } },
+            block = { markNoShowUseCase(id, s.booking.noShow != true).first() },
+            onSuccess = { updated ->
+                updateState { copy(booking = updated, isProcessing = false) }
+                sendEffect(BookingDetailsContract.Effect.NoShowSaved)
             },
             onError = ::onError
         )

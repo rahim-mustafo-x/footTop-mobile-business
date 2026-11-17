@@ -79,6 +79,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import uz.coder.foottopbusiness.presentation.main.reviews.ReviewsScreen
 import kotlinx.coroutines.launch
 import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.platform.getPlatform
@@ -94,6 +95,10 @@ import uz.coder.foottopbusiness.core.platform.NotificationPermissionLauncher
 import uz.coder.foottopbusiness.core.ui.Info
 import uz.coder.foottopbusiness.core.ui.Success
 import uz.coder.foottopbusiness.core.ui.Warning
+
+/** Xodim Telegram'ni shu bot orqali bog'laydi: yangi bron so'rovlari chatga keladi. */
+private const val BOT_URL = "https://t.me/FootTopUzBot?start=owner"
+private const val PRIVACY_POLICY_URL = "https://rahim-mustafo-x.github.io/footTop-mobile-business/privacy-policy.html"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -498,6 +503,22 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     onClick = { viewModel.handleEvent(SettingsContract.Event.CheckNotificationPermission) }
                 )
 
+                SettingsItem(
+                    icon = Icons.Default.Notifications,
+                    iconTint = if (state.user?.telegramLinked == true) Success else Info,
+                    title = strings.telegramNotifications,
+                    subtitle = if (state.user?.telegramLinked == true) strings.telegramLinkedText else strings.telegramNotLinkedText,
+                    onClick = { uriHandler.openUriSafely(BOT_URL) }
+                )
+
+                SettingsItem(
+                    icon = Icons.Default.Star,
+                    iconTint = Warning,
+                    title = strings.reviews,
+                    subtitle = strings.reviewsHint,
+                    onClick = { navigator.push(ReviewsScreen()) }
+                )
+
                 SettingsSectionTitle(strings.app)
 
                 SettingsItem(
@@ -505,7 +526,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     iconTint = Warning,
                     title = strings.helpAndContact,
                     subtitle = strings.helpAndContactSubtitle,
-                    onClick = { uriHandler.openUri("https://t.me/rahim_mustafo_x") }
+                    onClick = { uriHandler.openUriSafely("https://t.me/rahim_mustafo_x") }
                 )
 
                 SettingsItem(
@@ -514,6 +535,14 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     title = strings.rateApp,
                     subtitle = strings.rateAppSubtitle,
                     onClick = { uz.coder.foottopbusiness.core.platform.rateApp() }
+                )
+
+                SettingsItem(
+                    icon = Icons.Default.Lock,
+                    iconTint = Info,
+                    title = strings.privacyPolicy,
+                    subtitle = strings.privacyPolicySubtitle,
+                    onClick = { uriHandler.openUriSafely(PRIVACY_POLICY_URL) }
                 )
 
                 SettingsItem(
@@ -738,4 +767,9 @@ private fun SettingsItem(
             )
         }
     }
+}
+
+/** Qurilmada havolani ochadigan ilova (brauzer/Telegram) bo'lmasa ilova yiqilmasin. */
+private fun androidx.compose.ui.platform.UriHandler.openUriSafely(uri: String) {
+    runCatching { openUri(uri) }
 }
