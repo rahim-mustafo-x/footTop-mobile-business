@@ -61,6 +61,12 @@ class MapSelectionScreen(
                             val lng = selectedLng
                             if (lat != null && lng != null) onSelected?.invoke(lat, lng)
                             navigator.pop()
+                            selectedLat?.let { lat ->
+                                selectedLng?.let { lng ->
+                                    onSelected(lat, lng)
+                                    navigator.pop()
+                                }
+                            }
                         },
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary,

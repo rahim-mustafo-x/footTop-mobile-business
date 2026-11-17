@@ -56,7 +56,7 @@ class CoachesViewModel(
                                 availability = event.availability,
                             )
                         ).collect { result = it }
-                        result!!
+                        result ?: throw Exception("Murabbiy yaratilmadi")
                     },
                     onSuccess = { created ->
                         updateState { copy(isCreating = false, coaches = coaches + created) }

@@ -3,6 +3,7 @@ package uz.coder.foottopbusiness.core.mvi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cafe.adriel.voyager.core.model.ScreenModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
@@ -64,6 +65,7 @@ abstract class BaseViewModel <S: MviState, E: MviEffect, A: MviEvent>(initialSta
                 val result = block()
                 onSuccess(result)
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 onError(e)
             }
         }
