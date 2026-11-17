@@ -6,6 +6,8 @@ import uz.coder.foottopbusiness.data.network.BookingApiService
 import uz.coder.foottopbusiness.data.network.dto.booking.BookingRequestDto
 import uz.coder.foottopbusiness.data.network.dto.booking.BookingResponseDto
 import uz.coder.foottopbusiness.data.network.dto.booking.CancelBookingRequestDto
+import uz.coder.foottopbusiness.data.network.dto.booking.CustomerSummaryDto
+import uz.coder.foottopbusiness.data.network.dto.booking.NoShowRequestDto
 import uz.coder.foottopbusiness.data.network.dto.booking.PaymentStatusRequestDto
 import uz.coder.foottopbusiness.domain.repository.BookingRepository
 
@@ -102,6 +104,24 @@ class BookingRepositoryImpl(private val api: BookingApiService) : BookingReposit
             emit(response.data ?: emptyList())
         } else {
             throw Exception(response.message ?: "Bekor qilishda xatolik")
+        }
+    }
+
+    override fun markNoShow(id: Long, noShow: Boolean): Flow<BookingResponseDto> = flow {
+        val response = api.markNoShow(id, NoShowRequestDto(noShow))
+        if (response.success == true) {
+            response.data?.let { emit(it) } ?: throw Exception("Saqlandi, lekin ma'lumotlar qaytmadi")
+        } else {
+            throw Exception(response.message ?: "Saqlashda xatolik")
+        }
+    }
+
+    override fun getCustomerSummary(phone: String): Flow<CustomerSummaryDto> = flow {
+        val response = api.getCustomerSummary(phone)
+        if (response.success == true) {
+            response.data?.let { emit(it) } ?: throw Exception("Mijoz ma'lumotlari qaytmadi")
+        } else {
+            throw Exception(response.message ?: "Ma'lumotlarni yuklashda xatolik")
         }
     }
 

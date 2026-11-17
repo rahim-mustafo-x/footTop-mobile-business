@@ -233,14 +233,13 @@ class HomeViewModel(
                         // davomiylikka bog'liq qiymatga - qaytib ketardi.
                         val endTime = slot.first.plusMinutes(durationMinutesKey(s.selectedDuration))
 
-                        val totalPrice = (stadium.pricePerHour ?: 0.0) * (durationMinutesKey(s.selectedDuration) / 60.0)
-
                         val request = BookingRequestDto(
                             userId = userId,
                             stadiumId = stadium.id?.toLong(),
                             startTime = slot.first.toString(),
                             endTime = endTime.toString(),
-                            totalPrice = totalPrice,
+                            // Narx yuborilmaydi: backend slotni o'zi narxlaydi (gavjum soatlar ham)
+                            totalPrice = null,
                             status = "PENDING",
                             paymentMethod = "CASH",
                             paymentTiming = event.options.paymentTiming,

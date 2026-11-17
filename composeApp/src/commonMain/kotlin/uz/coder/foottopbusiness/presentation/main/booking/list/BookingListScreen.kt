@@ -34,6 +34,8 @@ import uz.coder.foottopbusiness.core.Money
 import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.data.network.dto.booking.BookingResponseDto
 import uz.coder.foottopbusiness.core.toLocalDateTimeSafe
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import uz.coder.foottopbusiness.core.formatToTime
 import uz.coder.foottopbusiness.core.ui.shimmer
 import uz.coder.foottopbusiness.core.visualTransformation.formatPhoneNumber
@@ -315,8 +317,12 @@ fun BookingItem(
                 }
                 
                 // Kutilayotgan bronda bekor qilish emas, tasdiqlash/rad etish kerak --
-                // ular pastdagi tugmalar qatorida.
-                if (booking.status != "CANCELLED" && booking.status != "REJECTED" &&
+                // ular pastdagi tugmalar qatorida. Tugagan bron esa o'zgarmaydi.
+                val finished = booking.status == "COMPLETED" ||
+                    (booking.endTime.toLocalDateTimeSafe()
+                        ?.toInstant(TimeZone.currentSystemDefault())
+                        ?.let { it < kotlin.time.Clock.System.now() } ?: false)
+                if (!finished && booking.status != "CANCELLED" && booking.status != "REJECTED" &&
                     booking.status != "PENDING"
                 ) {
                     IconButton(onClick = onCancelClick) {

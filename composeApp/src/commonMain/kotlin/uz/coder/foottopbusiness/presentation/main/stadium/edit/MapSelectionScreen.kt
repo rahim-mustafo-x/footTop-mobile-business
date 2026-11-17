@@ -20,8 +20,16 @@ import uz.coder.foottopbusiness.core.ui.MapView
 class MapSelectionScreen(
     private val initialLatitude: Double?,
     private val initialLongitude: Double?,
-    private val onSelected: (Double, Double) -> Unit
+    onSelected: (Double, Double) -> Unit
 ) : Screen {
+    // Voyager ilova fonga o'tganda navigator stack'ini java-serialization bilan
+    // Bundle'ga yozadi. Lambda (ViewModel'ni ushlab turadi) Serializable emas --
+    // ilgari shu sabab ilova NotSerializableException bilan yiqilardi (Google Play
+    // "Broken functionality" rad etishi). @Transient: lambda saqlanmaydi; jarayon
+    // o'ldirilib tiklangan kamdan-kam holatda null bo'ladi va ekran shunchaki yopiladi.
+    @kotlin.jvm.Transient
+    private val onSelected: ((Double, Double) -> Unit)? = onSelected
+
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
@@ -49,6 +57,10 @@ class MapSelectionScreen(
                 if (selectedLat != null && selectedLng != null && selectedLat != 0.0) {
                     FloatingActionButton(
                         onClick = {
+                            val lat = selectedLat
+                            val lng = selectedLng
+                            if (lat != null && lng != null) onSelected?.invoke(lat, lng)
+                            navigator.pop()
                             selectedLat?.let { lat ->
                                 selectedLng?.let { lng ->
                                     onSelected(lat, lng)

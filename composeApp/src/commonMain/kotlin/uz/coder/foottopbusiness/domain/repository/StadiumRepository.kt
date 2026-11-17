@@ -3,6 +3,7 @@ package uz.coder.foottopbusiness.domain.repository
 import kotlinx.coroutines.flow.Flow
 import uz.coder.foottopbusiness.core.platform.PickedImage
 import uz.coder.foottopbusiness.data.network.dto.stadium.ImageDto
+import uz.coder.foottopbusiness.data.network.dto.stadium.PeakPricing
 import uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.PageStadiumResponseDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.RegionDto
@@ -27,6 +28,7 @@ interface StadiumRepository {
         latitude: Double? = null,
         longitude: Double? = null,
         address: String? = null,
+        peak: PeakPricing? = null,
     ): Flow<StadiumResponse>
 
     fun updateStadium(
@@ -50,6 +52,7 @@ interface StadiumRepository {
         latitude: Double? = null,
         longitude: Double? = null,
         address: String? = null,
+        peak: PeakPricing? = null,
     ): Flow<StadiumResponse>
 
     fun getStadiums(

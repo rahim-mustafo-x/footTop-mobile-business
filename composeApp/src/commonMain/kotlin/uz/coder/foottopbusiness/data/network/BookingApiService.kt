@@ -9,6 +9,8 @@ import uz.coder.foottopbusiness.data.network.dto.BaseResponse
 import uz.coder.foottopbusiness.data.network.dto.booking.BookingRequestDto
 import uz.coder.foottopbusiness.data.network.dto.booking.BookingResponseDto
 import uz.coder.foottopbusiness.data.network.dto.booking.CancelBookingRequestDto
+import uz.coder.foottopbusiness.data.network.dto.booking.CustomerSummaryDto
+import uz.coder.foottopbusiness.data.network.dto.booking.NoShowRequestDto
 import uz.coder.foottopbusiness.data.network.dto.booking.PaymentStatusRequestDto
 
 class BookingApiService(private val client: HttpClient) {
@@ -90,6 +92,21 @@ class BookingApiService(private val client: HttpClient) {
         return client.patch("/v1/booking/series/$groupId/cancel") {
             contentType(ContentType.Application.Json)
             setBody(request)
+        }.body()
+    }
+
+    /** Tasdiqlangan, boshlangan bron: o'yinchi kelmadi (yoki belgini olib tashlash). */
+    suspend fun markNoShow(id: Long, request: NoShowRequestDto): BaseResponse<BookingResponseDto> {
+        return client.patch("/v1/booking/$id/no-show") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
+    }
+
+    /** Xodim ko'ra oladigan hamma narsa - bitta telefon raqam bo'yicha. */
+    suspend fun getCustomerSummary(phone: String): BaseResponse<CustomerSummaryDto> {
+        return client.get("/v1/booking/customer") {
+            parameter("phone", phone)
         }.body()
     }
 

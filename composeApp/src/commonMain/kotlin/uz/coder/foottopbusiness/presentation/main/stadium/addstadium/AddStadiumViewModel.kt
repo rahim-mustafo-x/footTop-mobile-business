@@ -80,6 +80,7 @@ class AddStadiumViewModel(
             is AddStadiumContract.Event.Type -> updateState { copy(type = event.value, showTypeDropdown = false, showErrors = false) }
             is AddStadiumContract.Event.Duration -> updateState { copy(duration = event.value, showDurationDropdown = false, showErrors = false) }
             is AddStadiumContract.Event.Capacity -> updateState { copy(capacity = event.value, showErrors = false) }
+            is AddStadiumContract.Event.Peak -> updateState { copy(peak = event.value) }
             is AddStadiumContract.Event.PricePerHour -> updateState { copy(pricePerHour = event.value, showErrors = false) }
             is AddStadiumContract.Event.OpenTime -> updateState { copy(openTime = event.value, showErrors = false) }
             is AddStadiumContract.Event.CloseTime -> updateState { copy(closeTime = event.value, showErrors = false) }
@@ -215,6 +216,11 @@ class AddStadiumViewModel(
             return
         }
 
+        if (s.peak.needsWindow) {
+            sendEffect(AddStadiumContract.Effect.ShowToast("PEAK_NEEDS_WINDOW"))
+            return
+        }
+
         log(logLabel, "Saving stadium: ${s.name}")
         executeAsync(
             onLoading = { updateState { copy(isLoading = true) } },
@@ -245,7 +251,8 @@ class AddStadiumViewModel(
                     phone = s.phone,
                     latitude = s.latitude,
                     longitude = s.longitude,
-                    address = s.preciseAddress
+                    address = s.preciseAddress,
+                    peak = s.peak.toRequest()
                 ).first()
             },
             onSuccess = {

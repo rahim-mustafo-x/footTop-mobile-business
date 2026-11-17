@@ -1,6 +1,6 @@
 # Privacy Policy for FootTopBusiness
 
-**Last Updated: October 27, 2023**
+**Last Updated: November 10, 2026**
 
 Welcome to **FootTopBusiness**. We value your privacy and are committed to protecting your personal data. This Privacy Policy explains how we collect, use, and safeguard your information when you use our mobile application.
 
@@ -15,7 +15,7 @@ We collect several types of information to provide and improve our service to yo
 - **Profile Image**: You may optionally provide a profile image URL to personalize your account.
 
 ### B. Location Data
-- **Precise Location**: With your permission, we use `ACCESS_FINE_LOCATION` and `ACCESS_COARSE_LOCATION` to:
+- **Approximate Location**: With your permission, we use `ACCESS_COARSE_LOCATION` (approximate location only) to:
     - Show your current position on the map.
     - Help you precisely select the geographic coordinates for your stadium.
 - **Background Location**: We **do not** collect your location in the background. Location is only accessed while you are using the Map view.
@@ -46,7 +46,7 @@ We use the collected information for the following purposes:
 We do **not** sell your personal data. However, we may share information with third-party services necessary for app functionality:
 - **Firebase (Google)**: For sending push notifications and analytics.
 - **OpenFreeMap / OpenStreetMap**: Used for rendering map tiles and reverse geocoding addresses. No personal identity is shared with these tile providers.
-- **Internal Backend**: Your data is securely stored on our private servers (`83.222.19.225`).
+- **Internal Backend**: Your data is securely stored on our private servers.
 
 ---
 
@@ -55,7 +55,7 @@ We do **not** sell your personal data. However, we may share information with th
 | Permission | Reason |
 | :--- | :--- |
 | `INTERNET` | Required to communicate with our servers. |
-| `ACCESS_FINE_LOCATION` | Required to show "You are here" on the map. |
+| `ACCESS_COARSE_LOCATION` | Moves the map to your approximate area when you choose a stadium location. |
 | `POST_NOTIFICATIONS` | Required to alert you about new bookings or matches. |
 
 ---
@@ -63,7 +63,8 @@ We do **not** sell your personal data. However, we may share information with th
 ## 5. Data Retention and Deletion
 
 - **Retention**: We keep your data for as long as your account is active or as needed to provide you with services.
-- **Deletion**: You can request account deletion by contacting your District or Super Admin. Once deleted, your personal data will be removed from our active databases.
+- **Deletion in the app**: Settings → Danger zone → Delete Account. Type your username to confirm; the account is deleted immediately.
+- **Deletion without the app**: email rahim.mustafo.x@gmail.com with the subject "FootTop Business account deletion" and your username or phone number. We complete the request within 30 days.
 
 ---
 

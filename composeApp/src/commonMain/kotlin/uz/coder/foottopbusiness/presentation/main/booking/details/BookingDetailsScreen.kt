@@ -35,11 +35,12 @@ import uz.coder.foottopbusiness.core.localization.Language
 import uz.coder.foottopbusiness.core.localization.Localization
 import uz.coder.foottopbusiness.core.platform.makePhoneCall
 import uz.coder.foottopbusiness.core.toLocalDateTimeSafe
-import uz.coder.foottopbusiness.core.ui.Error
-import uz.coder.foottopbusiness.core.ui.Success
-import uz.coder.foottopbusiness.core.ui.Warning
+import uz.coder.foottopbusiness.core.ui.bookingStatusStyle
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import uz.coder.foottopbusiness.core.visualTransformation.formatPhoneNumber
 import uz.coder.foottopbusiness.data.network.dto.booking.BookingResponseDto
+import uz.coder.foottopbusiness.presentation.main.customer.CustomerScreen
 
 class BookingDetailsScreen(private val booking: BookingResponseDto) : Screen {
     override val key: ScreenKey = uniqueScreenKey
@@ -48,13 +49,21 @@ class BookingDetailsScreen(private val booking: BookingResponseDto) : Screen {
     override fun Content() {
         val viewModel = getScreenModel<BookingDetailsViewModel> { parametersOf(booking) }
         val navigator = LocalNavigator.currentOrThrow
-        BookingDetailsContent(viewModel = viewModel, onBack = { navigator.pop() })
+        BookingDetailsContent(
+            viewModel = viewModel,
+            onBack = { navigator.pop() },
+            onOpenCustomer = { phone, name -> navigator.push(CustomerScreen(phone, name)) }
+        )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun BookingDetailsContent(viewModel: BookingDetailsViewModel, onBack: () -> Unit) {
+private fun BookingDetailsContent(
+    viewModel: BookingDetailsViewModel,
+    onBack: () -> Unit,
+    onOpenCustomer: (phone: String, name: String?) -> Unit
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val strings = Localization.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -67,6 +76,7 @@ private fun BookingDetailsContent(viewModel: BookingDetailsViewModel, onBack: ()
                 BookingDetailsContract.Effect.BookingConfirmed -> strings.bookingConfirmedMsg
                 BookingDetailsContract.Effect.BookingRejected -> strings.bookingRejectedMsg
                 BookingDetailsContract.Effect.PaymentStatusUpdated -> strings.paymentStatusUpdated
+                BookingDetailsContract.Effect.NoShowSaved -> strings.noShowSaved
                 BookingDetailsContract.Effect.SeriesUpdated -> strings.seriesUpdatedMsg
                 is BookingDetailsContract.Effect.ShowError ->
                     effect.message.takeIf { it.isNotBlank() }?.let { ErrorMapper.map(it, strings) }
@@ -135,7 +145,11 @@ private fun BookingDetailsContent(viewModel: BookingDetailsViewModel, onBack: ()
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            StatusCard(booking.status, strings)
+            StatusCard(booking.status, booking.noShow == true, strings)
+            val cancelReason = booking.cancelReason
+            if (!cancelReason.isNullOrBlank() && (booking.status == "CANCELLED" || booking.status == "REJECTED")) {
+                Text(cancelReason, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            }
 
             InfoSection(title = strings.customerInfo, icon = Icons.Default.Person) {
                 DetailRow(Icons.Default.Person, strings.fullName, booking.name ?: strings.unknownUser)
@@ -154,6 +168,14 @@ private fun BookingDetailsContent(viewModel: BookingDetailsViewModel, onBack: ()
                         Spacer(Modifier.width(8.dp))
                         Text(strings.call)
                     }
+                    TextButton(
+                        onClick = { onOpenCustomer(booking.phone, booking.name) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(strings.customerHistory)
+                    }
                 }
             }
 
@@ -165,6 +187,25 @@ private fun BookingDetailsContent(viewModel: BookingDetailsViewModel, onBack: ()
                     strings.time,
                     "${booking.startTime.formatToTime()} - ${booking.endTime.formatToTime()}"
                 )
+                booking.stadiumName?.let { DetailRow(Icons.Default.Stadium, strings.stadium, it) }
+                // Faqat tasdiqlangan va boshlangan bronni "kelmadi" deb belgilash mumkin
+                val started = start?.toInstant(TimeZone.currentSystemDefault())
+                    ?.let { it <= kotlin.time.Clock.System.now() } ?: false
+                if (booking.id != null && booking.status == "CONFIRMED" && started) {
+                    Spacer(Modifier.height(8.dp))
+                    val noShow = booking.noShow == true
+                    OutlinedButton(
+                        onClick = { viewModel.handleEvent(BookingDetailsContract.Event.ToggleNoShow) },
+                        enabled = !state.isProcessing,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = if (noShow) ButtonDefaults.outlinedButtonColors()
+                        else ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Icon(if (noShow) Icons.Default.Check else Icons.Default.Block, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(if (noShow) strings.unmarkNoShow else strings.markNoShow)
+                    }
+                }
             }
 
             InfoSection(title = strings.paymentInfo, icon = Icons.Default.Payments) {
@@ -310,15 +351,8 @@ private fun paymentMethodLabel(method: String, strings: Language): String = when
 }
 
 @Composable
-private fun StatusCard(status: String?, strings: Language) {
-    val (color, label) = when (status) {
-        "CONFIRMED" -> Success to strings.statusConfirmed
-        "PENDING" -> Warning to strings.statusPending
-        "CANCELLED" -> Error to strings.statusCancelled
-        "REJECTED" -> Error to strings.statusRejected
-        "COMPLETED" -> MaterialTheme.colorScheme.primary to strings.statusCompleted
-        else -> MaterialTheme.colorScheme.onSurfaceVariant to (status ?: strings.unknown)
-    }
+private fun StatusCard(status: String?, noShow: Boolean, strings: Language) {
+    val (color, label) = bookingStatusStyle(status, strings)
 
     Surface(
         color = color.copy(alpha = 0.1f),
@@ -332,6 +366,17 @@ private fun StatusCard(status: String?, strings: Language) {
             Icon(Icons.Default.Info, null, tint = color)
             Spacer(Modifier.width(12.dp))
             Text(label, color = color, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            if (noShow) {
+                Spacer(Modifier.width(8.dp))
+                Surface(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.12f), shape = RoundedCornerShape(8.dp)) {
+                    Text(
+                        strings.noShow,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                    )
+                }
+            }
         }
     }
 }

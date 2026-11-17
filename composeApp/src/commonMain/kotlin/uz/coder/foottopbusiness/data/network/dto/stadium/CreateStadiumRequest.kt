@@ -20,7 +20,29 @@ data class CreateStadiumRequest(
     @SerialName("pricePerHour") val pricePerHour: Int,
     @SerialName("images") val images: List<ImageDto>,
     @SerialName("isActive") val isActive: Boolean = true,
-) : KmpSerializable
+    /** Gavjum soat narxi; 0 - o'chirish, null - saqlangan qiymat o'zgarmaydi. */
+    @SerialName("peakPricePerHour") val peakPricePerHour: Int? = null,
+    /** "18:00:00" */
+    @SerialName("peakStartTime") val peakStartTime: String? = null,
+    @SerialName("peakEndTime") val peakEndTime: String? = null,
+    /** Shanba-yakshanba kun bo'yi gavjum narx. */
+    @SerialName("peakWeekends") val peakWeekends: Boolean? = null,
+) : KmpSerializable {
+    fun withPeak(peak: PeakPricing?): CreateStadiumRequest = if (peak == null) this else copy(
+        peakPricePerHour = peak.pricePerHour,
+        peakStartTime = peak.startTime?.let { "$it:00" },
+        peakEndTime = peak.endTime?.let { "$it:00" },
+        peakWeekends = peak.weekends
+    )
+}
+
+/** Formadagi gavjum narx: vaqtlar "HH:mm", narx 0 bo'lsa gavjum narx yo'q. */
+data class PeakPricing(
+    val pricePerHour: Int,
+    val startTime: String?,
+    val endTime: String?,
+    val weekends: Boolean
+)
 
 @Serializable
 data class LocationDto(

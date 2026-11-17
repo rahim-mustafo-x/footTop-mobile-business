@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.datetime.LocalDateTime
 import uz.coder.foottopbusiness.core.formatAsTime
 import uz.coder.foottopbusiness.core.mvi.BaseViewModel
+import uz.coder.foottopbusiness.presentation.main.stadium.components.PeakForm
 import uz.coder.foottopbusiness.data.local.PreferencesManager
 import uz.coder.foottopbusiness.data.network.dto.stadium.DistrictDto
 import uz.coder.foottopbusiness.data.network.dto.stadium.RegionDto
@@ -49,6 +50,7 @@ class EditStadiumViewModel(
         latitude = stadium.location?.latitude,
         longitude = stadium.location?.longitude,
         preciseAddress = stadium.location?.address ?: stadium.address ?: "",
+        peak = PeakForm.of(stadium, stadium.closeTime?.substringAfter('T')?.take(5)?.takeIf { it.isNotBlank() } ?: "22:00"),
         type = try { StadiumType.valueOf(stadium.type ?: "FOOTBALL") } catch (_: Exception) { StadiumType.FOOTBALL },
         duration = try { StadiumDuration.valueOf(stadium.duration ?: "SIXTY") } catch (_: Exception) { StadiumDuration.SIXTY }
     )
@@ -91,6 +93,7 @@ class EditStadiumViewModel(
             is EditStadiumContract.Event.Type -> updateState { copy(type = event.value, showTypeDropdown = false) }
             is EditStadiumContract.Event.Duration -> updateState { copy(duration = event.value, showDurationDropdown = false) }
             is EditStadiumContract.Event.Capacity -> updateState { copy(capacity = event.value) }
+            is EditStadiumContract.Event.Peak -> updateState { copy(peak = event.value) }
             is EditStadiumContract.Event.PricePerHour -> updateState { copy(pricePerHour = event.value) }
             is EditStadiumContract.Event.OpenTime -> updateState { copy(openTime = event.value) }
             is EditStadiumContract.Event.CloseTime -> updateState { copy(closeTime = event.value) }
@@ -234,6 +237,10 @@ class EditStadiumViewModel(
 
     private fun save() {
         val s = state.value
+        if (s.peak.needsWindow) {
+            sendEffect(EditStadiumContract.Effect.ShowToast("PEAK_NEEDS_WINDOW"))
+            return
+        }
         executeAsync(
             onLoading = { updateState { copy(isLoading = true) } },
             onError = { e ->
@@ -260,7 +267,8 @@ class EditStadiumViewModel(
                     phone = s.phone,
                     latitude = s.latitude,
                     longitude = s.longitude,
-                    address = s.preciseAddress
+                    address = s.preciseAddress,
+                    peak = s.peak.toRequest()
                 ).first()
             },
             onSuccess = {

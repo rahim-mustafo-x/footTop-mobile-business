@@ -347,7 +347,9 @@ class StadiumDetailsViewModel(
                     stadiumId = event.stadiumId.toLong(),
                     startTime = event.startTime,
                     endTime = event.endTime,
-                    totalPrice = event.price,
+                    // Narx yuborilmaydi: backend slotni o'zi narxlaydi (gavjum soatlar ham).
+                    // event.price faqat tugmadagi taxminiy summa uchun.
+                    totalPrice = null,
                     status = "PENDING",
                     paymentMethod = "CASH",
                     paymentTiming = options.paymentTiming,

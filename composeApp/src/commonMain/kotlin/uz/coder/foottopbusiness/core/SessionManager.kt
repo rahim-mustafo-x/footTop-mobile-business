@@ -33,7 +33,10 @@ import uz.coder.foottopbusiness.data.network.dto.auth.RefreshTokenRequest
 import uz.coder.foottopbusiness.data.network.dto.auth.TokenResponse
 import kotlin.time.Clock
 
-class SessionManager(private val preferencesManager: PreferencesManager) {
+class SessionManager(
+    private val preferencesManager: PreferencesManager,
+    private val userSession: UserSession
+) {
     sealed class SessionEvent {
         data object Authenticated : SessionEvent()
         data object Logout : SessionEvent()
@@ -92,6 +95,13 @@ class SessionManager(private val preferencesManager: PreferencesManager) {
     suspend fun logout() {
         preferencesManager.logout()
         setToken(null)
+        // Rolni shu zahoti UNKNOWN qilamiz: login ekraniga o'tilganda tablar shu holatni
+        // ko'rib eski akkaunt ScreenModel'larini tozalaydi (DisposeOnSessionEnd). Ilgari bu
+        // prefs'dagi "authorised" o'zgargach, kechikib bajarilardi va boshqa akkaunt bilan
+        // kirganda oldingi foydalanuvchi ma'lumotlari ko'rinib qolardi.
+        // Token va prefs'dan keyin: rol o'zgarishi chiqish so'ragan ekranni (Sozlamalar) ham
+        // yopadi va uning coroutine'i bekor bo'ladi - bu yerda boshqa to'xtash nuqtasi yo'q.
+        userSession.clear()
         onUnauthorized()
     }
 

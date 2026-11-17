@@ -179,9 +179,9 @@ class BookingListViewModel(
                     start != null && end != null && start <= now && end >= now
                 }
             }
-            3 -> { // Completed: endTime < now and not CANCELLED
+            3 -> { // Completed: endTime < now, only bookings that took place (no cancelled/rejected/never-confirmed)
                 list.filter {
-                    it.status != "CANCELLED" && 
+                    (it.status == "CONFIRMED" || it.status == "COMPLETED") &&
                     (it.endTime.toLocalDateTimeSafe()?.toInstant(tz)?.let { it < now } ?: false)
                 }
             }

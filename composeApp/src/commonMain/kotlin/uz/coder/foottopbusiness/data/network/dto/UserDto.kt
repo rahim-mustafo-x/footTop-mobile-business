@@ -14,6 +14,8 @@ data class UserDto(
     @SerialName("districtId") val districtId: Long? = null,
     @SerialName("districtName") val districtName: String? = null,
     @SerialName("roles") val roles: List<RoleDto>? = null,
+    /** Xodim Telegram'ni botga bog'lagan - bron so'rovlari chatga keladi. */
+    @SerialName("telegramLinked") val telegramLinked: Boolean? = null,
 )
 
 @Serializable

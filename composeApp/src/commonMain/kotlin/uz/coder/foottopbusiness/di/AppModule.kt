@@ -22,6 +22,17 @@ import uz.coder.foottopbusiness.domain.usecase.booking.UpdatePaymentStatusUseCas
 import uz.coder.foottopbusiness.domain.usecase.booking.ConfirmSeriesUseCase
 import uz.coder.foottopbusiness.domain.usecase.booking.RejectSeriesUseCase
 import uz.coder.foottopbusiness.domain.usecase.booking.CancelSeriesUseCase
+import uz.coder.foottopbusiness.domain.usecase.booking.GetCustomerSummaryUseCase
+import uz.coder.foottopbusiness.domain.usecase.booking.MarkNoShowUseCase
+import uz.coder.foottopbusiness.presentation.main.customer.CustomerViewModel
+import uz.coder.foottopbusiness.presentation.main.schedule.ScheduleViewModel
+import uz.coder.foottopbusiness.presentation.main.reviews.ReviewsViewModel
+import uz.coder.foottopbusiness.domain.usecase.owner.CreateStadiumBlockUseCase
+import uz.coder.foottopbusiness.domain.usecase.owner.DeleteStadiumBlockUseCase
+import uz.coder.foottopbusiness.domain.usecase.owner.GetOwnerReportUseCase
+import uz.coder.foottopbusiness.domain.usecase.owner.GetStadiumBlocksUseCase
+import uz.coder.foottopbusiness.domain.usecase.owner.GetStaffRatingsUseCase
+import uz.coder.foottopbusiness.domain.usecase.owner.ReplyToRatingUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.ChangePasswordUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.IsLoginInUseCase
 import uz.coder.foottopbusiness.domain.usecase.auth.LoginUseCase
@@ -75,7 +86,7 @@ import uz.coder.foottopbusiness.presentation.splash.SplashViewModel
 val appModule = module {
     // core
     single { UserSession(get()) }
-    single { SessionManager(get()) }
+    single { SessionManager(get(), get()) }
     single { HttpClientFactory(get(), get()) }
     single { get<HttpClientFactory>().create(get()) }
 
@@ -89,6 +100,7 @@ val appModule = module {
     single { NotificationApiService(get()) }
     single { AdminApiService(get()) }
     single { BookingApiService(get()) }
+    single { OwnerApiService(get()) }
 
     // repositories
     single<AuthRepository> { AuthRepositoryImpl(get(), get(), get()) }
@@ -100,6 +112,7 @@ val appModule = module {
     single<NotificationRepository> { NotificationRepositoryImpl(get()) }
     single<AdminRepository> { AdminRepositoryImpl(get()) }
     single<BookingRepository> { BookingRepositoryImpl(get()) }
+    single<OwnerRepository> { OwnerRepositoryImpl(get()) }
 
     // use-cases
     factory { LoginUseCase(get()) }
@@ -127,6 +140,7 @@ val appModule = module {
     factory { UpdateTournamentUseCase(get()) }
     factory { GetMatchesUseCase(get()) }
     factory { GetUserUseCase(get()) }
+    factory { uz.coder.foottopbusiness.domain.usecase.user.DeleteAccountUseCase(get(), get()) }
     factory { GetAllUsersUseCase(get()) }
     factory { GeneratePasswordUseCase(get()) }
     factory { UserIdUseCase(get()) }
@@ -147,6 +161,14 @@ val appModule = module {
     factory { ConfirmSeriesUseCase(get()) }
     factory { RejectSeriesUseCase(get()) }
     factory { CancelSeriesUseCase(get()) }
+    factory { MarkNoShowUseCase(get()) }
+    factory { GetCustomerSummaryUseCase(get()) }
+    factory { GetStadiumBlocksUseCase(get()) }
+    factory { CreateStadiumBlockUseCase(get()) }
+    factory { DeleteStadiumBlockUseCase(get()) }
+    factory { GetOwnerReportUseCase(get()) }
+    factory { GetStaffRatingsUseCase(get()) }
+    factory { ReplyToRatingUseCase(get()) }
 
 
     // viewModels
@@ -160,10 +182,13 @@ val appModule = module {
     factory { (stadium: StadiumResponse) -> EditStadiumViewModel(stadium, get(), get(), get(), get(), get(), get(), get()) }
     factory { (stadium: StadiumResponse) -> StadiumDetailsViewModel(stadium, get(), get(), get(), get(), get()) }
     factory { BookingListViewModel(get(), get(), get(), get()) }
-    factory { (booking: BookingResponseDto) -> BookingDetailsViewModel(booking, get(), get(), get(), get(), get(), get()) }
+    factory { (booking: BookingResponseDto) -> BookingDetailsViewModel(booking, get(), get(), get(), get(), get(), get(), get()) }
+    factory { (phone: String) -> CustomerViewModel(phone, get()) }
+    factory { ScheduleViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    factory { ReviewsViewModel(get(), get()) }
     factory { CoachesViewModel(get(), get(), get()) }
     factory { TournamentsViewModel(get(), get(), get(), get(), get(), get(), get()) }
-    factory { SettingsViewModel(get(), get(), get(), get(), get()) }
+    factory { SettingsViewModel(get(), get(), get(), get(), get(), get()) }
     factory { EditProfileViewModel(get(), get()) }
     factory { SendNotificationViewModel(get()) }
     factory { UserCreateViewModel(get(), get(), get(), get(), get(), get()) }

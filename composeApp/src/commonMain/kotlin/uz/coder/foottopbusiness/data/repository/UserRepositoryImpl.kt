@@ -60,4 +60,11 @@ class UserRepositoryImpl(
     override suspend fun userId(): Long {
         return preferencesManager.userId.first().toLong()
     }
+
+    override suspend fun deleteUser(id: Long) {
+        val response = api.deleteUser(id)
+        if (response.success != true) {
+            throw Exception(response.message ?: "Hisobni o'chirishda xatolik")
+        }
+    }
 }

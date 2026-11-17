@@ -1,5 +1,7 @@
 package uz.coder.foottopbusiness.presentation.main.stadium.addstadium
 
+import uz.coder.foottopbusiness.presentation.main.stadium.components.PeakForm
+
 import uz.coder.foottopbusiness.core.mvi.MviEffect
 import uz.coder.foottopbusiness.core.mvi.MviEvent
 import uz.coder.foottopbusiness.core.mvi.MviState
@@ -29,6 +31,8 @@ sealed interface AddStadiumContract {
         val duration: StadiumDuration = StadiumDuration.SIXTY,
         val capacity: String = "1",
         val pricePerHour: String = "100000",
+        /** Gavjum soat narxi (ixtiyoriy). */
+        val peak: PeakForm = PeakForm(),
         val openTime: String = "08:00",
         val closeTime: String = "22:00",
         val images: List<PickedImage> = emptyList(),
@@ -69,6 +73,7 @@ sealed interface AddStadiumContract {
         data class Duration(val value: StadiumDuration) : Event
         data class Capacity(val value: String) : Event
         data class PricePerHour(val value: String) : Event
+        data class Peak(val value: PeakForm) : Event
         data class OpenTime(val value: String) : Event
         data class CloseTime(val value: String) : Event
         data class AddImages(val images: List<PickedImage>) : Event

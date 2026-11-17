@@ -170,31 +170,27 @@ actual fun LocationPermissionLauncher(
     trigger: Boolean,
     onResult: (PermissionStatus) -> Unit
 ) {
+    // Faqat taxminiy joylashuv: u xaritani foydalanuvchi turgan hududga olib borish
+    // uchun yetarli, aniq nuqta xaritada pin bilan tanlanadi. Google Play'ning
+    // "minimum location scope" qoidasi (2027-01-27) ACCESS_FINE_LOCATION uchun
+    // alohida deklaratsiya talab qiladi.
     val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val granted = permissions.getOrDefault(android.Manifest.permission.ACCESS_FINE_LOCATION, false) ||
-                permissions.getOrDefault(android.Manifest.permission.ACCESS_COARSE_LOCATION, false)
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
         onResult(if (granted) PermissionStatus.GRANTED else PermissionStatus.DENIED)
     }
 
     LaunchedEffect(trigger) {
         if (trigger) {
-            launcher.launch(
-                arrayOf(
-                    android.Manifest.permission.ACCESS_FINE_LOCATION,
-                    android.Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
+            launcher.launch(android.Manifest.permission.ACCESS_COARSE_LOCATION)
         }
     }
 }
 
 actual suspend fun checkLocationPermissionStatus(): PermissionStatus {
     val context = ContextProvider.getContext()
-    val fine = ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_FINE_LOCATION)
     val coarse = ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_COARSE_LOCATION)
-    return if (fine == PackageManager.PERMISSION_GRANTED || coarse == PackageManager.PERMISSION_GRANTED) {
+    return if (coarse == PackageManager.PERMISSION_GRANTED) {
         PermissionStatus.GRANTED
     } else {
         PermissionStatus.DENIED
@@ -230,7 +226,7 @@ actual suspend fun getCurrentLocation(): Pair<Double, Double>? {
         withTimeoutOrNull(FRESH_LOCATION_TIMEOUT_MS) {
             fusedLocationClient.getCurrentLocation(
                 CurrentLocationRequest.Builder()
-                    .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
+                    .setPriority(Priority.PRIORITY_BALANCED_POWER_ACCURACY)
                     .setMaxUpdateAgeMillis(FRESH_LOCATION_MAX_AGE_MS)
                     .build(),
                 cancellationSource.token

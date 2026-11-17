@@ -1,6 +1,7 @@
 package uz.coder.foottopbusiness.data.network
 
 import io.ktor.client.HttpClient
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.put
@@ -10,6 +11,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.appendPathSegments
 import io.ktor.http.contentType
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import uz.coder.foottopbusiness.data.network.dto.BaseResponse
 import uz.coder.foottopbusiness.data.network.dto.UserDto
 import uz.coder.foottopbusiness.data.network.dto.UserRequestDto
@@ -60,6 +62,14 @@ class UserApiService(private val client: HttpClient) {
 
     suspend fun getAllUsers(): BaseResponse<List<UserDto>> {
         val response = client.get(USERS.removeSuffix("/"))
+        return json.decodeFromString(response.bodyAsText())
+    }
+
+    /** Foydalanuvchi o'z hisobini butunlay o'chiradi (Google Play Account Deletion talabi). */
+    suspend fun deleteUser(id: Long): BaseResponse<JsonElement> {
+        val response = client.delete(USERS) {
+            url.appendPathSegments(id.toString())
+        }
         return json.decodeFromString(response.bodyAsText())
     }
 }
